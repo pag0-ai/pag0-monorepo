@@ -10,7 +10,12 @@
     "lint": "pnpm run --recursive lint",
     "test": "pnpm --filter @pag0/proxy test",
     "db:migrate": "pnpm --filter @pag0/proxy db:migrate",
-    "db:seed": "pnpm --filter @pag0/proxy db:seed"
+    "db:seed": "pnpm --filter @pag0/proxy db:seed",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:reset": "docker compose down -v && docker compose up -d && sleep 3 && pnpm db:migrate && pnpm db:seed",
+    "docker:logs": "docker compose logs -f",
+    "setup": "docker compose up -d && sleep 3 && pnpm db:migrate && pnpm db:seed && echo 'Ready! Run: pnpm dev'"
   },
   "engines": {
     "node": ">=20"
