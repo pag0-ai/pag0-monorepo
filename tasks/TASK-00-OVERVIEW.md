@@ -58,16 +58,16 @@ TASK-18 (Demo 시나리오)       ← TASK-17
 | ID | 태스크 | 패키지 | 예상 시간 | 의존성 |
 |----|--------|--------|-----------|--------|
 | [TASK-01](./TASK-01-db-redis-client.md) | ~~DB/Redis 클라이언트 설정~~ | proxy | 30분 | ✅ 완료 |
-| [TASK-02](./TASK-02-auth-middleware.md) | Auth 미들웨어 + Rate Limiter | proxy | 1시간 | TASK-01 |
-| [TASK-03](./TASK-03-policy-engine.md) | Policy Engine + Budget Tracker | proxy | 1.5시간 | TASK-01 |
-| [TASK-04](./TASK-04-cache-layer.md) | Cache Layer (Redis) | proxy | 1시간 | TASK-01 |
+| [TASK-02](./TASK-02-auth-middleware.md) | ~~Auth 미들웨어 + Rate Limiter~~ | proxy | 1시간 | ✅ 완료 |
+| [TASK-03](./TASK-03-policy-engine.md) | ~~Policy Engine + Budget Tracker~~ | proxy | 1.5시간 | ✅ 완료 |
+| [TASK-04](./TASK-04-cache-layer.md) | ~~Cache Layer (Redis)~~ | proxy | 1시간 | ✅ 완료 |
 
 ### Phase 2: Proxy Core + x402 (Day 1 오후)
 
 | ID | 태스크 | 패키지 | 예상 시간 | 의존성 |
 |----|--------|--------|-----------|--------|
 | [TASK-05](./TASK-05-proxy-core.md) | Proxy Core + x402 통합 | proxy | 2시간 | TASK-03, TASK-04 |
-| [TASK-06](./TASK-06-analytics-collector.md) | Analytics Collector | proxy | 1시간 | TASK-01 |
+| [TASK-06](./TASK-06-analytics-collector.md) | ~~Analytics Collector~~ | proxy | 1시간 | ✅ 완료 |
 
 ### Phase 3: API Routes (Day 2 오전)
 
@@ -75,8 +75,8 @@ TASK-18 (Demo 시나리오)       ← TASK-17
 |----|--------|--------|-----------|--------|
 | [TASK-07](./TASK-07-policy-routes.md) | Policy CRUD Routes | proxy | 1시간 | TASK-01, TASK-03 |
 | [TASK-08](./TASK-08-analytics-routes.md) | Analytics API Routes | proxy | 1.5시간 | TASK-01, TASK-06 |
-| [TASK-09](./TASK-09-curation-routes.md) | Curation API Routes | proxy | 1.5시간 | TASK-01 |
-| [TASK-10](./TASK-10-auth-routes.md) | Auth Routes (register/login/me) | proxy | 1시간 | TASK-01 |
+| [TASK-09](./TASK-09-curation-routes.md) | ~~Curation API Routes~~ | proxy | 1.5시간 | ✅ 완료 |
+| [TASK-10](./TASK-10-auth-routes.md) | ~~Auth Routes (register/login/me)~~ | proxy | 1시간 | ✅ 완료 |
 
 ### Phase 4: 통합 (Day 2 오후)
 
