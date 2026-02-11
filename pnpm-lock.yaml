@@ -97,6 +97,9 @@ importers:
       '@types/node':
         specifier: ^22.0.0
         version: 22.19.10
+      bun-types:
+        specifier: ^1.3.9
+        version: 1.3.9
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
@@ -705,6 +708,9 @@ packages:
   body-parser@2.2.2:
     resolution: {integrity: sha512-oP5VkATKlNwcgvxi0vM0p/D3n2C3EReYVX+DNYs5TjZFn/oQt2j+4sVJtSMr18pdRr8wjTcBl6LoV+FUwzPmNA==}
     engines: {node: '>=18'}
+
+  bun-types@1.3.9:
+    resolution: {integrity: sha512-+UBWWOakIP4Tswh0Bt0QD0alpTY8cb5hvgiYeWCMet9YukHbzuruIEeXC2D7nMJPB12kbh8C7XJykSexEqGKJg==}
 
   bytes@3.1.2:
     resolution: {integrity: sha512-/Nf7TyzTx6S3yRJObOAV7956r8cr2+Oj8AC5dt8wSP3BQAoeX58NoHyCU8P8zGkNXStjTSi6fzO6F0pBdcYbEg==}
@@ -1916,6 +1922,10 @@ snapshots:
       type-is: 2.0.1
     transitivePeerDependencies:
       - supports-color
+
+  bun-types@1.3.9:
+    dependencies:
+      '@types/node': 22.19.10
 
   bytes@3.1.2: {}
 

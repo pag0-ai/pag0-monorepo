@@ -75,6 +75,6 @@ cd packages/proxy && bun run src/db/postgres.ts
 
 ## 완료 기준
 
-- [ ] `postgres.ts` 작성 완료, import 가능
-- [ ] `redis.ts` 작성 완료, import 가능
-- [ ] Docker 로컬 환경에서 연결 성공 확인
+- [x] `postgres.ts` 작성 완료, import 가능
+- [x] `redis.ts` 작성 완료, import 가능
+- [x] Docker 로컬 환경에서 연결 성공 확인

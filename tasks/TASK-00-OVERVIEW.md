@@ -57,7 +57,7 @@ TASK-18 (Demo 시나리오)       ← TASK-17
 
 | ID | 태스크 | 패키지 | 예상 시간 | 의존성 |
 |----|--------|--------|-----------|--------|
-| [TASK-01](./TASK-01-db-redis-client.md) | DB/Redis 클라이언트 설정 | proxy | 30분 | 없음 |
+| [TASK-01](./TASK-01-db-redis-client.md) | ~~DB/Redis 클라이언트 설정~~ | proxy | 30분 | ✅ 완료 |
 | [TASK-02](./TASK-02-auth-middleware.md) | Auth 미들웨어 + Rate Limiter | proxy | 1시간 | TASK-01 |
 | [TASK-03](./TASK-03-policy-engine.md) | Policy Engine + Budget Tracker | proxy | 1.5시간 | TASK-01 |
 | [TASK-04](./TASK-04-cache-layer.md) | Cache Layer (Redis) | proxy | 1시간 | TASK-01 |
