@@ -70,10 +70,11 @@
                        ↓                            │
 ┌──────────────────────────────────────────────────┴─────────────────┐
 │                    Post-Processing Pipeline                         │
-│  ┌────────────────┐  ┌─────────────────┐  ┌──────────────────┐    │
-│  │ Cache Store    │  │ Analytics       │  │ Budget Update    │    │
-│  │ (if cacheable) │  │ Logger          │  │                  │    │
-│  └────────────────┘  └─────────────────┘  └──────────────────┘    │
+│  ┌──────────────┐ ┌─────────────┐ ┌──────────────┐ ┌───────────┐ │
+│  │ Cache Store  │ │ Analytics   │ │ Budget Update│ │ ERC-8004  │ │
+│  │ (if cache-   │ │ Logger      │ │              │ │ Feedback  │ │
+│  │  able)       │ │             │ │              │ │ (on-chain)│ │
+│  └──────────────┘ └─────────────┘ └──────────────┘ └───────────┘ │
 └─────────────────────────────┬───────────────────────────────────────┘
                               │
                               ↓
@@ -88,11 +89,11 @@
 ├─────────────────────────────────────────────────────────────────────┤
 │  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐  │
 │  │ PostgreSQL       │  │ Redis            │  │ SKALE Blockchain │  │
-│  │ (Supabase)       │  │ (Upstash)        │  │                  │  │
+│  │ (Supabase)       │  │ (Upstash)        │  │ + ERC-8004       │  │
 │  │                  │  │                  │  │                  │  │
 │  │ - Policies       │  │ - Cache          │  │ - On-chain       │  │
 │  │ - Requests Log   │  │ - Budget Counter │  │   Metrics        │  │
-│  │ - Analytics      │  │ - Rate Limits    │  │ - Immutable      │  │
+│  │ - Analytics      │  │ - Rate Limits    │  │ - ERC-8004       │  │
 │  │ - Endpoint       │  │ - Scores Cache   │  │   Audit Trail    │  │
 │  │   Scores         │  │                  │  │                  │  │
 │  └──────────────────┘  └──────────────────┘  └──────────────────┘  │
@@ -846,7 +847,131 @@ class Pag0Client {
 }
 ```
 
-### 3.2 Facilitator Client
+### 3.2 CDP Wallet Integration (Coinbase Developer Platform)
+
+**책임**: Agent의 x402 결제 서명을 위한 지갑 인프라 제공
+
+**방식**: Coinbase CDP Server Wallet — Coinbase 인프라에서 키 관리, Pag0는 API 호출만 수행
+
+```typescript
+import { CoinbaseSDK } from '@coinbase/sdk';
+
+class CDPWalletManager {
+  private sdk: CoinbaseSDK;
+  private wallets: Map<string, Wallet> = new Map();
+
+  constructor(config: {
+    apiKeyName: string;
+    apiKeySecret: string;
+    network: 'base' | 'base-sepolia';
+  }) {
+    this.sdk = new CoinbaseSDK({
+      apiKeyName: config.apiKeyName,
+      apiKeySecret: config.apiKeySecret,
+    });
+  }
+
+  /**
+   * 프로젝트별 Server Wallet 생성 또는 로드
+   */
+  async getOrCreateWallet(projectId: string): Promise<Wallet> {
+    if (this.wallets.has(projectId)) {
+      return this.wallets.get(projectId)!;
+    }
+
+    // 기존 지갑 조회 또는 신규 생성
+    let wallet = await this.sdk.wallets.get(projectId).catch(() => null);
+    if (!wallet) {
+      wallet = await this.sdk.wallets.create({
+        name: `pag0-${projectId}`,
+        network: this.network,
+      });
+    }
+
+    this.wallets.set(projectId, wallet);
+    return wallet;
+  }
+
+  /**
+   * x402 Payment Request에 대한 서명 생성
+   * - pag0-mcp에서 402 응답 수신 시 호출
+   * - Server Wallet이 결제 페이로드를 서명
+   */
+  async signPayment(projectId: string, paymentRequest: X402PaymentRequest): Promise<SignedPayment> {
+    const wallet = await this.getOrCreateWallet(projectId);
+    const address = await wallet.getDefaultAddress();
+
+    // x402 결제 페이로드 서명 (Coinbase 서버에서 키 관리)
+    const signedPayload = await address.signPayload({
+      to: paymentRequest.recipient,
+      value: paymentRequest.amount,
+      data: paymentRequest.data,
+    });
+
+    return {
+      payment: paymentRequest,
+      signature: signedPayload.signature,
+      signer: address.getId(),
+    };
+  }
+
+  /**
+   * 지갑 잔고 조회
+   */
+  async getBalance(projectId: string): Promise<WalletBalance> {
+    const wallet = await this.getOrCreateWallet(projectId);
+    const balances = await wallet.listBalances();
+
+    return {
+      usdc: balances.get('usdc') || '0',
+      eth: balances.get('eth') || '0',
+      address: (await wallet.getDefaultAddress()).getId(),
+    };
+  }
+
+  /**
+   * 테스트넷 펀딩 (Base Sepolia 전용)
+   */
+  async fundTestnet(projectId: string): Promise<FaucetTransaction> {
+    const wallet = await this.getOrCreateWallet(projectId);
+    return await wallet.faucet(); // Base Sepolia testnet USDC
+  }
+}
+
+interface WalletBalance {
+  usdc: string;
+  eth: string;
+  address: string;
+}
+```
+
+**pag0-mcp에서의 CDP Wallet 활용 흐름:**
+
+```
+pag0-mcp (MCP Server)
+  │
+  ├─ pag0_fetch tool 호출
+  │   ├─ 1. Pag0 Proxy로 요청 전달
+  │   ├─ 2. 402 응답 수신 (PaymentRequest)
+  │   ├─ 3. Policy Engine 검증 (예산, allowlist)
+  │   ├─ 4. CDPWalletManager.signPayment() ← CDP Server Wallet이 서명
+  │   ├─ 5. 서명된 결제를 Facilitator에 전달
+  │   └─ 6. 200 응답 + 메타데이터 반환
+  │
+  ├─ pag0_wallet_balance tool → CDPWalletManager.getBalance()
+  └─ pag0_wallet_fund tool    → CDPWalletManager.fundTestnet()
+```
+
+**보안 고려사항:**
+
+| 항목 | 설계 |
+|------|------|
+| 키 관리 | Coinbase Server Wallet — 키는 Coinbase 인프라에서 관리, Pag0는 API Key만 보유 |
+| 서명 권한 | pag0-mcp만 서명 요청 가능, AI Agent 자체에 키 노출 없음 |
+| 지출 한도 | Policy Engine의 예산 검증을 통과한 요청만 서명 진행 |
+| 감사 추적 | 모든 서명/결제를 Analytics Collector에 기록 + SKALE 온체인 로그 |
+
+### 3.3 Facilitator Client (x402 결제 검증)
 
 ```typescript
 class FacilitatorClient {
@@ -872,7 +997,7 @@ class FacilitatorClient {
 }
 ```
 
-### 3.3 SKALE Integration (On-chain Metrics)
+### 3.6 SKALE Integration (On-chain Metrics)
 
 ```typescript
 import { ethers } from 'ethers';
@@ -923,7 +1048,184 @@ class SKALEMetrics {
 // }
 ```
 
-### 3.4 The Graph Integration (Subgraph)
+### 3.4 ERC-8004 Audit Trail Integration
+
+**책임**: x402 결제 완료 후 ERC-8004 ReputationRegistry에 온체인 감사 기록 작성
+
+**방식**: Post-Processing Pipeline에서 비동기적으로 실행 — 결제 성공 → IPFS 메타데이터 업로드 → giveFeedback() 호출
+
+```typescript
+import { ethers } from 'ethers';
+import { create } from 'ipfs-http-client';
+
+class ERC8004AuditTrail {
+  private reputationRegistry: ethers.Contract;
+  private validationRegistry: ethers.Contract;
+  private ipfs: any;
+
+  constructor(config: {
+    reputationRegistryAddress: string;
+    validationRegistryAddress: string;
+    provider: ethers.Provider;
+    signer: ethers.Signer;
+    ipfsUrl: string;
+  }) {
+    this.reputationRegistry = new ethers.Contract(
+      config.reputationRegistryAddress,
+      REPUTATION_REGISTRY_ABI,
+      config.signer
+    );
+    this.validationRegistry = new ethers.Contract(
+      config.validationRegistryAddress,
+      VALIDATION_REGISTRY_ABI,
+      config.signer
+    );
+    this.ipfs = create({ url: config.ipfsUrl });
+  }
+
+  /**
+   * x402 결제 완료 후 ERC-8004 ReputationRegistry에 피드백 기록
+   * - Post-Processing Pipeline에서 비동기 호출
+   * - feedbackURI에 proofOfPayment (x402 tx hash) 포함
+   */
+  async recordPaymentFeedback(params: {
+    agentId: string;
+    endpoint: string;
+    cost: string;
+    latencyMs: number;
+    statusCode: number;
+    txHash: string;        // x402 결제 트랜잭션 해시
+    sender: string;        // CDP Wallet 주소
+    receiver: string;      // x402 서버 주소
+  }): Promise<string> {
+    // 1. feedbackURI JSON 생성 (IPFS에 업로드)
+    const feedbackData = {
+      version: '1.0',
+      type: 'x402-payment-audit',
+      proofOfPayment: {
+        txHash: params.txHash,
+        sender: params.sender,
+        receiver: params.receiver,
+        amount: params.cost,
+        network: 'base',
+      },
+      serviceMetrics: {
+        endpoint: params.endpoint,
+        latencyMs: params.latencyMs,
+        statusCode: params.statusCode,
+        timestamp: Date.now(),
+      },
+    };
+
+    // 2. IPFS에 메타데이터 업로드
+    const ipfsResult = await this.ipfs.add(JSON.stringify(feedbackData));
+    const feedbackURI = `ipfs://${ipfsResult.path}`;
+
+    // 3. feedbackHash 생성 (무결성 검증용)
+    const feedbackHash = ethers.keccak256(
+      ethers.toUtf8Bytes(JSON.stringify(feedbackData))
+    );
+
+    // 4. ReputationRegistry.giveFeedback() 호출
+    //    - value: 서비스 품질 점수 (latency + statusCode 기반)
+    //    - tag1: 'x402-payment' (결제 유형)
+    //    - tag2: endpoint 카테고리
+    const qualityScore = this.calculateQualityScore(
+      params.latencyMs, params.statusCode
+    );
+
+    const tx = await this.reputationRegistry.giveFeedback(
+      params.agentId,           // agentId (x402 서버의 ERC-8004 ID)
+      qualityScore,             // value (서비스 품질 0-100)
+      2,                        // valueDecimals
+      ethers.encodeBytes32String('x402-payment'),  // tag1
+      ethers.encodeBytes32String('api-call'),       // tag2
+      feedbackURI,              // IPFS URI (proofOfPayment 포함)
+      feedbackHash              // 무결성 해시
+    );
+
+    await tx.wait();
+    return tx.hash;
+  }
+
+  /**
+   * 고액 결제 시 ValidationRegistry를 통한 사전 검증 요청
+   * - Policy Engine의 requireApproval 임계값 초과 시 호출
+   */
+  async requestValidation(params: {
+    agentId: string;
+    endpoint: string;
+    estimatedCost: string;
+    taskDescription: string;
+  }): Promise<string> {
+    const tx = await this.validationRegistry.validationRequest(
+      params.agentId,
+      ethers.toUtf8Bytes(JSON.stringify({
+        endpoint: params.endpoint,
+        estimatedCost: params.estimatedCost,
+        task: params.taskDescription,
+        timestamp: Date.now(),
+      }))
+    );
+
+    await tx.wait();
+    return tx.hash;
+  }
+
+  private calculateQualityScore(latencyMs: number, statusCode: number): number {
+    // 성공 (2xx): latency 기반 점수 (0-100)
+    if (statusCode >= 200 && statusCode < 300) {
+      if (latencyMs < 200) return 100;
+      if (latencyMs < 500) return 85;
+      if (latencyMs < 1000) return 70;
+      if (latencyMs < 3000) return 50;
+      return 30;
+    }
+    // 실패: 낮은 점수
+    return 10;
+  }
+}
+```
+
+**Post-Processing Pipeline 연동:**
+
+```typescript
+// ProxyCore의 Post-Processing에 ERC-8004 피드백 추가
+class PostProcessor {
+  async process(req: ProxyRequest, response: ProxyResponse, txHash: string) {
+    // 기존 파이프라인 (병렬 실행)
+    await Promise.all([
+      this.cacheStore(req, response),
+      this.analyticsLog(req, response),
+      this.budgetUpdate(req, response),
+      // ERC-8004 감사 기록 (비동기, 실패해도 응답에 영향 없음)
+      this.erc8004Audit.recordPaymentFeedback({
+        agentId: this.resolveAgentId(req.targetUrl),
+        endpoint: req.targetUrl,
+        cost: response.metadata.cost,
+        latencyMs: response.metadata.latency,
+        statusCode: response.status,
+        txHash: txHash,
+        sender: req.walletAddress,
+        receiver: this.resolveReceiverAddress(req.targetUrl),
+      }).catch(err => console.warn('ERC-8004 feedback failed:', err)),
+    ]);
+  }
+}
+```
+
+**ERC-8004 감사 데이터 구조:**
+
+| 필드 | 값 | 설명 |
+|------|------|------|
+| `agentId` | x402 서버의 ERC-8004 ID | Identity Registry에 등록된 서비스 식별자 |
+| `value` | 0-100 | latency + statusCode 기반 서비스 품질 점수 |
+| `tag1` | `x402-payment` | 피드백 유형 태그 |
+| `tag2` | `api-call` | 서비스 카테고리 태그 |
+| `feedbackURI` | `ipfs://Qm...` | proofOfPayment + serviceMetrics JSON |
+| `feedbackHash` | `0x...` | feedbackURI 콘텐츠의 keccak256 해시 |
+
+### 3.5 The Graph Integration (Subgraph)
 
 ```graphql
 # schema.graphql
@@ -943,6 +1245,36 @@ type EndpointAggregate @entity {
   totalAmount: BigInt!
   avgAmount: BigInt!
   lastPaymentTimestamp: BigInt!
+}
+
+# ERC-8004 Audit Events
+type FeedbackEvent @entity {
+  id: ID!
+  agentId: String!
+  value: Int!
+  tag1: String!
+  tag2: String!
+  feedbackURI: String!
+  feedbackHash: Bytes!
+  timestamp: BigInt!
+  txHash: String!
+}
+
+type ValidationRequestEvent @entity {
+  id: ID!
+  agentId: String!
+  requestData: Bytes!
+  timestamp: BigInt!
+  txHash: String!
+}
+
+type ValidationResponseEvent @entity {
+  id: ID!
+  agentId: String!
+  approved: Boolean!
+  responseData: Bytes!
+  timestamp: BigInt!
+  txHash: String!
 }
 ```
 

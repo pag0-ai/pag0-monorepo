@@ -49,6 +49,11 @@ TASK-15 (API Ranking Board)   ← TASK-12, TASK-09
 TASK-16 (MCP 연동 테스트)     ← TASK-11
 TASK-17 (통합 테스트 E2E)     ← TASK-11
 TASK-18 (Demo 시나리오)       ← TASK-17
+
+TASK-19 (CDP Wallet)          ← TASK-16
+TASK-20 (ERC-8004 Audit)      ← TASK-05, TASK-19
+TASK-21 (ERC-8004 MCP+Graph)  ← TASK-20, TASK-16
+TASK-22 (Deployment)          ← TASK-11, TASK-12
 ```
 
 ## 태스크 목록
@@ -101,6 +106,15 @@ TASK-18 (Demo 시나리오)       ← TASK-17
 | [TASK-17](./TASK-17-e2e-test.md) | ~~로컬 통합 테스트 (E2E)~~ | 전체 | 1.5시간 | ✅ 완료 |
 | [TASK-18](./TASK-18-demo-scenarios.md) | ~~Demo 시나리오 스크립트~~ | 전체 | 1시간 | ✅ 완료 |
 
+### Phase 7: 확장 기능 — CDP Wallet + ERC-8004 + Deployment
+
+| ID | 태스크 | 패키지 | 예상 시간 | 의존성 |
+|----|--------|--------|-----------|--------|
+| [TASK-19](./TASK-19-cdp-wallet.md) | CDP Wallet Integration (Coinbase Server Wallet) | mcp | 2~3시간 | TASK-16 |
+| [TASK-20](./TASK-20-erc8004-audit.md) | ERC-8004 Audit Trail (온체인 감사 기록) | proxy | 3~4시간 | TASK-05, TASK-19 |
+| [TASK-21](./TASK-21-erc8004-mcp-subgraph.md) | ERC-8004 MCP Tools + The Graph Subgraph | mcp, subgraph | 2~3시간 | TASK-20, TASK-16 |
+| [TASK-22](./TASK-22-deployment.md) | Deployment (Fly.io + Vercel) | proxy, dashboard | 2시간 | TASK-11, TASK-12 |
+
 ## 병렬 실행 가능 그룹
 
 - **그룹 A** (독립): TASK-01
@@ -110,6 +124,9 @@ TASK-18 (Demo 시나리오)       ← TASK-17
 - **그룹 E** (통합): TASK-11
 - **그룹 F** (Dashboard, TASK-12 이후 병렬): TASK-13, TASK-14, TASK-15
 - **그룹 G** (최종): TASK-16, TASK-17, TASK-18
+- **그룹 H** (확장, TASK-16 이후): TASK-19, TASK-22 (병렬)
+- **그룹 I** (TASK-19 완료 후): TASK-20
+- **그룹 J** (TASK-20 완료 후): TASK-21
 
 ## 참고 자료
 

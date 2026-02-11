@@ -149,44 +149,142 @@ interface Pag0Response extends Response {
 
 Pag0 SDK는 x402 프로토콜의 결제 플로우 위에서 동작하는 **프록시 레이어**입니다. 기존 `@x402/fetch`를 대체하는 것이 아니라, Pag0 Proxy 서버를 경유하여 정책/캐시/분석 기능을 추가합니다.
 
-**결제 플로우:**
+**결제 플로우 (CDP Wallet 통합):**
 
 ```
-Agent (SDK)          Pag0 Proxy           x402 Server       Facilitator
-    │                    │                     │                  │
-    │── pag0.fetch() ──▶│                     │                  │
-    │                    │── Forward ─────────▶│                  │
-    │                    │◀── 402 + PayReq ───│                  │
-    │                    │                     │                  │
-    │                    │ [Policy Check]      │                  │
-    │                    │  Budget OK?         │                  │
-    │                    │  Allowlist OK?      │                  │
-    │                    │                     │                  │
-    │◀── 402 + PayReq ──│                     │                  │
-    │                    │                     │                  │
-    │ [Agent signs       │                     │                  │
-    │  payment locally]  │                     │                  │
-    │                    │                     │                  │
-    │── Signed Payment ─▶│── Forward ──────────────────────────▶│
-    │                    │◀── Verification ──────────────────────│
-    │                    │── Retry + Proof ───▶│                  │
-    │                    │◀── 200 Response ───│                  │
-    │                    │                     │                  │
-    │                    │ [Cache Store]       │                  │
-    │                    │ [Analytics Log]     │                  │
-    │                    │ [Budget Update]     │                  │
-    │                    │                     │                  │
-    │◀── Response + Meta│                     │                  │
+AI Agent           pag0-mcp              Pag0 Proxy       x402 Server     Facilitator
+(Claude 등)     [CDP Wallet]
+    │                │                       │                │                │
+    │─ MCP tool ───▶│                       │                │                │
+    │  pag0_fetch    │── pag0.fetch() ─────▶│                │                │
+    │                │                       │── Forward ────▶│                │
+    │                │                       │◀── 402 + Pay ─│                │
+    │                │                       │                │                │
+    │                │                       │ [Policy Check] │                │
+    │                │                       │  Budget OK?    │                │
+    │                │                       │  Allowlist OK? │                │
+    │                │                       │                │                │
+    │                │◀── 402 + PayReq ─────│                │                │
+    │                │                       │                │                │
+    │                │ [CDP Server Wallet    │                │                │
+    │                │  signs payment]       │                │                │
+    │                │                       │                │                │
+    │                │── Signed Payment ────▶│── Forward ─────────────────────▶│
+    │                │                       │◀── Verification ───────────────│
+    │                │                       │── Retry+Proof ▶│                │
+    │                │                       │◀── 200 Resp ──│                │
+    │                │                       │                │                │
+    │                │                       │ [Cache Store]  │                │
+    │                │                       │ [Analytics Log]│                │
+    │                │                       │ [Budget Update]│                │
+    │                │                       │ [ERC-8004      │                │
+    │                │                       │  giveFeedback  │                │
+    │                │                       │  → IPFS + 온체인]│               │
+    │                │                       │                │                │
+    │                │◀── Response + Meta ──│                │                │
+    │◀── Result ────│                       │                │                │
 ```
 
 **핵심 원칙:**
 
 | 원칙 | 설명 |
 |------|------|
-| **Proxy는 서명 안 함** | 결제 서명은 Agent가 자체 지갑으로 직접 수행. Proxy는 릴레이만 |
+| **CDP Wallet이 서명** | 결제 서명은 pag0-mcp 내의 Coinbase CDP Server Wallet이 수행. Proxy는 릴레이만 |
+| **AI Agent에 키 노출 없음** | 지갑 키는 Coinbase 인프라에서 관리, pag0-mcp는 API Key만 보유 |
 | **정책은 서버에서 적용** | SDK의 `policy` 설정은 Pag0 Proxy 서버에서 적용됨 (클라이언트 우회 불가) |
 | **캐시 히트 시 결제 없음** | 동일 요청이 캐시에 있으면 x402 서버 호출 자체를 생략 |
 | **x402 스펙 100% 준수** | 기존 x402 보안 모델이 그대로 유지됨 |
+| **ERC-8004 온체인 감사** | 결제 완료 후 ReputationRegistry에 proofOfPayment 자동 기록 (IPFS + 온체인) |
+
+### 1.6 pag0-mcp: Agent용 MCP 인터페이스
+
+pag0-mcp는 AI Agent(Claude, GPT 등)가 Pag0의 모든 기능을 MCP tool로 사용할 수 있게 하는 **MCP 서버**입니다. CDP Wallet이 내장되어 있어, Agent는 지갑 관리 없이 tool 호출만으로 x402 결제를 완료할 수 있습니다.
+
+**제공 MCP Tools:**
+
+```typescript
+// pag0-mcp가 노출하는 MCP Tools
+const tools = {
+  // x402 요청 (402→CDP Wallet 서명→재요청 자동 포함)
+  pag0_fetch: {
+    description: 'x402 API 호출 (결제 자동 처리)',
+    params: { url: string, method?: string, body?: object },
+    // 내부: Pag0 Proxy 경유 → 402 수신 → CDP Wallet 서명 → 결과 반환
+  },
+
+  // API 추천
+  pag0_recommend: {
+    description: '카테고리별 최적 x402 API 추천',
+    params: { category: string, optimize?: 'cost' | 'speed' | 'reliability' },
+  },
+
+  // 지출 확인
+  pag0_get_spent: {
+    description: '기간별 지출 및 잔여 예산 확인',
+    params: { period?: 'today' | 'week' | 'month' },
+  },
+
+  // 지갑 잔고
+  pag0_wallet_balance: {
+    description: 'CDP Wallet USDC/ETH 잔고 확인',
+    params: {},
+  },
+
+  // 테스트넷 펀딩 (개발용)
+  pag0_wallet_fund: {
+    description: 'Base Sepolia 테스트넷 USDC 충전',
+    params: { amount?: string },
+  },
+
+  // API 비교
+  pag0_compare: {
+    description: '여러 x402 API 엔드포인트 성능/비용 비교',
+    params: { endpoints: string[] },
+  },
+
+  // ERC-8004 온체인 감사 조회
+  pag0_audit_trail: {
+    description: 'ERC-8004 온체인 감사 기록 조회 (결제 증명, 서비스 품질)',
+    params: { endpoint?: string, period?: 'today' | 'week' | 'month' },
+    // 내부: The Graph 서브그래프에서 FeedbackEvent 조회
+  },
+
+  // ERC-8004 서비스 평판 조회
+  pag0_reputation: {
+    description: 'x402 서버의 ERC-8004 ReputationRegistry 평판 점수 조회',
+    params: { endpoint: string },
+    // 내부: ReputationRegistry에서 giveFeedback 집계 데이터 반환
+  },
+};
+```
+
+**Agent 사용 예시 (Claude):**
+
+```
+User: "이 논문을 한국어로 번역해줘"
+
+Claude:
+  1. pag0_recommend({ category: "translation", optimize: "balanced" })
+     → DeepL API (score: 95, cost: $0.015)
+
+  2. pag0_fetch({ url: "https://api.deepl.com/v2/translate", method: "POST", body: {...} })
+     → pag0-mcp 내부:
+       a. Pag0 Proxy에 요청 → 402 수신 (0.015 USDC)
+       b. Policy 검증 통과 (일일 예산 내)
+       c. CDP Server Wallet이 결제 서명
+       d. Facilitator 검증 → 200 응답
+     → "안녕하세요, 세계!" (번역 결과)
+
+  3. pag0_get_spent({ period: "today" })
+     → { total: "0.015 USDC", remaining: "9.985 USDC" }
+
+  4. pag0_audit_trail({ period: "today" })
+     → [{ endpoint: "api.deepl.com", txHash: "0xabc...", qualityScore: 85,
+          feedbackURI: "ipfs://Qm...", timestamp: "..." }]
+
+  5. pag0_reputation({ endpoint: "https://api.deepl.com/v2/translate" })
+     → { avgScore: 92, totalFeedbacks: 1250, tag: "x402-payment" }
+```
 
 ---
 

@@ -56,11 +56,13 @@ x402 Bazaar는 서비스 목록만 제공하며, SlinkyLayer의 평판 시스템
 
 | 기능 | 설명 | 핵심 가치 |
 |------|------|-----------|
-| **Proxy Core** | x402 요청 중계, Agent-signed payment relay (프록시는 결제 서명 안함) | x402 투명한 통합 |
+| **Proxy Core** | x402 요청 중계, CDP Wallet 기반 결제 서명 자동화 | x402 투명한 통합 |
+| **CDP Wallet (MCP)** | Coinbase Server Wallet 통합, 402→서명→재요청 자동 처리, 잔고 관리 | Agent 자율 결제 |
 | **Policy Engine** | 예산 한도, whitelist/blacklist, 승인 워크플로우 | 지출 통제 |
 | **Cache Layer** | Redis 기반 응답 캐싱, TTL 관리, 패턴별 규칙 | 40%+ 비용 절감 |
 | **Analytics Collector** | 요청 수, 지연시간 (P50/P95/P99), 성공률, 비용, 캐시 적중률 추적 | 데이터 기반 최적화 |
 | **Curation Engine** | 엔드포인트 점수화, 랭킹, 추천, 비교 | 객관적 API 선택 |
+| **ERC-8004 Audit Trail** | ReputationRegistry.giveFeedback()으로 결제 증명 온체인 기록, IPFS 메타데이터 저장 | 신뢰 가능한 감사 추적 |
 
 ## 포지셔닝
 
@@ -70,7 +72,13 @@ x402 Bazaar는 서비스 목록만 제공하며, SlinkyLayer의 평판 시스템
 ┌─────────────────────────────────────────────────┐
 │ AI Agents (Virtuals G.A.M.E., Google ADK 등)     │
 └─────────────────────────────────────────────────┘
-                      ↓
+                      ↓ MCP Tool Call
+┌─────────────────────────────────────────────────┐
+│ ★ pag0-mcp (Agent Interface) ★                  │ ← MCP 서버
+│ (CDP Wallet + Pag0 SDK + Tool Endpoints)        │
+│  - 402 수신 → CDP Wallet 서명 → 재요청 자동화     │
+└─────────────────────────────────────────────────┘
+                      ↓ pag0.fetch()
 ┌─────────────────────────────────────────────────┐
 │ ★ Pag0 Smart Proxy Layer ★                      │ ← 유일한 프록시 레이어
 │ (Policy + Curation + Cache + Analytics)         │
@@ -88,6 +96,8 @@ x402 Bazaar는 서비스 목록만 제공하며, SlinkyLayer의 평판 시스템
 [보조 레이어]
 - x402 Bazaar: 서비스 디스커버리 (Facilitator 중심)
 - SlinkyLayer: 평판 시스템 (주관적 리뷰 기반)
+- Coinbase CDP: 지갑 인프라 (Server Wallet)
+- ERC-8004 Registry: 온체인 감사 추적 (Identity/Reputation/Validation)
 ```
 
 **핵심 차별점**: Payment layer와 Discovery/Reputation은 이미 포화 상태. **Proxy/Control layer는 공백 시장** → Pag0가 선점.
@@ -112,10 +122,13 @@ x402 Bazaar는 서비스 목록만 제공하며, SlinkyLayer의 평판 시스템
 |--------|------|-----------|
 | Runtime | Bun / Node.js | 빠른 개발, TypeScript native |
 | Framework | Hono | 경량, Edge 호환, 빠른 라우팅 |
+| Wallet | Coinbase CDP (Server Wallet) | API 기반 지갑 관리, 키 커스터디 위임 |
+| Agent Interface | pag0-mcp (MCP Server) | AI Agent 표준 인터페이스, CDP Wallet 내장 |
 | Cache | Redis (Upstash) | Serverless, 글로벌 저지연 |
 | Database | PostgreSQL (Supabase) | 관계형 데이터, 강력한 쿼리 |
 | Blockchain | SKALE | Zero Gas (무료 on-chain metrics) |
-| Indexing | The Graph | Payment event 서브그래프 |
+| Indexing | The Graph | Payment event + ERC-8004 Feedback 서브그래프 |
+| On-chain Audit | ERC-8004 (ReputationRegistry) | 결제 증명 온체인 기록, Trustless 감사 추적 |
 | Hosting | Cloudflare Workers / Fly.io | Edge deployment, 글로벌 분산 |
 
 ```yaml
@@ -123,10 +136,13 @@ x402 Bazaar는 서비스 목록만 제공하며, SlinkyLayer의 평판 시스템
 tech_stack:
   runtime: "Bun / Node.js"
   framework: "Hono"
+  wallet: "Coinbase CDP (Server Wallet)"
+  agent_interface: "pag0-mcp (MCP Server)"
   cache: "Redis (Upstash)"
   database: "PostgreSQL (Supabase)"
   blockchain: "SKALE (Zero Gas)"
   indexing: "The Graph"
+  onchain_audit: "ERC-8004 (ReputationRegistry)"
   hosting: "Cloudflare Workers / Fly.io"
 ```
 
@@ -230,7 +246,8 @@ post_hackathon_kpi:
 
 - **Coinbase**: x402 Protocol 사용 (core integration)
 - **SKALE**: On-chain metrics 저장 (zero gas)
-- **The Graph**: Payment event subgraph (투명성)
+- **The Graph**: Payment event + ERC-8004 Feedback subgraph (투명성)
+- **ERC-8004**: ReputationRegistry 온체인 감사 추적 (Trustless Agent Framework)
 - **Google Cloud**: ADK agent 오케스트레이션 (demo scenario)
 - **Virtuals**: G.A.M.E. SDK (optional agent creation)
 
