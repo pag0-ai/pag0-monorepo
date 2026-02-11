@@ -1,13 +1,13 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { Pag0Client, PaymentRequest, ProxyResponse } from "../client.js";
-import type { Pag0Wallet } from "../wallet.js";
+import type { IWallet } from "../wallet.js";
 import { injectAuthHeaders } from "./auth.js";
 
 export function registerProxyTools(
   server: McpServer,
   client: Pag0Client,
-  wallet: Pag0Wallet,
+  wallet: IWallet,
   credentials: Record<string, string> = {},
 ) {
   server.tool(

@@ -30,7 +30,20 @@ export interface SignedPayment {
   timestamp: number;
 }
 
-export class Pag0Wallet {
+/** Common wallet interface implemented by both LocalWallet (Pag0Wallet) and CdpWallet */
+export interface IWallet {
+  readonly address: string;
+  readonly walletMode: string;
+  getStatus(): Promise<WalletStatus>;
+  signPayment(paymentRequest: {
+    id: string;
+    amount: string;
+    recipient: string;
+  }): Promise<SignedPayment>;
+}
+
+export class Pag0Wallet implements IWallet {
+  readonly walletMode = "local";
   private wallet: Wallet;
   private provider: JsonRpcProvider;
   private network: string;

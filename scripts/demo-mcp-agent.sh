@@ -58,7 +58,7 @@ fi
 echo -e "${GREEN}✓ MCP package built${NC}"
 echo ""
 
-# ---- Setup: Load API keys (OPENAI_API_KEY, ANTHROPIC_API_KEY) ----
+# ---- Setup: Load API keys & CDP credentials ----
 # Search order: packages/mcp/.env → root .env → root .env.local
 for _envfile in "$MCP_DIR/.env" "$MONOREPO_ROOT/.env" "$MONOREPO_ROOT/.env.local"; do
   if [ -f "$_envfile" ]; then
@@ -69,6 +69,18 @@ for _envfile in "$MCP_DIR/.env" "$MONOREPO_ROOT/.env" "$MONOREPO_ROOT/.env.local
     if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
       _key=$(grep -E '^ANTHROPIC_API_KEY=' "$_envfile" 2>/dev/null | head -1 | cut -d'=' -f2- | sed 's/^["'\'']*//;s/["'\'']*$//' || true)
       [ -n "$_key" ] && ANTHROPIC_API_KEY="$_key"
+    fi
+    if [ -z "${CDP_API_KEY_ID:-}" ]; then
+      _key=$(grep -E '^CDP_API_KEY_ID=' "$_envfile" 2>/dev/null | head -1 | cut -d'=' -f2- | sed 's/^["'\'']*//;s/["'\'']*$//' || true)
+      [ -n "$_key" ] && CDP_API_KEY_ID="$_key"
+    fi
+    if [ -z "${CDP_API_KEY_SECRET:-}" ]; then
+      _key=$(grep -E '^CDP_API_KEY_SECRET=' "$_envfile" 2>/dev/null | head -1 | cut -d'=' -f2- | sed 's/^["'\'']*//;s/["'\'']*$//' || true)
+      [ -n "$_key" ] && CDP_API_KEY_SECRET="$_key"
+    fi
+    if [ -z "${CDP_WALLET_SECRET:-}" ]; then
+      _key=$(grep -E '^CDP_WALLET_SECRET=' "$_envfile" 2>/dev/null | head -1 | cut -d'=' -f2- | sed 's/^["'\'']*//;s/["'\'']*$//' || true)
+      [ -n "$_key" ] && CDP_WALLET_SECRET="$_key"
     fi
   fi
 done
@@ -90,6 +102,15 @@ if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
 else
   echo -e "${YELLOW}⚠ ANTHROPIC_API_KEY not set — Step 4.5 may return 401 for Anthropic${NC}"
 fi
+
+# Determine wallet mode: CDP if all 3 credentials are present
+WALLET_MODE="local"
+if [ -n "${CDP_API_KEY_ID:-}" ] && [ -n "${CDP_API_KEY_SECRET:-}" ] && [ -n "${CDP_WALLET_SECRET:-}" ]; then
+  WALLET_MODE="cdp"
+  echo -e "${GREEN}✓ CDP credentials loaded — using WALLET_MODE=cdp (Coinbase Server Wallet)${NC}"
+else
+  echo -e "${YELLOW}⚠ CDP credentials incomplete — using WALLET_MODE=local (ethers.Wallet)${NC}"
+fi
 echo ""
 
 # ---- Setup: Register demo user ----
@@ -107,12 +128,18 @@ if [ -z "$API_KEY" ]; then
 fi
 echo -e "${GREEN}✓ API Key: ${API_KEY:0:20}...${NC}"
 
-# ---- Setup: Generate wallet key ----
-WALLET_KEY="0x$(openssl rand -hex 32)"
-echo -e "${GREEN}✓ Wallet key generated${NC}"
+# ---- Setup: Generate wallet key (local mode only) ----
+if [ "$WALLET_MODE" = "local" ]; then
+  WALLET_KEY="0x$(openssl rand -hex 32)"
+  echo -e "${GREEN}✓ Wallet key generated${NC}"
+else
+  WALLET_KEY=""
+  echo -e "${GREEN}✓ Skipping local wallet key (CDP mode)${NC}"
+fi
 
 # ---- Setup: Write .mcp.json ----
 NODE_BIN="$(which node)"
+if [ "$WALLET_MODE" = "cdp" ]; then
 cat > "$DEMO_DIR/.mcp.json" << EOF
 {
   "mcpServers": {
@@ -123,6 +150,30 @@ cat > "$DEMO_DIR/.mcp.json" << EOF
         "NODE_PATH": "$MCP_DIR/node_modules",
         "PAG0_API_URL": "$BASE_URL",
         "PAG0_API_KEY": "$API_KEY",
+        "WALLET_MODE": "cdp",
+        "CDP_API_KEY_ID": "${CDP_API_KEY_ID}",
+        "CDP_API_KEY_SECRET": "${CDP_API_KEY_SECRET}",
+        "CDP_WALLET_SECRET": "${CDP_WALLET_SECRET}",
+        "NETWORK": "base-sepolia",
+        "OPENAI_API_KEY": "${OPENAI_API_KEY:-}",
+        "ANTHROPIC_API_KEY": "${ANTHROPIC_API_KEY:-}"
+      }
+    }
+  }
+}
+EOF
+else
+cat > "$DEMO_DIR/.mcp.json" << EOF
+{
+  "mcpServers": {
+    "pag0": {
+      "command": "$NODE_BIN",
+      "args": ["$MCP_DIR/dist/index.js"],
+      "env": {
+        "NODE_PATH": "$MCP_DIR/node_modules",
+        "PAG0_API_URL": "$BASE_URL",
+        "PAG0_API_KEY": "$API_KEY",
+        "WALLET_MODE": "local",
         "WALLET_PRIVATE_KEY": "$WALLET_KEY",
         "NETWORK": "base-sepolia",
         "OPENAI_API_KEY": "${OPENAI_API_KEY:-}",
@@ -132,7 +183,8 @@ cat > "$DEMO_DIR/.mcp.json" << EOF
   }
 }
 EOF
-echo -e "${GREEN}✓ MCP config written to $DEMO_DIR/.mcp.json${NC}"
+fi
+echo -e "${GREEN}✓ MCP config written to $DEMO_DIR/.mcp.json (mode: $WALLET_MODE)${NC}"
 echo ""
 
 # ---- Helper: run agent step ----

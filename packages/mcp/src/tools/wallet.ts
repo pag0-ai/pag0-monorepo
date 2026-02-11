@@ -1,13 +1,13 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import type { Pag0Wallet } from "../wallet.js";
+import type { IWallet } from "../wallet.js";
 
 export function registerWalletTools(
   server: McpServer,
-  wallet: Pag0Wallet,
+  wallet: IWallet,
 ) {
   server.tool(
     "pag0_wallet_status",
-    "Check agent wallet address, USDC balance, and network. Use this before making paid API calls to verify sufficient funds.",
+    "Check agent wallet address, USDC balance, network, and wallet mode (local/cdp). Use this before making paid API calls to verify sufficient funds.",
     {},
     async () => {
       const status = await wallet.getStatus();
@@ -15,7 +15,7 @@ export function registerWalletTools(
         content: [
           {
             type: "text" as const,
-            text: JSON.stringify(status, null, 2),
+            text: JSON.stringify({ ...status, walletMode: wallet.walletMode }, null, 2),
           },
         ],
       };

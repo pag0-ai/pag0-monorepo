@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { Pag0Client, PaymentRequest } from "../client.js";
-import type { Pag0Wallet } from "../wallet.js";
+import type { IWallet } from "../wallet.js";
 
 // ── Response types from POST /api/smart-request ───────────────
 
@@ -39,7 +39,7 @@ interface SmartRequest402 {
 export function registerSmartTools(
   server: McpServer,
   client: Pag0Client,
-  wallet: Pag0Wallet,
+  wallet: IWallet,
   _credentials: Record<string, string> = {},
 ) {
   server.tool(

@@ -11,7 +11,10 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { Pag0Client } from "./client.js";
 import { Pag0Wallet } from "./wallet.js";
+import type { IWallet } from "./wallet.js";
+import { CdpWallet } from "./cdp-wallet.js";
 import { registerWalletTools } from "./tools/wallet.js";
+import { registerWalletFundTools } from "./tools/wallet-fund.js";
 import { registerProxyTools } from "./tools/proxy.js";
 import { registerPolicyTools } from "./tools/policy.js";
 import { registerCurationTools } from "./tools/curation.js";
@@ -23,6 +26,7 @@ import { registerSmartTools } from "./tools/smart.js";
 const PAG0_API_URL = process.env.PAG0_API_URL;
 const PAG0_API_KEY = process.env.PAG0_API_KEY;
 const WALLET_PRIVATE_KEY = process.env.WALLET_PRIVATE_KEY;
+const WALLET_MODE = process.env.WALLET_MODE ?? "local";
 const NETWORK = process.env.NETWORK || "base-sepolia";
 
 // Optional: auto-inject Authorization headers for known API providers
@@ -30,10 +34,13 @@ const API_CREDENTIALS: Record<string, string> = {};
 if (process.env.OPENAI_API_KEY) API_CREDENTIALS["api.openai.com"] = process.env.OPENAI_API_KEY;
 if (process.env.ANTHROPIC_API_KEY) API_CREDENTIALS["api.anthropic.com"] = process.env.ANTHROPIC_API_KEY;
 
-if (!PAG0_API_URL || !PAG0_API_KEY || !WALLET_PRIVATE_KEY) {
-  console.error(
-    "Missing required env vars: PAG0_API_URL, PAG0_API_KEY, WALLET_PRIVATE_KEY",
-  );
+if (!PAG0_API_URL || !PAG0_API_KEY) {
+  console.error("Missing required env vars: PAG0_API_URL, PAG0_API_KEY");
+  process.exit(1);
+}
+
+if (WALLET_MODE === "local" && !WALLET_PRIVATE_KEY) {
+  console.error("Missing WALLET_PRIVATE_KEY (required when WALLET_MODE=local)");
   process.exit(1);
 }
 
@@ -45,10 +52,22 @@ const server = new McpServer({
 });
 
 const client = new Pag0Client(PAG0_API_URL, PAG0_API_KEY);
-const wallet = new Pag0Wallet(WALLET_PRIVATE_KEY, NETWORK);
+
+// Wallet mode selection: local (ethers) or cdp (Coinbase Server Wallet)
+let wallet: IWallet;
+if (WALLET_MODE === "cdp") {
+  const cdpWallet = new CdpWallet(NETWORK);
+  await cdpWallet.init();
+  wallet = cdpWallet;
+  console.error("[pag0-mcp] CDP Server Wallet initialized:", wallet.address);
+} else {
+  wallet = new Pag0Wallet(WALLET_PRIVATE_KEY!, NETWORK);
+  console.error("[pag0-mcp] Local ethers.Wallet initialized:", wallet.address);
+}
 
 // Register all tools
 registerWalletTools(server, wallet);
+registerWalletFundTools(server, wallet);
 registerProxyTools(server, client, wallet, API_CREDENTIALS);
 registerPolicyTools(server, client);
 registerCurationTools(server, client);

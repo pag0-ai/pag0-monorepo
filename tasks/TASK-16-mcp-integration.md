@@ -13,7 +13,7 @@ MCP Server가 실제 Proxy 백엔드와 정상적으로 통신하는지 통합 �
 
 ## 현재 상태
 
-- `packages/mcp/` — 11개 MCP Tool 구현 완료
+- `packages/mcp/` — 12개 MCP Tool 구현 완료
   - `tools/wallet.ts` — `pag0_wallet_status`
   - `tools/proxy.ts` — `pag0_request` (402→sign→retry)
   - `tools/policy.ts` — `pag0_check_budget`, `pag0_check_policy`, `pag0_list_policies`

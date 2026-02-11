@@ -8,7 +8,7 @@
 |--------|------|--------|
 | `packages/proxy` | **완성** (통합 + E2E 테스트) | 100% |
 | `packages/dashboard` | **완성** (메트릭+정책+랭킹) | 100% |
-| `packages/mcp` | **완성** (11개 MCP 도구) | 100% |
+| `packages/mcp` | **완성** (12개 MCP 도구, CDP Wallet 통합) | 100% |
 | `prepare-hackathon/` | Day 0 검증 + 비즈니스 로직 테스트 패턴 완성 | 100% |
 
 ## 의존성 그래프
@@ -110,7 +110,7 @@ TASK-22 (Deployment)          ← TASK-11, TASK-12
 
 | ID | 태스크 | 패키지 | 예상 시간 | 의존성 |
 |----|--------|--------|-----------|--------|
-| [TASK-19](./TASK-19-cdp-wallet.md) | CDP Wallet Integration (Coinbase Server Wallet) | mcp | 2~3시간 | TASK-16 |
+| [TASK-19](./TASK-19-cdp-wallet.md) | ~~CDP Wallet Integration (Coinbase Server Wallet)~~ | mcp | 2~3시간 | ✅ 완료 |
 | [TASK-20](./TASK-20-erc8004-audit.md) | ERC-8004 Audit Trail (온체인 감사 기록) | proxy | 3~4시간 | TASK-05, TASK-19 |
 | [TASK-21](./TASK-21-erc8004-mcp-subgraph.md) | ERC-8004 MCP Tools + The Graph Subgraph | mcp, subgraph | 2~3시간 | TASK-20, TASK-16 |
 | [TASK-22](./TASK-22-deployment.md) | Deployment (Fly.io + Vercel) | proxy, dashboard | 2시간 | TASK-11, TASK-12 |
