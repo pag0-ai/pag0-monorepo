@@ -5,7 +5,7 @@
 # Prerequisites:
 #   - Proxy running at localhost:3000 (with seeded DB)
 #   - claude CLI installed and authenticated
-#   - npx / tsx available
+#   - MCP package built: cd packages/mcp && npm run build
 
 set -euo pipefail
 
@@ -49,11 +49,13 @@ if ! curl -sf "$BASE_URL/health" &>/dev/null; then
 fi
 echo -e "${GREEN}✓ Proxy running at $BASE_URL${NC}"
 
-if ! command -v npx &>/dev/null; then
-  echo -e "${RED}✗ npx not found${NC}"
-  exit 1
+# Ensure MCP package is built
+MCP_DIR="$MONOREPO_ROOT/packages/mcp"
+if [ ! -f "$MCP_DIR/dist/index.js" ]; then
+  echo -e "${YELLOW}Building MCP package...${NC}"
+  (cd "$MCP_DIR" && npm run build)
 fi
-echo -e "${GREEN}✓ npx available${NC}"
+echo -e "${GREEN}✓ MCP package built${NC}"
 echo ""
 
 # ---- Setup: Register demo user ----
@@ -76,17 +78,19 @@ WALLET_KEY="0x$(openssl rand -hex 32)"
 echo -e "${GREEN}✓ Wallet key generated${NC}"
 
 # ---- Setup: Write .mcp.json ----
+NODE_BIN="$(which node)"
 cat > "$DEMO_DIR/.mcp.json" << EOF
 {
   "mcpServers": {
     "pag0": {
-      "command": "npx",
-      "args": ["tsx", "$MONOREPO_ROOT/packages/mcp/src/index.ts"],
+      "command": "$NODE_BIN",
+      "args": ["$MCP_DIR/dist/index.js"],
       "env": {
+        "NODE_PATH": "$MCP_DIR/node_modules",
         "PAG0_API_URL": "$BASE_URL",
         "PAG0_API_KEY": "$API_KEY",
         "WALLET_PRIVATE_KEY": "$WALLET_KEY",
-        "NETWORK": "skale"
+        "NETWORK": "base-sepolia"
       }
     }
   }
@@ -106,8 +110,10 @@ run_agent() {
   echo ""
 
   local output
-  if output=$(cd "$DEMO_DIR" && claude -p "$prompt" \
+  if output=$(cd "$MONOREPO_ROOT" && claude -p "$prompt" \
     --mcp-config "$DEMO_DIR/.mcp.json" \
+    --strict-mcp-config \
+    --setting-sources "local" \
     --permission-mode bypassPermissions \
     --no-session-persistence \
     --model sonnet 2>&1); then
