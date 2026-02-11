@@ -6,8 +6,8 @@
 
 | 패키지 | 상태 | 완성도 |
 |--------|------|--------|
-| `packages/proxy` | 코어 로직 + API Routes 완성 | ~85% |
-| `packages/dashboard` | 레이아웃 + 네비게이션 완성 | ~30% |
+| `packages/proxy` | **완성** (통합 + E2E 테스트) | 100% |
+| `packages/dashboard` | **완성** (메트릭+정책+랭킹) | 100% |
 | `packages/mcp` | **완성** (11개 MCP 도구) | 100% |
 | `prepare-hackathon/` | Day 0 검증 + 비즈니스 로직 테스트 패턴 완성 | 100% |
 
@@ -82,24 +82,24 @@ TASK-18 (Demo 시나리오)       ← TASK-17
 
 | ID | 태스크 | 패키지 | 예상 시간 | 의존성 |
 |----|--------|--------|-----------|--------|
-| [TASK-11](./TASK-11-integration.md) | index.ts 통합 + 에러 핸들링 | proxy | 1시간 | TASK-02, TASK-05, TASK-07~10 |
+| [TASK-11](./TASK-11-integration.md) | ~~index.ts 통합 + 에러 핸들링~~ | proxy | 1시간 | ✅ 완료 |
 
 ### Phase 5: Dashboard (Day 3 오전)
 
 | ID | 태스크 | 패키지 | 예상 시간 | 의존성 |
 |----|--------|--------|-----------|--------|
 | [TASK-12](./TASK-12-dashboard-layout.md) | ~~Dashboard Layout + Navigation~~ | dashboard | 1시간 | ✅ 완료 |
-| [TASK-13](./TASK-13-dashboard-metrics.md) | Dashboard 메트릭 시각화 | dashboard | 1.5시간 | TASK-12, TASK-08 |
-| [TASK-14](./TASK-14-policy-ui.md) | Policy 관리 UI | dashboard | 1시간 | TASK-12, TASK-07 |
-| [TASK-15](./TASK-15-ranking-board.md) | API Ranking Board | dashboard | 1시간 | TASK-12, TASK-09 |
+| [TASK-13](./TASK-13-dashboard-metrics.md) | ~~Dashboard 메트릭 시각화~~ | dashboard | 1.5시간 | ✅ 완료 |
+| [TASK-14](./TASK-14-policy-ui.md) | ~~Policy 관리 UI~~ | dashboard | 1시간 | ✅ 완료 |
+| [TASK-15](./TASK-15-ranking-board.md) | ~~API Ranking Board~~ | dashboard | 1시간 | ✅ 완료 |
 
 ### Phase 6: 테스트 + Demo (Day 3 오후)
 
 | ID | 태스크 | 패키지 | 예상 시간 | 의존성 |
 |----|--------|--------|-----------|--------|
-| [TASK-16](./TASK-16-mcp-integration.md) | MCP 서버 연동 테스트 | mcp | 30분 | TASK-11 |
-| [TASK-17](./TASK-17-e2e-test.md) | 로컬 통합 테스트 (E2E) | 전체 | 1.5시간 | TASK-11 |
-| [TASK-18](./TASK-18-demo-scenarios.md) | Demo 시나리오 스크립트 | 전체 | 1시간 | TASK-17 |
+| [TASK-16](./TASK-16-mcp-integration.md) | ~~MCP 서버 연동 테스트~~ | mcp | 30분 | ✅ 완료 |
+| [TASK-17](./TASK-17-e2e-test.md) | ~~로컬 통합 테스트 (E2E)~~ | 전체 | 1.5시간 | ✅ 완료 |
+| [TASK-18](./TASK-18-demo-scenarios.md) | ~~Demo 시나리오 스크립트~~ | 전체 | 1시간 | ✅ 완료 |
 
 ## 병렬 실행 가능 그룹
 

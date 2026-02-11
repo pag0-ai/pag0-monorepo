@@ -135,7 +135,7 @@ export class Pag0Client {
   }) {
     const qs = new URLSearchParams({ category: params.category });
     if (params.limit) qs.set("limit", String(params.limit));
-    if (params.sortBy) qs.set("weights", params.sortBy);
+    if (params.sortBy) qs.set("sortBy", params.sortBy);
     return this.get(`/api/curation/recommend?${qs}`);
   }
 
