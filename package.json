@@ -5,7 +5,7 @@
     "dev:proxy": "pnpm --filter @pag0/proxy dev",
     "dev:dashboard": "pnpm --filter @pag0/dashboard dev",
     "dev:mcp": "pnpm --filter @pag0/mcp dev",
-    "dev": "pnpm run --parallel dev:proxy dev:dashboard",
+    "dev": "pnpm --filter @pag0/proxy dev & pnpm --filter @pag0/dashboard dev & wait",
     "build": "pnpm run --recursive build",
     "lint": "pnpm run --recursive lint",
     "test": "pnpm --filter @pag0/proxy test",
