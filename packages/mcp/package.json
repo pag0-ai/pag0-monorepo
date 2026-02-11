@@ -1,0 +1,21 @@
+{
+  "name": "@pag0/mcp",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Pag0 Smart Proxy — MCP Server for Claude Code demo agent",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "ethers": "^6.13.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.0",
+    "tsx": "^4.19.0"
+  }
+}
