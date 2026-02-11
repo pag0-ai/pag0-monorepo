@@ -6,8 +6,8 @@
 
 | 패키지 | 상태 | 완성도 |
 |--------|------|--------|
-| `packages/proxy` | 스켈레톤 (types + DB schema/seed만 존재) | ~5% |
-| `packages/dashboard` | Next.js 보일러플레이트 | ~2% |
+| `packages/proxy` | 코어 로직 + API Routes 완성 | ~85% |
+| `packages/dashboard` | 레이아웃 + 네비게이션 완성 | ~30% |
 | `packages/mcp` | **완성** (11개 MCP 도구) | 100% |
 | `prepare-hackathon/` | Day 0 검증 + 비즈니스 로직 테스트 패턴 완성 | 100% |
 
@@ -66,15 +66,15 @@ TASK-18 (Demo 시나리오)       ← TASK-17
 
 | ID | 태스크 | 패키지 | 예상 시간 | 의존성 |
 |----|--------|--------|-----------|--------|
-| [TASK-05](./TASK-05-proxy-core.md) | Proxy Core + x402 통합 | proxy | 2시간 | TASK-03, TASK-04 |
+| [TASK-05](./TASK-05-proxy-core.md) | ~~Proxy Core + x402 통합~~ | proxy | 2시간 | ✅ 완료 |
 | [TASK-06](./TASK-06-analytics-collector.md) | ~~Analytics Collector~~ | proxy | 1시간 | ✅ 완료 |
 
 ### Phase 3: API Routes (Day 2 오전)
 
 | ID | 태스크 | 패키지 | 예상 시간 | 의존성 |
 |----|--------|--------|-----------|--------|
-| [TASK-07](./TASK-07-policy-routes.md) | Policy CRUD Routes | proxy | 1시간 | TASK-01, TASK-03 |
-| [TASK-08](./TASK-08-analytics-routes.md) | Analytics API Routes | proxy | 1.5시간 | TASK-01, TASK-06 |
+| [TASK-07](./TASK-07-policy-routes.md) | ~~Policy CRUD Routes~~ | proxy | 1시간 | ✅ 완료 |
+| [TASK-08](./TASK-08-analytics-routes.md) | ~~Analytics API Routes~~ | proxy | 1.5시간 | ✅ 완료 |
 | [TASK-09](./TASK-09-curation-routes.md) | ~~Curation API Routes~~ | proxy | 1.5시간 | ✅ 완료 |
 | [TASK-10](./TASK-10-auth-routes.md) | ~~Auth Routes (register/login/me)~~ | proxy | 1시간 | ✅ 완료 |
 
@@ -88,7 +88,7 @@ TASK-18 (Demo 시나리오)       ← TASK-17
 
 | ID | 태스크 | 패키지 | 예상 시간 | 의존성 |
 |----|--------|--------|-----------|--------|
-| [TASK-12](./TASK-12-dashboard-layout.md) | Dashboard Layout + Navigation | dashboard | 1시간 | 없음 |
+| [TASK-12](./TASK-12-dashboard-layout.md) | ~~Dashboard Layout + Navigation~~ | dashboard | 1시간 | ✅ 완료 |
 | [TASK-13](./TASK-13-dashboard-metrics.md) | Dashboard 메트릭 시각화 | dashboard | 1.5시간 | TASK-12, TASK-08 |
 | [TASK-14](./TASK-14-policy-ui.md) | Policy 관리 UI | dashboard | 1시간 | TASK-12, TASK-07 |
 | [TASK-15](./TASK-15-ranking-board.md) | API Ranking Board | dashboard | 1시간 | TASK-12, TASK-09 |
