@@ -184,6 +184,41 @@ else
   ((FAIL++))
 fi
 
+# ===== 8. Rate Limiting =====
+echo -e "\n${YELLOW}=== 8. Rate Limiting ===${NC}"
+if [ -n "$API_KEY" ]; then
+  # Free tier: 60 req/min. Send 65 rapid requests and check for 429.
+  GOT_429=false
+  for i in $(seq 1 65); do
+    STATUS=$(curl -s -o /dev/null -w "%{http_code}" $BASE_URL/api/policies \
+      -H "X-Pag0-API-Key: $API_KEY")
+    if [ "$STATUS" = "429" ]; then
+      GOT_429=true
+      break
+    fi
+  done
+  if [ "$GOT_429" = true ]; then
+    echo -e "${GREEN}✓ PASS${NC}: Rate limit triggered (429 after $i requests)"
+    ((PASS++))
+  else
+    echo -e "${RED}✗ FAIL${NC}: Rate limit not triggered after 65 requests"
+    ((FAIL++))
+  fi
+
+  # Verify X-RateLimit-* headers present
+  HEADERS=$(curl -s -D - -o /dev/null $BASE_URL/api/policies \
+    -H "X-Pag0-API-Key: $API_KEY" 2>&1)
+  if echo "$HEADERS" | grep -qi "x-ratelimit-limit"; then
+    echo -e "${GREEN}✓ PASS${NC}: X-RateLimit-* headers present"
+    ((PASS++))
+  else
+    echo -e "${RED}✗ FAIL${NC}: X-RateLimit-* headers missing"
+    ((FAIL++))
+  fi
+else
+  echo -e "${YELLOW}! SKIP${NC}: Rate limit tests (no API key)"
+fi
+
 # ===== Summary =====
 echo -e "\n${YELLOW}================================${NC}"
 echo -e "Results: ${GREEN}$PASS passed${NC}, ${RED}$FAIL failed${NC}"

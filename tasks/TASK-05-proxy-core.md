@@ -133,10 +133,10 @@ x402 SDK 통합 실패 시:
 
 ## 완료 기준
 
-- [ ] X402Integration 클래스 구현 (forwardRequest, parsePaymentRequest)
-- [ ] ProxyCore 클래스 구현 (8단계 전체 흐름)
-- [ ] 402 → Agent relay → 재시도 플로우 동작
-- [ ] Replay 방지 (nonce 체크)
-- [ ] Cache 히트 시 cost=0 응답
-- [ ] Analytics 비동기 로깅
-- [ ] 로컬에서 curl로 프록시 요청 테스트
+- [x] X402Integration 클래스 구현 (forwardRequest, parsePaymentRequest)
+- [x] ProxyCore 클래스 구현 (8단계 전체 흐름)
+- [x] 402 → Agent relay → 재시도 플로우 동작
+- [x] Replay 방지 (nonce 체크)
+- [x] Cache 히트 시 cost=0 응답
+- [x] Analytics 비동기 로깅
+- [x] 로컬에서 curl로 프록시 요청 테스트

@@ -134,7 +134,7 @@ analyticsRoutes.get('/summary', async (c) => {
         ) as cache_savings
       FROM requests
       WHERE project_id = ${projectId}::uuid
-        AND created_at >= NOW() - ${sql(interval)}::interval
+        AND created_at >= NOW() - ${interval}::interval
     `;
 
     // 2. Get top 5 endpoints by request count
@@ -142,22 +142,28 @@ analyticsRoutes.get('/summary', async (c) => {
       SELECT endpoint, COUNT(*) as request_count
       FROM requests
       WHERE project_id = ${projectId}::uuid
-        AND created_at >= NOW() - ${sql(interval)}::interval
+        AND created_at >= NOW() - ${interval}::interval
       GROUP BY endpoint
       ORDER BY request_count DESC
       LIMIT 5
     `;
 
-    // 3. Get budget usage from budgets table
+    // 3. Get budget usage from budgets table (limits come from policies)
     const [budget] = await sql`
-      SELECT daily_limit, monthly_limit, daily_spent, monthly_spent
-      FROM budgets
-      WHERE project_id = ${projectId}::uuid
+      SELECT
+        b.daily_spent,
+        b.monthly_spent,
+        p.daily_budget,
+        p.monthly_budget
+      FROM budgets b
+      LEFT JOIN policies p ON p.project_id = b.project_id AND p.is_active = true
+      WHERE b.project_id = ${projectId}::uuid
+      LIMIT 1
     `;
 
     // Handle case where budget doesn't exist
-    const dailyLimit = budget ? BigInt(budget.daily_limit) : BigInt(0);
-    const monthlyLimit = budget ? BigInt(budget.monthly_limit) : BigInt(0);
+    const dailyLimit = budget ? BigInt(budget.daily_budget || '0') : BigInt(0);
+    const monthlyLimit = budget ? BigInt(budget.monthly_budget || '0') : BigInt(0);
     const dailySpent = budget ? BigInt(budget.daily_spent) : BigInt(0);
     const monthlySpent = budget ? BigInt(budget.monthly_spent) : BigInt(0);
 
@@ -236,7 +242,7 @@ analyticsRoutes.get('/endpoints', async (c) => {
         COALESCE(SUM(cost), 0) as total_cost
       FROM requests
       WHERE project_id = ${projectId}::uuid
-        AND created_at >= NOW() - ${sql(interval)}::interval
+        AND created_at >= NOW() - ${interval}::interval
       GROUP BY endpoint
       ORDER BY ${sql(orderByColumn)} DESC
       LIMIT ${limit}
@@ -289,7 +295,7 @@ analyticsRoutes.get('/costs', async (c) => {
         COUNT(*) as request_count
       FROM requests
       WHERE project_id = ${projectId}::uuid
-        AND created_at >= NOW() - ${sql(interval)}::interval
+        AND created_at >= NOW() - ${interval}::interval
       GROUP BY DATE_TRUNC(${truncUnit}, created_at)
       ORDER BY timestamp ASC
     `;
@@ -341,7 +347,7 @@ analyticsRoutes.get('/cache', async (c) => {
         ) as total_savings
       FROM requests
       WHERE project_id = ${projectId}::uuid
-        AND created_at >= NOW() - ${sql(interval)}::interval
+        AND created_at >= NOW() - ${interval}::interval
     `;
 
     // 2. Get top 10 cached endpoints
@@ -350,7 +356,7 @@ analyticsRoutes.get('/cache', async (c) => {
       FROM requests
       WHERE project_id = ${projectId}::uuid
         AND cached = true
-        AND created_at >= NOW() - ${sql(interval)}::interval
+        AND created_at >= NOW() - ${interval}::interval
       GROUP BY endpoint
       ORDER BY cache_hits DESC
       LIMIT 10

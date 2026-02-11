@@ -25,8 +25,8 @@ policyRoutes.get('/', async (c) => {
     project_id: string;
     name: string;
     max_per_request: string;
-    daily_limit: string;
-    monthly_limit: string;
+    daily_budget: string;
+    monthly_budget: string;
     allowed_endpoints: string[];
     blocked_endpoints: string[];
     is_active: boolean;
@@ -38,8 +38,8 @@ policyRoutes.get('/', async (c) => {
       project_id,
       name,
       max_per_request,
-      daily_limit,
-      monthly_limit,
+      daily_budget,
+      monthly_budget,
       allowed_endpoints,
       blocked_endpoints,
       is_active,
@@ -55,8 +55,8 @@ policyRoutes.get('/', async (c) => {
     projectId: row.project_id,
     name: row.name,
     maxPerRequest: row.max_per_request,
-    dailyLimit: row.daily_limit,
-    monthlyLimit: row.monthly_limit,
+    dailyLimit: row.daily_budget,
+    monthlyLimit: row.monthly_budget,
     allowedEndpoints: row.allowed_endpoints,
     blockedEndpoints: row.blocked_endpoints,
     isActive: row.is_active,
@@ -158,8 +158,8 @@ policyRoutes.post('/', async (c) => {
     project_id: string;
     name: string;
     max_per_request: string;
-    daily_limit: string;
-    monthly_limit: string;
+    daily_budget: string;
+    monthly_budget: string;
     allowed_endpoints: string[];
     blocked_endpoints: string[];
     is_active: boolean;
@@ -170,8 +170,8 @@ policyRoutes.post('/', async (c) => {
       project_id,
       name,
       max_per_request,
-      daily_limit,
-      monthly_limit,
+      daily_budget,
+      monthly_budget,
       allowed_endpoints,
       blocked_endpoints,
       is_active
@@ -190,8 +190,8 @@ policyRoutes.post('/', async (c) => {
       project_id,
       name,
       max_per_request,
-      daily_limit,
-      monthly_limit,
+      daily_budget,
+      monthly_budget,
       allowed_endpoints,
       blocked_endpoints,
       is_active,
@@ -205,8 +205,8 @@ policyRoutes.post('/', async (c) => {
     projectId: row.project_id,
     name: row.name,
     maxPerRequest: row.max_per_request,
-    dailyLimit: row.daily_limit,
-    monthlyLimit: row.monthly_limit,
+    dailyLimit: row.daily_budget,
+    monthlyLimit: row.monthly_budget,
     allowedEndpoints: row.allowed_endpoints,
     blockedEndpoints: row.blocked_endpoints,
     isActive: row.is_active,
@@ -230,8 +230,8 @@ policyRoutes.get('/:id', async (c) => {
     project_id: string;
     name: string;
     max_per_request: string;
-    daily_limit: string;
-    monthly_limit: string;
+    daily_budget: string;
+    monthly_budget: string;
     allowed_endpoints: string[];
     blocked_endpoints: string[];
     is_active: boolean;
@@ -243,8 +243,8 @@ policyRoutes.get('/:id', async (c) => {
       project_id,
       name,
       max_per_request,
-      daily_limit,
-      monthly_limit,
+      daily_budget,
+      monthly_budget,
       allowed_endpoints,
       blocked_endpoints,
       is_active,
@@ -272,8 +272,8 @@ policyRoutes.get('/:id', async (c) => {
     projectId: row.project_id,
     name: row.name,
     maxPerRequest: row.max_per_request,
-    dailyLimit: row.daily_limit,
-    monthlyLimit: row.monthly_limit,
+    dailyLimit: row.daily_budget,
+    monthlyLimit: row.monthly_budget,
     allowedEndpoints: row.allowed_endpoints,
     blockedEndpoints: row.blocked_endpoints,
     isActive: row.is_active,
@@ -297,10 +297,10 @@ policyRoutes.put('/:id', async (c) => {
   const existing = await sql<Array<{
     id: string;
     max_per_request: string;
-    daily_limit: string;
-    monthly_limit: string;
+    daily_budget: string;
+    monthly_budget: string;
   }>>`
-    SELECT id, max_per_request, daily_limit, monthly_limit
+    SELECT id, max_per_request, daily_budget, monthly_budget
     FROM policies
     WHERE id = ${id} AND project_id = ${projectId}
   `;
@@ -369,7 +369,7 @@ policyRoutes.put('/:id', async (c) => {
           400,
         );
       }
-      updates.push(`daily_limit = $${updates.length + 1}`);
+      updates.push(`daily_budget = $${updates.length + 1}`);
       values.push(body.dailyBudget);
     } catch (err) {
       return c.json(
@@ -398,7 +398,7 @@ policyRoutes.put('/:id', async (c) => {
           400,
         );
       }
-      updates.push(`monthly_limit = $${updates.length + 1}`);
+      updates.push(`monthly_budget = $${updates.length + 1}`);
       values.push(body.monthlyBudget);
     } catch (err) {
       return c.json(
@@ -459,8 +459,8 @@ policyRoutes.put('/:id', async (c) => {
     project_id: string;
     name: string;
     max_per_request: string;
-    daily_limit: string;
-    monthly_limit: string;
+    daily_budget: string;
+    monthly_budget: string;
     allowed_endpoints: string[];
     blocked_endpoints: string[];
     is_active: boolean;
@@ -471,8 +471,8 @@ policyRoutes.put('/:id', async (c) => {
     SET
       name = COALESCE(${body.name || null}, name),
       max_per_request = COALESCE(${body.maxPerRequest || null}, max_per_request),
-      daily_limit = COALESCE(${body.dailyBudget || null}, daily_limit),
-      monthly_limit = COALESCE(${body.monthlyBudget || null}, monthly_limit),
+      daily_budget = COALESCE(${body.dailyBudget || null}, daily_budget),
+      monthly_budget = COALESCE(${body.monthlyBudget || null}, monthly_budget),
       allowed_endpoints = COALESCE(${body.allowedEndpoints ? sql.array(body.allowedEndpoints) : null}, allowed_endpoints),
       blocked_endpoints = COALESCE(${body.blockedEndpoints ? sql.array(body.blockedEndpoints) : null}, blocked_endpoints),
       is_active = COALESCE(${body.isActive !== undefined ? body.isActive : null}, is_active),
@@ -483,8 +483,8 @@ policyRoutes.put('/:id', async (c) => {
       project_id,
       name,
       max_per_request,
-      daily_limit,
-      monthly_limit,
+      daily_budget,
+      monthly_budget,
       allowed_endpoints,
       blocked_endpoints,
       is_active,
@@ -498,8 +498,8 @@ policyRoutes.put('/:id', async (c) => {
     projectId: row.project_id,
     name: row.name,
     maxPerRequest: row.max_per_request,
-    dailyLimit: row.daily_limit,
-    monthlyLimit: row.monthly_limit,
+    dailyLimit: row.daily_budget,
+    monthlyLimit: row.monthly_budget,
     allowedEndpoints: row.allowed_endpoints,
     blockedEndpoints: row.blocked_endpoints,
     isActive: row.is_active,

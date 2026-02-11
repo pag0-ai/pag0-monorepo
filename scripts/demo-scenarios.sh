@@ -27,9 +27,10 @@ echo -e "${NC}"
 
 # Setup: Register demo user
 echo -e "${YELLOW}=== Setup: Creating demo user ===${NC}"
+DEMO_EMAIL="demo-$(date +%s)@pag0.io"
 REGISTER_RESP=$(curl -s -X POST $BASE_URL/api/auth/register \
   -H "Content-Type: application/json" \
-  -d "{\"email\":\"demo-$(date +%s)@pag0.io\",\"password\":\"Demo1234!\",\"name\":\"Demo User\"}")
+  -d '{"email":"'"$DEMO_EMAIL"'","password":"Demo1234x","name":"Demo User"}')
 API_KEY=$(echo "$REGISTER_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('apiKey',''))" 2>/dev/null || echo "")
 
 if [ -z "$API_KEY" ]; then

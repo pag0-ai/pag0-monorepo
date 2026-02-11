@@ -102,8 +102,8 @@ cd prepare-hackathon && bun run test-business-logic-day2.ts
 
 ## 완료 기준
 
-- [ ] AnalyticsCollector 클래스 구현
-- [ ] PG requests 테이블 INSERT 동작
-- [ ] Redis MULTI 파이프라인 카운터 업데이트 동작
-- [ ] 비동기 패턴 적용 (fire-and-forget)
-- [ ] 로컬에서 메트릭 수집 테스트 통과
+- [x] AnalyticsCollector 클래스 구현
+- [x] PG requests 테이블 INSERT 동작
+- [x] Redis MULTI 파이프라인 카운터 업데이트 동작
+- [x] 비동기 패턴 적용 (fire-and-forget)
+- [x] 로컬에서 메트릭 수집 테스트 통과

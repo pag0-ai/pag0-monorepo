@@ -88,8 +88,8 @@ cd prepare-hackathon && bun run test-business-logic-day2.ts
 
 ## 완료 기준
 
-- [ ] CacheLayer 클래스 구현 (get, set, invalidate, generateCacheKey, isCacheable)
-- [ ] 패턴 기반 TTL 규칙 적용
-- [ ] 제외 패턴 처리 (stream, events 등)
-- [ ] 크기 제한 체크
-- [ ] 로컬 Redis에서 캐시 round-trip 테스트 통과
+- [x] CacheLayer 클래스 구현 (get, set, invalidate, generateCacheKey, isCacheable)
+- [x] 패턴 기반 TTL 규칙 적용
+- [x] 제외 패턴 처리 (stream, events 등)
+- [x] 크기 제한 체크
+- [x] 로컬 Redis에서 캐시 round-trip 테스트 통과

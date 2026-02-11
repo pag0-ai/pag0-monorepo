@@ -80,8 +80,12 @@ curl -H "X-Pag0-API-Key: {seed된 demo key}" http://localhost:3000/api/policies
 
 ## 완료 기준
 
-- [ ] Auth 미들웨어 구현 (SHA-256 API Key 인증)
-- [ ] Rate Limiter 구현 (Redis, tier별 차등)
-- [ ] `X-RateLimit-*` 응답 헤더 추가
-- [ ] 인증 제외 경로 처리 (`/health`, `/api/auth/register`, `/api/auth/login`)
-- [ ] 로컬에서 curl로 인증 성공/실패 테스트
+- [x] Auth 미들웨어 구현 (SHA-256 API Key 인증)
+- [x] Rate Limiter 구현 (Redis, tier별 차등)
+- [x] `X-RateLimit-*` 응답 헤더 추가
+- [x] 인증 제외 경로 처리 (`/health`, `/api/auth/register`, `/api/auth/login`)
+- [x] 로컬에서 curl로 인증 성공/실패 테스트
+
+## 버그 수정 이력
+
+- **auth.ts SQL alias 수정**: `p.id as project_id` → `p.id as "projectId"`. `postgres` 라이브러리는 snake_case → camelCase 자동 변환을 하지 않아, `user.projectId`가 `undefined`로 설정되는 버그 수정. 이로 인해 하위 라우트(policies, analytics)에서 `project_id = null` 에러 발생했음.

@@ -127,8 +127,8 @@ seed.sql에 5개 sample endpoint_scores가 이미 존재. 추가 seed 데이터�
 
 ## 완료 기준
 
-- [ ] CurationEngine 스코어링 알고리즘 구현 (3개 차원 + overall)
-- [ ] 5개 curation 엔드포인트 구현
-- [ ] Redis score 캐싱 (TTL 300초)
-- [ ] compare에서 차원별 winner 계산
-- [ ] 로컬에서 seed 데이터 기반 API 테스트 통과
+- [x] CurationEngine 스코어링 알고리즘 구현 (3개 차원 + overall)
+- [x] 5개 curation 엔드포인트 구현
+- [x] Redis score 캐싱 (TTL 300초)
+- [x] compare에서 차원별 winner 계산
+- [x] 로컬에서 seed 데이터 기반 API 테스트 통과

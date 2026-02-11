@@ -78,8 +78,15 @@ cd prepare-hackathon && bun run test-business-logic-day1.ts
 
 ## 완료 기준
 
-- [ ] PolicyEngine 클래스 구현 (5단계 검증)
-- [ ] BudgetTracker 클래스 구현 (Redis + PG)
-- [ ] 와일드카드 패턴 매칭 (`*.openai.com`)
-- [ ] BigInt 기반 금액 비교 (parseFloat 미사용)
-- [ ] 로컬에서 정책 검증 로직 테스트 통과
+- [x] PolicyEngine 클래스 구현 (5단계 검증)
+- [x] BudgetTracker 클래스 구현 (Redis + PG)
+- [x] 와일드카드 패턴 매칭 (`*.openai.com`)
+- [x] BigInt 기반 금액 비교 (parseFloat 미사용)
+- [x] 로컬에서 정책 검증 로직 테스트 통과
+- [x] PolicyEngine 단위 테스트 작성 (20개 테스트, `engine.test.ts`)
+
+## 버그 수정 이력
+
+- **engine.ts SQL 컬럼명 수정**: `daily_limit`/`monthly_limit` → `daily_budget`/`monthly_budget`. DB 스키마(`policies` 테이블)의 실제 컬럼명과 불일치 수정.
+- **budget.ts checkBudget() 수정**: `budgets` 테이블에는 `daily_limit`/`monthly_limit` 컬럼이 없음. `policies` 테이블과 LEFT JOIN하여 한도 값을 가져오도록 수정.
+- **budget.ts recordSpend() 수정**: INSERT 쿼리에서 존재하지 않는 `daily_limit`/`monthly_limit` 컬럼 제거.

@@ -103,9 +103,9 @@ pnpm dev
 
 ## 완료 기준
 
-- [ ] 메트릭 카드 4개 (Total Requests, Cache Hit Rate, Avg Latency, Cache Savings)
-- [ ] 비용 시계열 차트 (recharts LineChart)
-- [ ] 엔드포인트 테이블 (Top 10)
-- [ ] 예산 사용량 표시
-- [ ] 기간 선택기 (1h, 24h, 7d, 30d)
-- [ ] 로컬에서 Dashboard 페이지 렌더링 확인
+- [x] 메트릭 카드 4개 (Total Requests, Cache Hit Rate, Avg Latency, Cache Savings)
+- [x] 비용 시계열 차트 (recharts LineChart)
+- [x] 엔드포인트 테이블 (Top 10)
+- [x] 예산 사용량 표시
+- [x] 기간 선택기 (1h, 24h, 7d, 30d)
+- [x] 로컬에서 Dashboard 페이지 렌더링 확인

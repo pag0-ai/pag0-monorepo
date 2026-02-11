@@ -125,8 +125,13 @@ curl -H "X-Pag0-API-Key: {key}" "http://localhost:3000/api/analytics/cache?perio
 
 ## 완료 기준
 
-- [ ] 4개 analytics 엔드포인트 구현
-- [ ] period 파라미터 → SQL interval 변환
-- [ ] budgetUsage 포함 (summary)
-- [ ] topEndpoints 포함 (summary)
-- [ ] 로컬에서 curl 테스트 통과 (seed 데이터 기반)
+- [x] 4개 analytics 엔드포인트 구현
+- [x] period 파라미터 → SQL interval 변환
+- [x] budgetUsage 포함 (summary)
+- [x] topEndpoints 포함 (summary)
+- [x] 로컬에서 curl 테스트 통과 (seed 데이터 기반)
+
+## 버그 수정 이력
+
+- **SQL interval 버그 수정**: `${sql(interval)}::interval` → `${interval}::interval` (6개소). `sql()` 함수는 SQL 식별자(컬럼명)를 생성하여 `"24 hours"`처럼 따옴표가 붙어 `column "24 hours" does not exist` 에러 발생. 문자열 파라미터로 변경하여 `'24 hours'::interval`로 정상 캐스팅.
+- **budget 쿼리 수정**: `budgets` 테이블에 `daily_limit`/`monthly_limit` 컬럼이 없으므로, `policies` 테이블과 LEFT JOIN하여 한도 값을 가져오도록 수정.

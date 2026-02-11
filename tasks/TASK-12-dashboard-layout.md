@@ -107,9 +107,9 @@ pnpm dev:dashboard
 
 ## 완료 기준
 
-- [ ] React Query Provider 설정
-- [ ] API 클라이언트 함수 추가 (API Key 헤더 포함)
-- [ ] 사이드바 네비게이션 구현 (3개 메뉴)
-- [ ] 3개 페이지 라우트 생성 (스켈레톤)
-- [ ] MetricCard 공통 컴포넌트
-- [ ] 로컬에서 Dashboard 접속 + 네비게이션 동작 확인
+- [x] React Query Provider 설정
+- [x] API 클라이언트 함수 추가 (API Key 헤더 포함)
+- [x] 사이드바 네비게이션 구현 (3개 메뉴)
+- [x] 3개 페이지 라우트 생성 (스켈레톤)
+- [x] MetricCard 공통 컴포넌트
+- [x] 로컬에서 Dashboard 접속 + 네비게이션 동작 확인

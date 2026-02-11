@@ -203,12 +203,16 @@ bun run prepare-hackathon/test-business-logic-day3.ts
 
 ## 완료 기준
 
-- [ ] Health check 200 응답
-- [ ] 404 handler 정상 동작
-- [ ] Auth flow 전체 (register → API Key → 인증 성공/실패)
-- [ ] Policy CRUD 전체 (생성 → 조회 → 수정 → 삭제)
-- [ ] Analytics 4개 엔드포인트 응답 확인
-- [ ] Curation 5개 엔드포인트 응답 확인
-- [ ] Rate limiting 동작 확인 (429 응답)
-- [ ] CORS preflight 정상
-- [ ] prepare-hackathon 테스트 통과
+- [x] Health check 200 응답
+- [x] 404 handler 정상 동작
+- [x] Auth flow 전체 (register → API Key → 인증 성공/실패)
+- [x] Policy CRUD 전체 (생성 → 조회 → 수정 → 삭제)
+- [x] Analytics 4개 엔드포인트 응답 확인
+- [x] Curation 5개 엔드포인트 응답 확인
+- [x] Rate limiting 동작 확인 (429 응답)
+- [x] CORS preflight 정상
+- [x] prepare-hackathon 테스트 통과
+
+## 버그 수정 이력
+
+- **Rate limit 테스트 추가**: `scripts/e2e-test.sh`에 Section 8 추가 — 65회 연속 요청으로 429 응답 확인 + `X-RateLimit-*` 헤더 존재 확인.

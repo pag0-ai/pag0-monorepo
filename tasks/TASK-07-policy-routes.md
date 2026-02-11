@@ -109,8 +109,13 @@ curl -X DELETE -H "X-Pag0-API-Key: {key}" \
 
 ## 완료 기준
 
-- [ ] 5개 CRUD 엔드포인트 구현
-- [ ] 입력 검증 (budget 양수, 계층 순서)
-- [ ] 프로젝트당 활성 정책 1개 제한 처리
-- [ ] Soft delete 구현
-- [ ] 로컬에서 curl CRUD 테스트 통과
+- [x] 5개 CRUD 엔드포인트 구현
+- [x] 입력 검증 (budget 양수, 계층 순서)
+- [x] 프로젝트당 활성 정책 1개 제한 처리
+- [x] Soft delete 구현
+- [x] 로컬에서 curl CRUD 테스트 통과
+
+## 버그 수정 이력
+
+- **policies.ts SQL 컬럼명 전체 수정**: SELECT, INSERT, UPDATE, RETURNING 절의 `daily_limit`/`monthly_limit` → `daily_budget`/`monthly_budget` (약 15개소). DB 스키마와 불일치로 모든 CRUD 쿼리가 실패하던 문제 수정.
+- **TypeScript 타입 매핑 수정**: `row.daily_limit` → `row.daily_budget`, `row.monthly_limit` → `row.monthly_budget`로 변경.

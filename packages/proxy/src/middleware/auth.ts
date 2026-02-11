@@ -47,7 +47,7 @@ export async function authMiddleware(c: Context, next: Next) {
       u.id,
       u.email,
       u.subscription_tier as tier,
-      p.id as project_id
+      p.id as "projectId"
     FROM users u
     JOIN projects p ON p.user_id = u.id AND p.is_active = true
     WHERE u.api_key_hash = ${apiKeyHash}

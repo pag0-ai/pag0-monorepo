@@ -114,9 +114,9 @@ echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | bun run src/index.ts
 
 ## 완료 기준
 
-- [ ] MCP Server 기동 + tool 목록 반환
-- [ ] Policy tools (list, check_budget, check_policy) 정상 동작
-- [ ] Curation tools (rankings, recommend, compare, score) 정상 동작
-- [ ] Analytics tools (spending, cache_stats, tx_history) 정상 동작
-- [ ] client.ts API 경로와 Proxy 라우트 매핑 일치 확인
-- [ ] 에러 케이스 핸들링 확인
+- [x] MCP Server 기동 + tool 목록 반환
+- [x] Policy tools (list, check_budget, check_policy) 정상 동작
+- [x] Curation tools (rankings, recommend, compare, score) 정상 동작
+- [x] Analytics tools (spending, cache_stats, tx_history) 정상 동작
+- [x] client.ts API 경로와 Proxy 라우트 매핑 일치 확인
+- [x] 에러 케이스 핸들링 확인

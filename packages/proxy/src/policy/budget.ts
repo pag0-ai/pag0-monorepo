@@ -24,15 +24,16 @@ export class BudgetTracker {
       redis.get(monthlyKey),
     ]);
 
-    // Get limits from DB (from active policy or budgets table)
+    // Get spent from DB + limits from active policy
     const [budgetRecord] = await sql`
       SELECT
-        daily_spent as "dailySpent",
-        monthly_spent as "monthlySpent",
-        daily_limit as "dailyLimit",
-        monthly_limit as "monthlyLimit"
-      FROM budgets
-      WHERE project_id = ${projectId}
+        b.daily_spent as "dailySpent",
+        b.monthly_spent as "monthlySpent",
+        p.daily_budget as "dailyLimit",
+        p.monthly_budget as "monthlyLimit"
+      FROM budgets b
+      LEFT JOIN policies p ON p.project_id = b.project_id AND p.is_active = true
+      WHERE b.project_id = ${projectId}
       LIMIT 1
     `;
 
@@ -80,13 +81,11 @@ export class BudgetTracker {
     // Update PostgreSQL (source of truth)
     // Use atomic UPDATE ... RETURNING to ensure data consistency
     await sql`
-      INSERT INTO budgets (project_id, daily_spent, monthly_spent, daily_limit, monthly_limit)
+      INSERT INTO budgets (project_id, daily_spent, monthly_spent)
       VALUES (
         ${projectId},
         ${amount},
-        ${amount},
-        '999999999999999',
-        '999999999999999'
+        ${amount}
       )
       ON CONFLICT (project_id)
       DO UPDATE SET

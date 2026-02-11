@@ -119,10 +119,10 @@ curl http://localhost:3000/nonexistent                               # → 404
 
 ## 완료 기준
 
-- [ ] 모든 라우트 마운트 완료
-- [ ] Auth 미들웨어 적용 (제외 경로 포함)
-- [ ] Rate Limit 미들웨어 적용
-- [ ] Global error handler (PolicyViolation, Unauthorized, RateLimit, Internal)
-- [ ] 404 handler
-- [ ] Graceful shutdown (Redis, PG 연결 종료)
-- [ ] 로컬에서 전체 서비스 정상 동작 확인
+- [x] 모든 라우트 마운트 완료
+- [x] Auth 미들웨어 적용 (제외 경로 포함)
+- [x] Rate Limit 미들웨어 적용
+- [x] Global error handler (PolicyViolation, Unauthorized, RateLimit, Internal)
+- [x] 404 handler
+- [x] Graceful shutdown (Redis, PG 연결 종료)
+- [x] 로컬에서 전체 서비스 정상 동작 확인

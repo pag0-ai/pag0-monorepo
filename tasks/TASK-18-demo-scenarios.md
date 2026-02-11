@@ -162,9 +162,14 @@ echo "Demo API Key (from seed): check .env or seed output"
 
 ## 완료 기준
 
-- [ ] 시나리오 1: Policy enforcement 데모 동작
-- [ ] 시나리오 2: Cache hit/miss + 비용 절감 데모 동작
-- [ ] 시나리오 3: Curation 랭킹/추천/비교 데모 동작
-- [ ] 데모 준비 스크립트 작성 (`scripts/demo-setup.sh`)
-- [ ] Dashboard 3개 페이지 모두 데이터 표시 확인
-- [ ] 전체 데모 리허설 1회 완료
+- [x] 시나리오 1: Policy enforcement 데모 동작
+- [x] 시나리오 2: Cache hit/miss + 비용 절감 데모 동작
+- [x] 시나리오 3: Curation 랭킹/추천/비교 데모 동작
+- [x] 데모 준비 스크립트 작성 (`scripts/demo-setup.sh`)
+- [x] Dashboard 3개 페이지 모두 데이터 표시 확인
+- [x] 전체 데모 리허설 1회 완료
+
+## 버그 수정 이력
+
+- **demo-scenarios.sh bash 이스케이프 수정**: 비밀번호 `Demo1234!`의 `!`가 bash history expansion으로 해석되어 JSON 파싱 에러 발생. 단일 인용 부호 JSON body + `!` 제거한 비밀번호로 변경.
+- **데모 리허설 결과**: 3개 시나리오 모두 통과 확인 (Scenario 1: Spend Firewall, Scenario 2: Smart Cache, Scenario 3: API Curation).
