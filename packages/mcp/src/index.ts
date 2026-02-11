@@ -16,6 +16,7 @@ import { registerProxyTools } from "./tools/proxy.js";
 import { registerPolicyTools } from "./tools/policy.js";
 import { registerCurationTools } from "./tools/curation.js";
 import { registerAnalyticsTools } from "./tools/analytics.js";
+import { registerSmartTools } from "./tools/smart.js";
 
 // ── Environment ────────────────────────────────────────────
 
@@ -23,6 +24,11 @@ const PAG0_API_URL = process.env.PAG0_API_URL;
 const PAG0_API_KEY = process.env.PAG0_API_KEY;
 const WALLET_PRIVATE_KEY = process.env.WALLET_PRIVATE_KEY;
 const NETWORK = process.env.NETWORK || "base-sepolia";
+
+// Optional: auto-inject Authorization headers for known API providers
+const API_CREDENTIALS: Record<string, string> = {};
+if (process.env.OPENAI_API_KEY) API_CREDENTIALS["api.openai.com"] = process.env.OPENAI_API_KEY;
+if (process.env.ANTHROPIC_API_KEY) API_CREDENTIALS["api.anthropic.com"] = process.env.ANTHROPIC_API_KEY;
 
 if (!PAG0_API_URL || !PAG0_API_KEY || !WALLET_PRIVATE_KEY) {
   console.error(
@@ -43,10 +49,11 @@ const wallet = new Pag0Wallet(WALLET_PRIVATE_KEY, NETWORK);
 
 // Register all tools
 registerWalletTools(server, wallet);
-registerProxyTools(server, client, wallet);
+registerProxyTools(server, client, wallet, API_CREDENTIALS);
 registerPolicyTools(server, client);
 registerCurationTools(server, client);
 registerAnalyticsTools(server, client);
+registerSmartTools(server, client, wallet, API_CREDENTIALS);
 
 // ── Connect ────────────────────────────────────────────────
 

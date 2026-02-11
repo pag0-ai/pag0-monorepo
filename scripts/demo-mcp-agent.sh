@@ -58,6 +58,40 @@ fi
 echo -e "${GREEN}✓ MCP package built${NC}"
 echo ""
 
+# ---- Setup: Load API keys (OPENAI_API_KEY, ANTHROPIC_API_KEY) ----
+# Search order: packages/mcp/.env → root .env → root .env.local
+for _envfile in "$MCP_DIR/.env" "$MONOREPO_ROOT/.env" "$MONOREPO_ROOT/.env.local"; do
+  if [ -f "$_envfile" ]; then
+    if [ -z "${OPENAI_API_KEY:-}" ]; then
+      _key=$(grep -E '^OPENAI_API_KEY=' "$_envfile" 2>/dev/null | head -1 | cut -d'=' -f2- | sed 's/^["'\'']*//;s/["'\'']*$//' || true)
+      [ -n "$_key" ] && OPENAI_API_KEY="$_key"
+    fi
+    if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
+      _key=$(grep -E '^ANTHROPIC_API_KEY=' "$_envfile" 2>/dev/null | head -1 | cut -d'=' -f2- | sed 's/^["'\'']*//;s/["'\'']*$//' || true)
+      [ -n "$_key" ] && ANTHROPIC_API_KEY="$_key"
+    fi
+  fi
+done
+if [ -z "${OPENAI_API_KEY:-}" ]; then
+  echo -e "${YELLOW}OPENAI_API_KEY not found in environment or .env files.${NC}"
+  read -rp "Enter your OpenAI API key (or press Enter to skip): " OPENAI_API_KEY
+fi
+if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
+  echo -e "${YELLOW}ANTHROPIC_API_KEY not found in environment or .env files.${NC}"
+  read -rp "Enter your Anthropic API key (or press Enter to skip): " ANTHROPIC_API_KEY
+fi
+if [ -n "${OPENAI_API_KEY:-}" ]; then
+  echo -e "${GREEN}✓ OPENAI_API_KEY loaded${NC}"
+else
+  echo -e "${YELLOW}⚠ OPENAI_API_KEY not set — Step 4.5 may return 401 for OpenAI${NC}"
+fi
+if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
+  echo -e "${GREEN}✓ ANTHROPIC_API_KEY loaded${NC}"
+else
+  echo -e "${YELLOW}⚠ ANTHROPIC_API_KEY not set — Step 4.5 may return 401 for Anthropic${NC}"
+fi
+echo ""
+
 # ---- Setup: Register demo user ----
 echo -e "${YELLOW}=== Setup: Creating demo user ===${NC}"
 DEMO_EMAIL="mcp-demo-${RANDOM}@pag0.io"
@@ -90,7 +124,9 @@ cat > "$DEMO_DIR/.mcp.json" << EOF
         "PAG0_API_URL": "$BASE_URL",
         "PAG0_API_KEY": "$API_KEY",
         "WALLET_PRIVATE_KEY": "$WALLET_KEY",
-        "NETWORK": "base-sepolia"
+        "NETWORK": "base-sepolia",
+        "OPENAI_API_KEY": "${OPENAI_API_KEY:-}",
+        "ANTHROPIC_API_KEY": "${ANTHROPIC_API_KEY:-}"
       }
     }
   }
@@ -106,7 +142,7 @@ run_agent() {
   echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
   echo -e "${BLUE}║  Step ${step}: ${desc}${NC}"
   echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
-  echo -e "${CYAN}Prompt: ${prompt:0:80}...${NC}"
+  echo -e "${CYAN}Prompt: ${prompt:0:280}...${NC}"
   echo ""
 
   local output
@@ -149,13 +185,31 @@ run_agent "4.3" "Get AI Recommendations" \
 run_agent "4.4" "Compare Endpoints" \
   "Use the pag0_compare tool to compare api.openai.com and api.anthropic.com. Show which one wins overall and in each dimension (cost, latency, reliability)."
 
-# ===== Step 4.5: API Call via Proxy =====
-run_agent "4.5" "API Call via Proxy" \
-  "Use the pag0_request tool to make a GET request to https://api.openai.com/v1/models through the Pag0 proxy. Report the response status, cost, cache status, and latency."
+# ===== Step 4.5: Naive Select & Call (multi-tool orchestration) =====
+run_agent "4.5" "Naive Select and Call" \
+  "You are demonstrating Pag0's smart API selection the MANUAL way — using multiple tools. Do the following steps in order:
 
-# ===== Step 4.6: Accounting Check =====
-run_agent "4.6" "Accounting Check" \
-  "Check my account after the API call:
+1. Use pag0_recommend to get the top recommended APIs in the AI category.
+
+2. Pick the top 2 endpoints from step 1 and use pag0_compare to compare them. Show the comparison table.
+
+3. Identify the overall winner from step 2.
+
+4. Call the winning provider via pag0_request. Use the winner's hostname to build the request:
+   - If the winner is api.openai.com: POST https://api.openai.com/v1/chat/completions with body {\"model\":\"gpt-4o-mini\",\"messages\":[{\"role\":\"user\",\"content\":\"What is the x402 payment protocol? Answer in one sentence.\"}],\"max_tokens\":100}
+   - If the winner is api.anthropic.com: POST https://api.anthropic.com/v1/messages with body {\"model\":\"claude-sonnet-4-20250514\",\"max_tokens\":100,\"messages\":[{\"role\":\"user\",\"content\":\"What is the x402 payment protocol? Answer in one sentence.\"}]}
+
+5. Show a summary: which provider was selected, why (score breakdown), and the API response with latency/cost/cache metadata."
+
+# ===== Step 4.6: Smart Select & Call (single tool) =====
+run_agent "4.6" "Smart Select and Call" \
+  "Use the pag0_smart_request tool to ask an AI API: 'What is the x402 payment protocol? Answer in one sentence.'
+
+Use category 'AI' and max_tokens 100."
+
+# ===== Step 4.7: Accounting Check =====
+run_agent "4.7" "Accounting Check" \
+  "Check my account after the API calls (both the naive multi-tool call and the smart single-tool call):
 1. Use pag0_spending with period '1h' to show recent spending.
 2. Use pag0_cache_stats to show cache performance.
 Summarize the total cost and any savings from caching."
@@ -167,7 +221,7 @@ echo "║  MCP Agent Demo Complete!                ║"
 echo "╚══════════════════════════════════════════╝"
 echo -e "${NC}"
 
-echo -e "  ${GREEN}Passed: $PASS${NC}  ${RED}Failed: $FAIL${NC}  Total: $((PASS + FAIL))"
+echo -e "  ${GREEN}Passed: $PASS${NC}  ${RED}Failed: $FAIL${NC}  Total: $((PASS + FAIL)) / 7"
 echo ""
 echo -e "  Temp dir: ${CYAN}$DEMO_DIR${NC}"
 echo -e "  MCP config: ${CYAN}$DEMO_DIR/.mcp.json${NC}"

@@ -2,11 +2,13 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { Pag0Client, PaymentRequest, ProxyResponse } from "../client.js";
 import type { Pag0Wallet } from "../wallet.js";
+import { injectAuthHeaders } from "./auth.js";
 
 export function registerProxyTools(
   server: McpServer,
   client: Pag0Client,
   wallet: Pag0Wallet,
+  credentials: Record<string, string> = {},
 ) {
   server.tool(
     "pag0_request",
@@ -22,11 +24,13 @@ export function registerProxyTools(
       body: z.any().optional().describe("Request body (for POST/PUT)"),
     },
     async (args) => {
+      const headers = injectAuthHeaders(args.url, args.headers ?? {}, credentials);
+
       // 1) First attempt — may return 402
       const res = await client.proxyRequest({
         targetUrl: args.url,
         method: args.method,
-        headers: args.headers,
+        headers,
         body: args.body,
       });
 
@@ -74,7 +78,7 @@ export function registerProxyTools(
         const retryRes = await client.proxyRequest({
           targetUrl: args.url,
           method: args.method,
-          headers: args.headers,
+          headers,
           body: args.body,
           signedPayment,
         });

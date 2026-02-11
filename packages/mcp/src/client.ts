@@ -156,4 +156,20 @@ export class Pag0Client {
       `/api/curation/score/${encodeURIComponent(endpoint)}`,
     );
   }
+
+  // ── Smart Request ──────────────────────────────────────────
+
+  async smartRequest(params: {
+    category: string;
+    prompt: string;
+    maxTokens?: number;
+    sortBy?: string;
+    signedPayment?: unknown;
+  }): Promise<Response> {
+    return fetch(`${this.baseUrl}/api/smart-request`, {
+      method: "POST",
+      headers: this.headers,
+      body: JSON.stringify(params),
+    });
+  }
 }

@@ -7,6 +7,7 @@ import policyRoutes from './routes/policies';
 import analyticsRoutes from './routes/analytics';
 import curationRoutes from './routes/curation';
 import authRoutes from './routes/auth';
+import smartRequestRoutes from './routes/smart-request';
 import { PolicyViolationError, UnauthorizedError, RateLimitError } from './types/index';
 import redis from './cache/redis';
 import sql from './db/postgres';
@@ -36,10 +37,12 @@ app.use('/proxy/*', authMiddleware);
 app.use('/api/policies/*', authMiddleware);
 app.use('/api/analytics/*', authMiddleware);
 app.use('/api/curation/*', authMiddleware);
+app.use('/api/smart-request/*', authMiddleware);
 app.use('/proxy/*', rateLimitMiddleware);
 app.use('/api/policies/*', rateLimitMiddleware);
 app.use('/api/analytics/*', rateLimitMiddleware);
 app.use('/api/curation/*', rateLimitMiddleware);
+app.use('/api/smart-request/*', rateLimitMiddleware);
 
 // ─── 5. Proxy endpoint ───────────────────────────────────
 app.post('/proxy', async (c) => {
@@ -75,6 +78,7 @@ app.post('/proxy', async (c) => {
 app.route('/api/policies', policyRoutes);
 app.route('/api/analytics', analyticsRoutes);
 app.route('/api/curation', curationRoutes);
+app.route('/api/smart-request', smartRequestRoutes);
 
 // ─── 7. Global error handler ─────────────────────────────
 app.onError((err, c) => {
