@@ -47,7 +47,7 @@ pause
 echo -e "${BLUE}"
 echo "╔══════════════════════════════════════════╗"
 echo "║  Scenario 1: Spend Firewall              ║"
-echo "║  AI Agent budget enforcement              ║"
+echo "║  AI Agent budget enforcement             ║"
 echo "╚══════════════════════════════════════════╝"
 echo -e "${NC}"
 
@@ -71,8 +71,8 @@ pause
 # ===== SCENARIO 2: Smart Cache =====
 echo -e "${BLUE}"
 echo "╔══════════════════════════════════════════╗"
-echo "║  Scenario 2: Smart Cache                  ║"
-echo "║  40%+ cost savings through caching         ║"
+echo "║  Scenario 2: Smart Cache                 ║"
+echo "║  40%+ cost savings through caching       ║"
 echo "╚══════════════════════════════════════════╝"
 echo -e "${NC}"
 
@@ -89,8 +89,8 @@ pause
 # ===== SCENARIO 3: API Curation =====
 echo -e "${BLUE}"
 echo "╔══════════════════════════════════════════╗"
-echo "║  Scenario 3: API Curation                 ║"
-echo "║  Smart API recommendations & comparison    ║"
+echo "║  Scenario 3: API Curation                ║"
+echo "║  Smart API recommendations & comparison  ║"
 echo "╚══════════════════════════════════════════╝"
 echo -e "${NC}"
 
@@ -111,11 +111,11 @@ echo -e "${GREEN}→ Data-driven scoring: cost (40%) + latency (30%) + reliabili
 echo ""
 echo -e "${BLUE}"
 echo "╔══════════════════════════════════════════╗"
-echo "║  Demo Complete!                            ║"
-echo "║                                            ║"
-echo "║  Pag0 = Spend Firewall + Smart Cache       ║"
-echo "║         + API Curation                     ║"
-echo "║                                            ║"
-echo "║  Dashboard: http://localhost:3001           ║"
+echo "║  Demo Complete!                          ║"
+echo "║                                          ║"
+echo "║  Pag0 = Spend Firewall + Smart Cache     ║"
+echo "║         + API Curation                   ║"
+echo "║                                          ║"
+echo "║  Dashboard: http://localhost:3001        ║"
 echo "╚══════════════════════════════════════════╝"
 echo -e "${NC}"
