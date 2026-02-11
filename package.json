@@ -1,0 +1,19 @@
+{
+  "name": "pag0-monorepo",
+  "private": true,
+  "scripts": {
+    "dev:proxy": "pnpm --filter @pag0/proxy dev",
+    "dev:dashboard": "pnpm --filter @pag0/dashboard dev",
+    "dev:mcp": "pnpm --filter @pag0/mcp dev",
+    "dev": "pnpm run --parallel dev:proxy dev:dashboard",
+    "build": "pnpm run --recursive build",
+    "lint": "pnpm run --recursive lint",
+    "test": "pnpm --filter @pag0/proxy test",
+    "db:migrate": "pnpm --filter @pag0/proxy db:migrate",
+    "db:seed": "pnpm --filter @pag0/proxy db:seed"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@9.15.4"
+}
