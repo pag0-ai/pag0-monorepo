@@ -77,9 +77,20 @@ async getReputation(endpoint: string): Promise<...>;
 
 ```graphql
 # ERC-8004 Audit Events
+type Agent @entity {
+  id: ID!
+  name: String!           # agentIdRaw — 사람이 읽을 수 있는 hostname
+  feedbacks: [FeedbackEvent!]! @derivedFrom(field: "agent")
+  eventCount: Int!
+  firstSeen: BigInt!
+  lastSeen: BigInt!
+}
+
 type FeedbackEvent @entity {
   id: ID!
+  agent: Agent!
   agentId: String!
+  agentName: String!      # agentIdRaw — 원본 hostname 문자열
   value: Int!
   tag1: String!
   tag2: String!
@@ -109,15 +120,16 @@ type ValidationResponseEvent @entity {
 
 ### 2. 이벤트 매핑 (`subgraph/src/mapping.ts`)
 
-- `handleFeedbackGiven` — FeedbackEvent 생성
+- `handleFeedbackGiven` — `event.params.agentIdRaw`에서 원본 hostname 추출 → `Agent.name` + `FeedbackEvent.agentName` 저장
 - `handleValidationRequested` — ValidationRequestEvent 생성
 - `handleValidationResponded` — ValidationResponseEvent 생성
 
 ### 3. 서브그래프 설정 (`subgraph/subgraph.yaml`)
 
-- Network: SKALE
-- DataSource: ReputationRegistry + ValidationRegistry 컨트랙트
-- StartBlock: 배포 블록 번호
+- Network: SKALE (bite-v2-sandbox)
+- DataSource: ReputationRegistry (`0xCC46EFB2118C323D5E1543115C4b4DfA3bc02131`) + ValidationRegistry (`0x05bf80675DcFD3fdD1F7889685CB925C9c56c308`)
+- Event signature: `FeedbackGiven(indexed string,string,uint256,bytes32,bytes32,string,bytes32)` — 두 번째 `string`이 `agentIdRaw`
+- Subgraph: `pag0-erc8004/v1.1.0` on Goldsky
 
 ## 폴백 전략
 

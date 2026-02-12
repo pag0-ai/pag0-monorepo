@@ -103,14 +103,16 @@ await Promise.all([
 
 `packages/proxy/src/audit/abi/` 디렉토리에 ABI JSON:
 - `ReputationRegistry.json` — `giveFeedback(agentId, value, valueDecimals, tag1, tag2, feedbackURI, feedbackHash)`
+  - **FeedbackGiven 이벤트**: `(indexed string agentId, string agentIdRaw, uint256 value, bytes32 tag1, bytes32 tag2, string feedbackURI, bytes32 feedbackHash)`
+  - `agentIdRaw`: 비-인덱싱된 원본 agentId 문자열 (EVM이 indexed string을 keccak256 해시로 변환하므로 원문 보존용)
 - `ValidationRegistry.json` — `validationRequest(agentId, data)`
 
 ### 6. 환경변수
 
 ```env
-# ERC-8004
-ERC8004_REPUTATION_REGISTRY=0x...   # ReputationRegistry 컨트랙트 주소
-ERC8004_VALIDATION_REGISTRY=0x...   # ValidationRegistry 컨트랙트 주소
+# ERC-8004 (SKALE bite-v2-sandbox, v1.1.0 배포)
+ERC8004_REPUTATION_REGISTRY=0xCC46EFB2118C323D5E1543115C4b4DfA3bc02131
+ERC8004_VALIDATION_REGISTRY=0x05bf80675DcFD3fdD1F7889685CB925C9c56c308
 ERC8004_SIGNER_KEY=...              # 피드백 기록용 서명 키
 IPFS_API_URL=https://ipfs.infura.io:5001
 ```
@@ -119,7 +121,8 @@ IPFS_API_URL=https://ipfs.infura.io:5001
 
 | 필드 | 값 | 설명 |
 |------|------|------|
-| `agentId` | x402 서버의 ERC-8004 ID | Identity Registry에 등록된 서비스 식별자 |
+| `agentId` | x402 서버의 ERC-8004 ID | Identity Registry에 등록된 서비스 식별자 (indexed → keccak256 해시) |
+| `agentIdRaw` | agentId 원본 문자열 | 비-인덱싱, 사람이 읽을 수 있는 hostname (예: `api.openai.com`) |
 | `value` | 0-100 | latency + statusCode 기반 서비스 품질 점수 |
 | `valueDecimals` | 2 | 소수점 자릿수 |
 | `tag1` | `x402-payment` | 피드백 유형 태그 |

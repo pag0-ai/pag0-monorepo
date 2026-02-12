@@ -28,8 +28,8 @@
 ```
 packages/proxy/src/subgraph/
   client.ts    — SubgraphClient 클래스 (GraphQL fetch + Redis 캐시 + 에러 핸들링)
-  queries.ts   — 네임드 GraphQL 쿼리 문자열
-  types.ts     — 서브그래프 응답 TypeScript 인터페이스
+  queries.ts   — 네임드 GraphQL 쿼리 문자열 (name, agentName 필드 포함)
+  types.ts     — 서브그래프 응답 TypeScript 인터페이스 (name?, agentName? 필드 포함)
 ```
 
 **SubgraphClient 핵심 설계:**
@@ -107,9 +107,9 @@ query AgentReputation($agentId: String!, $since: BigInt!) {
 
 | Method | Path | 설명 | 응답 예시 |
 |--------|------|------|-----------|
-| GET | `/api/reputation/agent?id={endpoint}` | 온체인 평판 프로필 | `{ agentId, avgScore, feedbackCount, firstSeen, lastSeen }` |
-| GET | `/api/reputation/feedbacks?agentId={endpoint}` | 피드백 이력 (페이지네이션) | `{ feedbacks: [...], total }` |
-| GET | `/api/reputation/leaderboard` | 에이전트 랭킹 | `{ agents: [{ agentId, eventCount, avgScore }] }` |
+| GET | `/api/reputation/agent?id={endpoint}` | 온체인 평판 프로필 | `{ agentId, agentName, avgScore, feedbackCount, firstSeen, lastSeen }` |
+| GET | `/api/reputation/feedbacks?agentId={endpoint}` | 피드백 이력 (페이지네이션) | `{ feedbacks: [{ ..., agentName }], pagination }` |
+| GET | `/api/reputation/leaderboard` | 에이전트 랭킹 | `{ agents: [{ agentId, agentName, eventCount, avgScore }] }` |
 
 > **참고**: `agentId`는 전체 endpoint URL (예: `https://api.openai.com/v1/chat`)이므로 path parameter 대신 query parameter로 전달한다.
 
@@ -145,10 +145,10 @@ export interface EndpointScore {
 ## 환경변수
 
 ```env
-ERC8004_SUBGRAPH_URL=http://localhost:8000/subgraphs/name/pag0/erc8004
+ERC8004_SUBGRAPH_URL=https://api.goldsky.com/api/public/project_cmliyvfm2vyq701v0gm02a234/subgraphs/pag0-erc8004/v1.1.0/gn
 ```
 
-> 이미 `.env.example`, `.env.local`에 추가 완료.
+> Goldsky에 `pag0-erc8004/v1.1.0`으로 배포 완료. `.env.local` 업데이트됨.
 
 ## 폴백 전략
 
