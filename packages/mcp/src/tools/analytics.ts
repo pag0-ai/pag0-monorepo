@@ -110,8 +110,14 @@ export function registerAnalyticsTools(
           requestCount: number;
           totalCost: string;
           cacheHitCount: number;
+          cacheHitRate: number;
           avgLatencyMs: number;
+          p50LatencyMs: number;
           p95LatencyMs: number;
+          p99LatencyMs: number;
+          successRate: number;
+          errorCount: number;
+          cacheSavings: string;
         }>;
       };
 

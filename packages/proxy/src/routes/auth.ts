@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { sign } from 'hono/jwt';
 import { createHash, randomBytes } from 'node:crypto';
 import sql from '../db/postgres';
 import { UnauthorizedError } from '../types/index';
@@ -426,7 +427,30 @@ app.post('/login', async (c) => {
       );
     }
 
+    // Generate JWT token
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      console.error('JWT_SECRET not configured');
+      return c.json(
+        { error: { code: 'INTERNAL_ERROR', message: 'Server configuration error' } },
+        500,
+      );
+    }
+
+    const now = Math.floor(Date.now() / 1000);
+    const token = await sign(
+      {
+        userId: user.id,
+        email: user.email,
+        tier: user.subscription_tier,
+        iat: now,
+        exp: now + 7 * 24 * 60 * 60, // 7 days
+      },
+      jwtSecret,
+    );
+
     return c.json({
+      token,
       user: {
         id: user.id,
         email: user.email,

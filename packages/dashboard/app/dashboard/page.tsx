@@ -301,6 +301,9 @@ curl -X POST ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/proxy
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                   Avg Latency
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  Success Rate
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-700">
@@ -322,11 +325,14 @@ curl -X POST ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/proxy
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                       {ep.avgLatencyMs.toFixed(0)}ms
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                      {((ep.successRate ?? 0) * 100).toFixed(1)}%
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
                     No endpoint data available
                   </td>
                 </tr>

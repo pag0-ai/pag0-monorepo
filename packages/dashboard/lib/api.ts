@@ -55,7 +55,7 @@ export interface AnalyticsSummary {
   successRate: number;
   totalCost: string;
   cacheSavings: string;
-  topEndpoints: Array<{ endpoint: string; requestCount: number }>;
+  topEndpoints: Array<{ endpoint: string; requestCount: number; cost: string }>;
   budgetUsage: {
     daily: { limit: string; spent: string; remaining: string; percentage: number };
     monthly: { limit: string; spent: string; remaining: string; percentage: number };
@@ -70,9 +70,15 @@ export interface EndpointMetrics {
   endpoint: string;
   requestCount: number;
   cacheHitCount: number;
+  cacheHitRate: number;
   avgLatencyMs: number;
+  p50LatencyMs: number;
   p95LatencyMs: number;
+  p99LatencyMs: number;
+  successRate: number;
+  errorCount: number;
   totalCost: string;
+  cacheSavings: string;
 }
 
 export async function fetchAnalyticsEndpoints(params?: {
@@ -191,7 +197,22 @@ export interface EndpointScore {
   costScore: number;
   latencyScore: number;
   reliabilityScore: number;
+  reputationScore?: number;
   sampleSize: number;
+  lastCalculated?: string;
+  weights?: {
+    cost: number;
+    latency: number;
+    reliability: number;
+    reputation: number;
+  };
+  evidence?: {
+    sampleSize: number;
+    period: string;
+    avgCostPerRequest: string;
+    avgLatencyMs: number;
+    successRate: number;
+  };
 }
 
 export async function fetchRankings(params?: {

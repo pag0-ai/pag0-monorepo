@@ -33,6 +33,11 @@ interface CompareResult {
     latency: string;
     reliability: string;
   };
+  differences: {
+    costRange: { min: number; max: number; delta: number };
+    latencyRange: { min: number; max: number; delta: number };
+    reliabilityRange: { min: number; max: number; delta: number };
+  };
 }
 
 const DEFAULT_WEIGHTS: ScoreWeights = {
@@ -156,6 +161,14 @@ export class CurationEngine {
         reputationScore,
         sampleSize: Number(metrics?.request_count || 0),
         lastCalculated: new Date(),
+        weights: { ...DEFAULT_WEIGHTS },
+        evidence: {
+          sampleSize: Number(metrics?.request_count || 0),
+          period: '30d',
+          avgCostPerRequest: '0',
+          avgLatencyMs: 0,
+          successRate: 0,
+        },
       };
     }
 
@@ -187,6 +200,14 @@ export class CurationEngine {
       reputationScore,
       sampleSize: Number(metrics.request_count),
       lastCalculated: new Date(),
+      weights: { ...DEFAULT_WEIGHTS },
+      evidence: {
+        sampleSize: Number(metrics.request_count),
+        period: '30d',
+        avgCostPerRequest: String(Math.round(avgCost)),
+        avgLatencyMs: Math.round(p95Latency),
+        successRate: Number(successRate.toFixed(4)),
+      },
     };
   }
 
@@ -211,6 +232,7 @@ export class CurationEngine {
         cost_score: string;
         latency_score: string;
         reliability_score: string;
+        weights: { cost: number; latency: number; reliability: number; reputation?: number };
         evidence: {
           sampleSize: number;
           period: string;
@@ -228,6 +250,7 @@ export class CurationEngine {
         cost_score,
         latency_score,
         reliability_score,
+        weights,
         evidence,
         updated_at
       FROM endpoint_scores
@@ -247,6 +270,13 @@ export class CurationEngine {
       reliabilityScore: Number(score.reliability_score),
       sampleSize: score.evidence.sampleSize,
       lastCalculated: new Date(score.updated_at),
+      weights: {
+        cost: score.weights.cost,
+        latency: score.weights.latency,
+        reliability: score.weights.reliability,
+        reputation: score.weights.reputation ?? DEFAULT_WEIGHTS.reputation,
+      },
+      evidence: score.evidence,
     };
 
     // Cache in Redis (TTL: 300s)
@@ -280,6 +310,7 @@ export class CurationEngine {
         cost_score: string;
         latency_score: string;
         reliability_score: string;
+        weights: { cost: number; latency: number; reliability: number; reputation?: number };
         evidence: {
           sampleSize: number;
           period: string;
@@ -297,6 +328,7 @@ export class CurationEngine {
         cost_score,
         latency_score,
         reliability_score,
+        weights,
         evidence,
         updated_at
       FROM endpoint_scores
@@ -314,6 +346,13 @@ export class CurationEngine {
       reliabilityScore: Number(score.reliability_score),
       sampleSize: score.evidence.sampleSize,
       lastCalculated: new Date(score.updated_at),
+      weights: {
+        cost: score.weights.cost,
+        latency: score.weights.latency,
+        reliability: score.weights.reliability,
+        reputation: score.weights.reputation ?? DEFAULT_WEIGHTS.reputation,
+      },
+      evidence: score.evidence,
     }));
   }
 
@@ -333,6 +372,7 @@ export class CurationEngine {
         cost_score: string;
         latency_score: string;
         reliability_score: string;
+        weights: { cost: number; latency: number; reliability: number; reputation?: number };
         evidence: {
           sampleSize: number;
           period: string;
@@ -350,6 +390,7 @@ export class CurationEngine {
         cost_score,
         latency_score,
         reliability_score,
+        weights,
         evidence,
         updated_at
       FROM endpoint_scores
@@ -369,6 +410,13 @@ export class CurationEngine {
       reliabilityScore: Number(score.reliability_score),
       sampleSize: score.evidence.sampleSize,
       lastCalculated: new Date(score.updated_at),
+      weights: {
+        cost: score.weights.cost,
+        latency: score.weights.latency,
+        reliability: score.weights.reliability,
+        reputation: score.weights.reputation ?? DEFAULT_WEIGHTS.reputation,
+      },
+      evidence: score.evidence,
     }));
 
     // Find winners in each dimension
@@ -385,6 +433,18 @@ export class CurationEngine {
       curr.reliabilityScore > best.reliabilityScore ? curr : best,
     );
 
+    // Calculate differences (ranges and deltas)
+    const costScores = endpointScores.map((s) => s.costScore);
+    const latencyScores = endpointScores.map((s) => s.latencyScore);
+    const reliabilityScores = endpointScores.map((s) => s.reliabilityScore);
+
+    const costMin = Math.min(...costScores);
+    const costMax = Math.max(...costScores);
+    const latencyMin = Math.min(...latencyScores);
+    const latencyMax = Math.max(...latencyScores);
+    const reliabilityMin = Math.min(...reliabilityScores);
+    const reliabilityMax = Math.max(...reliabilityScores);
+
     return {
       endpoints: endpointScores,
       winner: {
@@ -392,6 +452,11 @@ export class CurationEngine {
         cost: costWinner.endpoint,
         latency: latencyWinner.endpoint,
         reliability: reliabilityWinner.endpoint,
+      },
+      differences: {
+        costRange: { min: costMin, max: costMax, delta: costMax - costMin },
+        latencyRange: { min: latencyMin, max: latencyMax, delta: latencyMax - latencyMin },
+        reliabilityRange: { min: reliabilityMin, max: reliabilityMax, delta: reliabilityMax - reliabilityMin },
       },
     };
   }
@@ -403,66 +468,38 @@ export class CurationEngine {
     category?: string,
     limit: number = 20,
   ): Promise<EndpointScore[]> {
+    type RankingRow = {
+      endpoint: string;
+      category: string;
+      overall_score: string;
+      cost_score: string;
+      latency_score: string;
+      reliability_score: string;
+      weights: { cost: number; latency: number; reliability: number; reputation?: number };
+      evidence: {
+        sampleSize: number;
+        period: string;
+        avgCostPerRequest: string;
+        avgLatencyMs: number;
+        successRate: number;
+      };
+      updated_at: Date;
+    };
+
     const query = category
-      ? sql<
-          Array<{
-            endpoint: string;
-            category: string;
-            overall_score: string;
-            cost_score: string;
-            latency_score: string;
-            reliability_score: string;
-            evidence: {
-              sampleSize: number;
-              period: string;
-              avgCostPerRequest: string;
-              avgLatencyMs: number;
-              successRate: number;
-            };
-            updated_at: Date;
-          }>
-        >`
+      ? sql<Array<RankingRow>>`
           SELECT
-            endpoint,
-            category,
-            overall_score,
-            cost_score,
-            latency_score,
-            reliability_score,
-            evidence,
-            updated_at
+            endpoint, category, overall_score, cost_score, latency_score, reliability_score,
+            weights, evidence, updated_at
           FROM endpoint_scores
           WHERE category = ${category}
           ORDER BY overall_score DESC
           LIMIT ${limit}
         `
-      : sql<
-          Array<{
-            endpoint: string;
-            category: string;
-            overall_score: string;
-            cost_score: string;
-            latency_score: string;
-            reliability_score: string;
-            evidence: {
-              sampleSize: number;
-              period: string;
-              avgCostPerRequest: string;
-              avgLatencyMs: number;
-              successRate: number;
-            };
-            updated_at: Date;
-          }>
-        >`
+      : sql<Array<RankingRow>>`
           SELECT
-            endpoint,
-            category,
-            overall_score,
-            cost_score,
-            latency_score,
-            reliability_score,
-            evidence,
-            updated_at
+            endpoint, category, overall_score, cost_score, latency_score, reliability_score,
+            weights, evidence, updated_at
           FROM endpoint_scores
           ORDER BY overall_score DESC
           LIMIT ${limit}
@@ -479,6 +516,13 @@ export class CurationEngine {
       reliabilityScore: Number(score.reliability_score),
       sampleSize: score.evidence.sampleSize,
       lastCalculated: new Date(score.updated_at),
+      weights: {
+        cost: score.weights.cost,
+        latency: score.weights.latency,
+        reliability: score.weights.reliability,
+        reputation: score.weights.reputation ?? DEFAULT_WEIGHTS.reputation,
+      },
+      evidence: score.evidence,
     }));
   }
 }

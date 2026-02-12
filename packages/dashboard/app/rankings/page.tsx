@@ -36,6 +36,20 @@ interface ComparisonEndpoint {
   costScore: number;
   latencyScore: number;
   reliabilityScore: number;
+  reputationScore?: number;
+  weights?: {
+    cost: number;
+    latency: number;
+    reliability: number;
+    reputation: number;
+  };
+  evidence?: {
+    sampleSize: number;
+    period: string;
+    avgCostPerRequest: string;
+    avgLatencyMs: number;
+    successRate: number;
+  };
 }
 
 interface ComparisonWinner {
@@ -45,9 +59,16 @@ interface ComparisonWinner {
   reliability: string;
 }
 
+interface ComparisonDifferences {
+  costRange: { min: number; max: number; delta: number };
+  latencyRange: { min: number; max: number; delta: number };
+  reliabilityRange: { min: number; max: number; delta: number };
+}
+
 interface ComparisonData {
   endpoints: ComparisonEndpoint[];
   winner?: ComparisonWinner;
+  differences?: ComparisonDifferences;
 }
 
 export default function RankingsPage() {
@@ -255,6 +276,21 @@ export default function RankingsPage() {
               <Crown size={20} className="text-yellow-400" />
               <span className="text-yellow-200 font-medium">Overall Winner:</span>
               <span className="text-white font-mono text-sm">{comparison.winner.overall}</span>
+            </div>
+          )}
+          {comparison.differences && (
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              {(['costRange', 'latencyRange', 'reliabilityRange'] as const).map((key) => {
+                const range = comparison.differences![key];
+                const label = key.replace('Range', '');
+                return (
+                  <div key={key} className="bg-gray-900 rounded-lg p-3 text-center">
+                    <div className="text-xs text-gray-400 uppercase mb-1">{label} Spread</div>
+                    <div className="text-lg font-bold text-white">{range.delta.toFixed(1)}</div>
+                    <div className="text-xs text-gray-500">{range.min.toFixed(1)} - {range.max.toFixed(1)}</div>
+                  </div>
+                );
+              })}
             </div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

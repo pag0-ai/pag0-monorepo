@@ -46,6 +46,19 @@ export interface EndpointScore {
   reputationScore?: number;  // On-chain reputation score (0-100)
   sampleSize: number;
   lastCalculated: Date;
+  weights?: {
+    cost: number;
+    latency: number;
+    reliability: number;
+    reputation: number;
+  };
+  evidence?: {
+    sampleSize: number;
+    period: string;
+    avgCostPerRequest: string;
+    avgLatencyMs: number;
+    successRate: number;
+  };
 }
 
 export interface User {

@@ -48,9 +48,15 @@ interface EndpointMetrics {
   endpoint: string;
   requestCount: number;
   cacheHitCount: number;
+  cacheHitRate: number;
   avgLatencyMs: number;
+  p50LatencyMs: number;
   p95LatencyMs: number;
+  p99LatencyMs: number;
+  successRate: number;
+  errorCount: number;
   totalCost: string;
+  cacheSavings: string;
 }
 
 interface CostTimeseriesPoint {
@@ -240,12 +246,30 @@ analyticsRoutes.get('/endpoints', async (c) => {
         endpoint,
         COUNT(*) as request_count,
         SUM(CASE WHEN cached THEN 1 ELSE 0 END) as cache_hit_count,
+        ROUND(COALESCE(
+          SUM(CASE WHEN cached THEN 1 ELSE 0 END)::numeric / NULLIF(COUNT(*), 0),
+          0
+        ), 4) as cache_hit_rate,
         COALESCE(AVG(latency_ms), 0) as avg_latency_ms,
+        COALESCE(
+          PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY latency_ms),
+          0
+        ) as p50_latency_ms,
         COALESCE(
           PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency_ms),
           0
         ) as p95_latency_ms,
-        COALESCE(SUM(cost), 0) as total_cost
+        COALESCE(
+          PERCENTILE_CONT(0.99) WITHIN GROUP (ORDER BY latency_ms),
+          0
+        ) as p99_latency_ms,
+        ROUND(COALESCE(
+          SUM(CASE WHEN status_code >= 200 AND status_code < 300 THEN 1 ELSE 0 END)::numeric / NULLIF(COUNT(*), 0),
+          0
+        ), 4) as success_rate,
+        SUM(CASE WHEN status_code < 200 OR status_code >= 300 THEN 1 ELSE 0 END) as error_count,
+        COALESCE(SUM(cost), 0) as total_cost,
+        COALESCE(SUM(CASE WHEN cached THEN cost ELSE 0 END), 0) as cache_savings
       FROM requests
       WHERE project_id = ${projectId}::uuid
         AND created_at >= NOW() - ${interval}::interval
@@ -258,9 +282,15 @@ analyticsRoutes.get('/endpoints', async (c) => {
       endpoint: r.endpoint as string,
       requestCount: Number(r.request_count),
       cacheHitCount: Number(r.cache_hit_count),
+      cacheHitRate: Number(r.cache_hit_rate),
       avgLatencyMs: Number(r.avg_latency_ms),
+      p50LatencyMs: Number(r.p50_latency_ms),
       p95LatencyMs: Number(r.p95_latency_ms),
+      p99LatencyMs: Number(r.p99_latency_ms),
+      successRate: Number(r.success_rate),
+      errorCount: Number(r.error_count),
       totalCost: String(r.total_cost),
+      cacheSavings: String(r.cache_savings),
     }));
 
     return c.json({ endpoints: metrics, total: metrics.length });
