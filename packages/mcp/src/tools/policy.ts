@@ -48,8 +48,8 @@ export function registerPolicyTools(
             name: string;
             isActive: boolean;
             maxPerRequest: string;
-            dailyLimit: string;
-            monthlyLimit: string;
+            dailyBudget: string;
+            monthlyBudget: string;
             allowedEndpoints: string[];
             blockedEndpoints?: string[];
           }>;

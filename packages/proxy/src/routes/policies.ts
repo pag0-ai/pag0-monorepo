@@ -73,7 +73,15 @@ policyRoutes.get('/', async (c) => {
  */
 policyRoutes.post('/', async (c) => {
   const projectId = c.get('projectId') as string;
-  const body = await c.req.json();
+  let body: any;
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json(
+      { error: { code: 'VALIDATION_ERROR', message: 'Invalid JSON in request body' } },
+      400,
+    );
+  }
 
   // Validate required fields
   if (!body.name || typeof body.name !== 'string') {
@@ -291,7 +299,15 @@ policyRoutes.get('/:id', async (c) => {
 policyRoutes.put('/:id', async (c) => {
   const projectId = c.get('projectId') as string;
   const id = c.req.param('id');
-  const body = await c.req.json();
+  let body: any;
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json(
+      { error: { code: 'VALIDATION_ERROR', message: 'Invalid JSON in request body' } },
+      400,
+    );
+  }
 
   // Check policy exists and belongs to project
   const existing = await sql<Array<{

@@ -127,8 +127,8 @@ export interface Policy {
   projectId: string;
   name: string;
   maxPerRequest: string;
-  dailyLimit: string;
-  monthlyLimit: string;
+  dailyBudget: string;
+  monthlyBudget: string;
   allowedEndpoints: string[];
   blockedEndpoints: string[];
   isActive: boolean;

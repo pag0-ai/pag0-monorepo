@@ -137,8 +137,8 @@ export class ProxyCore {
           latency,
           endpoint,
           budgetRemaining: {
-            daily: budgetStatus.dailySpent,
-            monthly: budgetStatus.monthlySpent,
+            daily: String(BigInt(budgetStatus.dailyBudget) - BigInt(budgetStatus.dailySpent)),
+            monthly: String(BigInt(budgetStatus.monthlyBudget) - BigInt(budgetStatus.monthlySpent)),
           },
           ...(onChainRep && {
             onChainReputation: {
@@ -300,8 +300,8 @@ export class ProxyCore {
         latency,
         endpoint,
         budgetRemaining: {
-          daily: budgetStatus.dailySpent,
-          monthly: budgetStatus.monthlySpent,
+          daily: String(BigInt(budgetStatus.dailyBudget) - BigInt(budgetStatus.dailySpent)),
+          monthly: String(BigInt(budgetStatus.monthlyBudget) - BigInt(budgetStatus.monthlySpent)),
         },
         ...(onChainRep && {
           onChainReputation: {

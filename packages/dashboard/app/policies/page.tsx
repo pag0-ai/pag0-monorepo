@@ -118,8 +118,8 @@ export default function PoliciesPage() {
     setFormData({
       name: policy.name,
       maxPerRequest: fromUsdcBigint(policy.maxPerRequest),
-      dailyBudget: fromUsdcBigint(policy.dailyLimit),
-      monthlyBudget: fromUsdcBigint(policy.monthlyLimit),
+      dailyBudget: fromUsdcBigint(policy.dailyBudget),
+      monthlyBudget: fromUsdcBigint(policy.monthlyBudget),
       allowedEndpoints: (policy.allowedEndpoints || []).join(', '),
       blockedEndpoints: (policy.blockedEndpoints || []).join(', '),
     });
@@ -247,10 +247,10 @@ export default function PoliciesPage() {
                 <tr key={policy.id} className="hover:bg-gray-700 transition-colors">
                   <td className="px-6 py-4 text-white font-medium">{policy.name}</td>
                   <td className="px-6 py-4 text-gray-300">
-                    ${fromUsdcBigint(policy.dailyLimit)}
+                    ${fromUsdcBigint(policy.dailyBudget)}
                   </td>
                   <td className="px-6 py-4 text-gray-300">
-                    ${fromUsdcBigint(policy.monthlyLimit)}
+                    ${fromUsdcBigint(policy.monthlyBudget)}
                   </td>
                   <td className="px-6 py-4">
                     {policy.isActive ? (

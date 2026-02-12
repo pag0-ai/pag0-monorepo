@@ -63,11 +63,15 @@ interface CostTimeseriesPoint {
 interface CachePerformance {
   hitCount: number;
   missCount: number;
+  bypassCount: number;
   hitRate: number;
   totalSavings: string;
+  avgCacheAge: number;
   topCachedEndpoints: Array<{
     endpoint: string;
     cacheHits: number;
+    hitRate: number;
+    savings: string;
   }>;
 }
 
@@ -346,7 +350,7 @@ analyticsRoutes.get('/cache', async (c) => {
     const period = c.req.query('period') || '7d';
     const interval = periodToInterval(period);
 
-    // 1. Get cache hit/miss statistics
+    // 1. Get cache hit/miss/bypass statistics
     const [stats] = await sql`
       SELECT
         COALESCE(SUM(CASE WHEN cached THEN 1 ELSE 0 END), 0) as hit_count,
@@ -358,20 +362,31 @@ analyticsRoutes.get('/cache', async (c) => {
         COALESCE(
           SUM(CASE WHEN cached THEN cost ELSE 0 END),
           0
-        ) as total_savings
+        ) as total_savings,
+        COALESCE(
+          AVG(CASE WHEN cached THEN EXTRACT(EPOCH FROM NOW() - created_at) END),
+          0
+        ) as avg_cache_age
       FROM requests
       WHERE project_id = ${projectId}::uuid
         AND created_at >= NOW() - ${interval}::interval
     `;
 
-    // 2. Get top 10 cached endpoints
+    // 2. Get top 10 cached endpoints with per-endpoint hit rate and savings
     const topCached = await sql`
-      SELECT endpoint, COUNT(*) as cache_hits
+      SELECT
+        endpoint,
+        SUM(CASE WHEN cached THEN 1 ELSE 0 END) as cache_hits,
+        COALESCE(
+          SUM(CASE WHEN cached THEN 1 ELSE 0 END)::float / NULLIF(COUNT(*), 0),
+          0
+        ) as hit_rate,
+        COALESCE(SUM(CASE WHEN cached THEN cost ELSE 0 END), 0) as savings
       FROM requests
       WHERE project_id = ${projectId}::uuid
-        AND cached = true
         AND created_at >= NOW() - ${interval}::interval
       GROUP BY endpoint
+      HAVING SUM(CASE WHEN cached THEN 1 ELSE 0 END) > 0
       ORDER BY cache_hits DESC
       LIMIT 10
     `;
@@ -379,11 +394,15 @@ analyticsRoutes.get('/cache', async (c) => {
     const response: CachePerformance = {
       hitCount: Number(stats.hit_count),
       missCount: Number(stats.miss_count),
+      bypassCount: 0,
       hitRate: Number(stats.hit_rate),
       totalSavings: String(stats.total_savings),
+      avgCacheAge: Math.round(Number(stats.avg_cache_age)),
       topCachedEndpoints: topCached.map((e) => ({
         endpoint: e.endpoint as string,
         cacheHits: Number(e.cache_hits),
+        hitRate: Number(e.hit_rate),
+        savings: String(e.savings),
       })),
     };
 

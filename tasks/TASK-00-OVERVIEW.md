@@ -1,20 +1,20 @@
 # Pag0 MVP 구현 태스크 총괄
 
 > Day 0 준비 완료 상태에서 Day 1~3 구현 시작
-> **Last updated**: 2026-02-12 (Phase 10 추가, gap/requirements analysis 반영)
+> **Last updated**: 2026-02-12 (Phase 11 R2 추가, gap-analysis-r2/requirements-r2 반영)
 
 ## 현재 상태 요약
 
 | 패키지 | 상태 | 완성도 | 비고 |
 |--------|------|--------|------|
-| `packages/proxy` | **완성** (Phase 10 정렬 완료) | 100% | TASK-38, 39 반영 |
-| `packages/dashboard` | **완성** (메트릭+정책+랭킹) | 100% | TASK-40 반영 |
-| `packages/mcp` | **완성** (13개 MCP 도구, CDP Wallet 통합) | 100% | TASK-41 반영 |
+| `packages/proxy` | **완성** (Phase 11 R2 수정 완료) | 100% | TASK-43, 44 반영 (cache enrichment + JSON validation) |
+| `packages/dashboard` | **완성** (Phase 11 R2 필드 정렬 완료) | 100% | TASK-42 반영 (policy field alignment) |
+| `packages/mcp` | **완성** (Phase 11 R2 필드 정렬 완료) | 100% | TASK-42 반영 (policy field alignment) |
 | `packages/contracts` | **배포 완료** (SKALE bite-v2-sandbox) | 100% | ReputationRegistry + ValidationRegistry |
 | `subgraph/` | **배포 완료** (Goldsky) | 100% | Agent, FeedbackEvent 인덱싱 |
 | `prepare-hackathon/` | Day 0 검증 완성 | 100% | - |
 
-### 전체 진행률: 40/41 완료 (97.6%) + 1 수동 대기 (TASK-22 Deployment)
+### 전체 진행률: 43/44 완료 (97.7%) + 1 수동 대기 (TASK-22 Deployment)
 
 ## 의존성 그래프
 
@@ -159,15 +159,43 @@ TASK-22 (Deployment)          ← TASK-11, TASK-12
 | [TASK-40](./TASK-40-dashboard-204-nullable-fix.md) | Dashboard fetchApi 204 처리 + Category nullable 필드 | dashboard | **P1** | ✅ 완료 |
 | [TASK-41](./TASK-41-mcp-route-field-alignment.md) | MCP client/tools 라우트 및 필드명 정렬 | mcp | **P1** | ✅ 완료 |
 
+### Phase 11: R2 Cross-Package Alignment (2026-02-12)
+
+> R2 Gap Analysis (.omc/gap-analysis-r2.md) 및 R2 Requirements (.omc/requirements-r2.md) 기반.
+> R1 커밋 이후 남아있던 cross-package 불일치 해소 및 API 보강.
+
+| ID | 태스크 | 패키지 | 우선순위 | 상태 |
+|----|--------|--------|----------|------|
+| [TASK-42](./TASK-42-policy-field-alignment-r2.md) | ~~Policy 필드명 전체 패키지 정렬 (dailyBudget/monthlyBudget)~~ | dashboard, mcp | **P0** | ✅ 완료 |
+| [TASK-43](./TASK-43-analytics-cache-enrichment-r2.md) | ~~Analytics Cache 응답 보강 (bypassCount, avgCacheAge, per-endpoint stats)~~ | proxy | **P0** | ✅ 완료 |
+| [TASK-44](./TASK-44-policy-route-validation-r2.md) | ~~Policy Route JSON 파싱 에러 핸들링~~ | proxy | **P1** | ✅ 완료 |
+
 ### 미착수 / 보류
 
 | ID | 태스크 | 패키지 | 우선순위 | 상태 |
 |----|--------|--------|----------|------|
 | [TASK-22](./TASK-22-deployment.md) | Deployment (Fly.io + Vercel) | proxy, dashboard | - | ⏳ 수동 승인 대기 |
 
+### R2 Gap Analysis 잔여 항목 (배포 비차단 — Post-Deploy 또는 문서 업데이트)
+
+> 아래 항목들은 R2 gap-analysis에서 식별되었으나 배포를 차단하지 않는 항목:
+
+**R2-P1 (배포 후 개선)**:
+- **R2-P1-1**: `cacheBypass` param POST /proxy에 미연결 (R1 P0-9) — 데모에 영향 없음
+- **R2-P1-2**: `policyId` param POST /proxy에 미연결 (R1 P1-12) — 데모에 영향 없음
+- **R2-P1-3**: Curation compare `differences` 필드 누락 (R1 P1-13)
+- **R2-P1-4**: Endpoint metrics `p50`/`p99`/`errorCount` 필드 누락 (R1 P0-4 일부)
+
+**R2-P2 (Post-MVP)**:
+- **R2-P2-1**: `budgetRemaining`가 spent 값을 반환 (remaining = limit - spent으로 수정 필요) — gap-analysis-r2 P0-3
+- **R2-P2-2**: Curation score에 `weights`/`evidence` 구조체 누락
+- **R2-P2-3**: Beyond-spec 기능 문서화 (smart-request, reputation, 4-factor scoring)
+- **R2-P2-4**: Auth 응답 형식 문서 업데이트
+- **R2-P2-5**: x402 PaymentInfo 문서 업데이트
+
 ### Gap Analysis 발견 사항 (구현 불필요 — 문서 업데이트 또는 Post-MVP)
 
-아래 항목들은 gap-analysis에서 발견되었으나 코드 수정이 아닌 문서 업데이트 대상이거나 MVP 범위 제외 항목:
+아래 항목들은 R1 gap-analysis에서 발견되었으나 코드 수정이 아닌 문서 업데이트 대상이거나 MVP 범위 제외 항목:
 
 - **P2-1**: Approval workflow — MVP 제외 (CLAUDE.md에 명시)
 - **P2-2**: Anomaly detection — MVP 제외
@@ -198,6 +226,7 @@ TASK-22 (Deployment)          ← TASK-11, TASK-12
 - **그룹 I** (TASK-19 완료 후): TASK-20
 - **그룹 J** (TASK-20 완료 후): TASK-21
 - **그룹 K** (Phase 10, 병렬): TASK-38, TASK-39, TASK-40, TASK-41
+- **그룹 L** (Phase 11 R2, 병렬): TASK-42, TASK-43, TASK-44
 
 ## 참고 자료
 
@@ -205,8 +234,11 @@ TASK-22 (Deployment)          ← TASK-11, TASK-12
 - `docs/04-API-SPEC.md` — API 엔드포인트 정의
 - `docs/05-DB-SCHEMA.md` — DB 스키마 + Redis 키 패턴
 - `docs/06-DEV-TASKS.md` — 원본 개발 태스크
-- `.omc/gap-analysis.md` — docs vs codebase 갭 분석 결과
-- `.omc/requirements.md` — 갭 기반 요구사항 분석
+- `.omc/gap-analysis.md` — R1 docs vs codebase 갭 분석 결과
+- `.omc/gap-analysis-r2.md` — R2 갭 분석 (커밋 후 재분석)
+- `.omc/requirements.md` — R1 갭 기반 요구사항 분석
+- `.omc/requirements-r2.md` — R2 잔여 요구사항 및 배포 준비도
+- `.omc/change-log-r2.md` — R2 코드 변경 추적
 - `prepare-hackathon/test-business-logic-day1.ts` — Day 1 테스트 패턴
 - `prepare-hackathon/test-business-logic-day2.ts` — Day 2 테스트 패턴
 - `prepare-hackathon/test-business-logic-day3.ts` — Day 3 테스트 패턴
