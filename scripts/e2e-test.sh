@@ -17,10 +17,10 @@ assert_status() {
   local actual="$3"
   if [ "$actual" = "$expected" ]; then
     echo -e "${GREEN}✓ PASS${NC}: $test_name (HTTP $actual)"
-    ((PASS++))
+    PASS=$((PASS + 1))
   else
     echo -e "${RED}✗ FAIL${NC}: $test_name (expected $expected, got $actual)"
-    ((FAIL++))
+    FAIL=$((FAIL + 1))
   fi
 }
 
@@ -50,10 +50,10 @@ STATUS=$(echo "$REGISTER_RESPONSE" | grep -o '"apiKey"' | head -1)
 API_KEY=$(echo "$REGISTER_RESPONSE" | grep -o '"pag0_live_[^"]*"' | tr -d '"' | head -1)
 if [ -n "$API_KEY" ]; then
   echo -e "${GREEN}✓ PASS${NC}: Register user (got API key)"
-  ((PASS++))
+  PASS=$((PASS + 1))
 else
   echo -e "${RED}✗ FAIL${NC}: Register user (no API key in response)"
-  ((FAIL++))
+  FAIL=$((FAIL + 1))
   echo -e "${YELLOW}! WARN${NC}: Skipping auth-dependent tests"
   # Try to use seed data API key if register fails
   API_KEY=""
@@ -88,10 +88,10 @@ if [ -n "$API_KEY" ]; then
   POLICY_ID=$(echo "$CREATE_RESP" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
   if [ -n "$POLICY_ID" ]; then
     echo -e "${GREEN}✓ PASS${NC}: Create policy (id: ${POLICY_ID:0:8}...)"
-    ((PASS++))
+    PASS=$((PASS + 1))
   else
     echo -e "${RED}✗ FAIL${NC}: Create policy (no id in response)"
-    ((FAIL++))
+    FAIL=$((FAIL + 1))
   fi
 
   # List
@@ -117,10 +117,10 @@ if [ -n "$API_KEY" ]; then
       -H "X-Pag0-API-Key: $API_KEY")
     if [ "$DELETE_STATUS" = "200" ] || [ "$DELETE_STATUS" = "204" ]; then
       echo -e "${GREEN}✓ PASS${NC}: Delete policy (soft) (HTTP $DELETE_STATUS)"
-      ((PASS++))
+      PASS=$((PASS + 1))
     else
       echo -e "${RED}✗ FAIL${NC}: Delete policy (expected 200/204, got $DELETE_STATUS)"
-      ((FAIL++))
+      FAIL=$((FAIL + 1))
     fi
   fi
 else
@@ -178,10 +178,10 @@ CORS_HEADER=$(curl -s -D - -o /dev/null -X OPTIONS $BASE_URL/api/policies \
   -H "Access-Control-Request-Method: GET" 2>&1 | grep -i "access-control-allow-origin")
 if echo "$CORS_HEADER" | grep -qi "localhost:3001\|*"; then
   echo -e "${GREEN}✓ PASS${NC}: CORS preflight"
-  ((PASS++))
+  PASS=$((PASS + 1))
 else
   echo -e "${RED}✗ FAIL${NC}: CORS preflight (missing allow-origin header)"
-  ((FAIL++))
+  FAIL=$((FAIL + 1))
 fi
 
 # ===== 8. Rate Limiting =====
@@ -199,10 +199,10 @@ if [ -n "$API_KEY" ]; then
   done
   if [ "$GOT_429" = true ]; then
     echo -e "${GREEN}✓ PASS${NC}: Rate limit triggered (429 after $i requests)"
-    ((PASS++))
+    PASS=$((PASS + 1))
   else
     echo -e "${RED}✗ FAIL${NC}: Rate limit not triggered after 65 requests"
-    ((FAIL++))
+    FAIL=$((FAIL + 1))
   fi
 
   # Verify X-RateLimit-* headers present
@@ -210,10 +210,10 @@ if [ -n "$API_KEY" ]; then
     -H "X-Pag0-API-Key: $API_KEY" 2>&1)
   if echo "$HEADERS" | grep -qi "x-ratelimit-limit"; then
     echo -e "${GREEN}✓ PASS${NC}: X-RateLimit-* headers present"
-    ((PASS++))
+    PASS=$((PASS + 1))
   else
     echo -e "${RED}✗ FAIL${NC}: X-RateLimit-* headers missing"
-    ((FAIL++))
+    FAIL=$((FAIL + 1))
   fi
 else
   echo -e "${YELLOW}! SKIP${NC}: Rate limit tests (no API key)"
