@@ -30,14 +30,16 @@ function RankBadge({ rank }: { rank: number }) {
   return <span className="text-gray-500">{rank}</span>;
 }
 
+interface ComparisonEndpoint {
+  endpoint: string;
+  overallScore: number;
+  costScore: number;
+  latencyScore: number;
+  reliabilityScore: number;
+}
+
 interface ComparisonData {
-  endpoints: Array<{
-    endpoint: string;
-    overall: number;
-    cost: number;
-    latency: number;
-    reliability: number;
-  }>;
+  endpoints: ComparisonEndpoint[];
 }
 
 export default function RankingsPage() {
@@ -64,7 +66,10 @@ export default function RankingsPage() {
 
   const { data: comparison, isLoading: comparisonLoading, refetch: compareRefetch } = useQuery({
     queryKey: ['compare', selectedEndpoints],
-    queryFn: () => fetchApi<ComparisonData>(`/api/curation/compare?endpoints=${selectedEndpoints.join(',')}`, { apiKey }),
+    queryFn: async () => {
+      const res = await fetchApi<{ data: ComparisonData }>(`/api/curation/compare?endpoints=${selectedEndpoints.join(',')}`, { apiKey });
+      return res.data;
+    },
     enabled: false,
   });
 
@@ -86,7 +91,7 @@ export default function RankingsPage() {
   const categoryStats = categories?.map(cat => {
     const catRankings = rankings?.filter(r => r.category === cat.name) || [];
     const avgScore = catRankings.length > 0
-      ? catRankings.reduce((sum, r) => sum + r.overall, 0) / catRankings.length
+      ? catRankings.reduce((sum, r) => sum + r.overallScore, 0) / catRankings.length
       : 0;
     return {
       name: cat.name,
@@ -118,7 +123,7 @@ export default function RankingsPage() {
           ) : (
             categories?.map(cat => (
               <button
-                key={cat.id}
+                key={cat.name}
                 onClick={() => setSelectedCategory(cat.name)}
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                   selectedCategory === cat.name
@@ -200,16 +205,16 @@ export default function RankingsPage() {
                       <div className="text-sm text-gray-400">{ranking.category}</div>
                     </td>
                     <td className="px-4 py-3">
-                      <ScoreBadge score={ranking.overall} />
+                      <ScoreBadge score={ranking.overallScore} />
                     </td>
                     <td className="px-4 py-3">
-                      <ScoreBadge score={ranking.cost} />
+                      <ScoreBadge score={ranking.costScore} />
                     </td>
                     <td className="px-4 py-3">
-                      <ScoreBadge score={ranking.latency} />
+                      <ScoreBadge score={ranking.latencyScore} />
                     </td>
                     <td className="px-4 py-3">
-                      <ScoreBadge score={ranking.reliability} />
+                      <ScoreBadge score={ranking.reliabilityScore} />
                     </td>
                   </tr>
                 ))}
@@ -224,63 +229,63 @@ export default function RankingsPage() {
         <div className="bg-gray-800 rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold text-white mb-4">Comparison Results</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {comparison.endpoints.map((endpoint) => (
-              <div key={endpoint.endpoint} className="bg-gray-900 rounded-lg p-4">
-                <h3 className="text-white font-medium mb-4 truncate">{endpoint.endpoint}</h3>
+            {comparison.endpoints.map((ep) => (
+              <div key={ep.endpoint} className="bg-gray-900 rounded-lg p-4">
+                <h3 className="text-white font-medium mb-4 truncate">{ep.endpoint}</h3>
                 <div className="space-y-3">
                   <div>
                     <div className="flex justify-between text-sm mb-1">
                       <span className="text-gray-400">Overall</span>
-                      <span className="text-white font-medium">{endpoint.overall.toFixed(1)}</span>
+                      <span className="text-white font-medium">{ep.overallScore.toFixed(1)}</span>
                     </div>
                     <div className="w-full bg-gray-700 rounded-full h-2">
                       <div
                         className={`h-2 rounded-full ${
-                          endpoint.overall >= 80 ? 'bg-green-400' : endpoint.overall >= 60 ? 'bg-yellow-400' : 'bg-red-400'
+                          ep.overallScore >= 80 ? 'bg-green-400' : ep.overallScore >= 60 ? 'bg-yellow-400' : 'bg-red-400'
                         }`}
-                        style={{ width: `${endpoint.overall}%` }}
+                        style={{ width: `${ep.overallScore}%` }}
                       />
                     </div>
                   </div>
                   <div>
                     <div className="flex justify-between text-sm mb-1">
                       <span className="text-gray-400">Cost</span>
-                      <span className="text-white font-medium">{endpoint.cost.toFixed(1)}</span>
+                      <span className="text-white font-medium">{ep.costScore.toFixed(1)}</span>
                     </div>
                     <div className="w-full bg-gray-700 rounded-full h-2">
                       <div
                         className={`h-2 rounded-full ${
-                          endpoint.cost >= 80 ? 'bg-green-400' : endpoint.cost >= 60 ? 'bg-yellow-400' : 'bg-red-400'
+                          ep.costScore >= 80 ? 'bg-green-400' : ep.costScore >= 60 ? 'bg-yellow-400' : 'bg-red-400'
                         }`}
-                        style={{ width: `${endpoint.cost}%` }}
+                        style={{ width: `${ep.costScore}%` }}
                       />
                     </div>
                   </div>
                   <div>
                     <div className="flex justify-between text-sm mb-1">
                       <span className="text-gray-400">Latency</span>
-                      <span className="text-white font-medium">{endpoint.latency.toFixed(1)}</span>
+                      <span className="text-white font-medium">{ep.latencyScore.toFixed(1)}</span>
                     </div>
                     <div className="w-full bg-gray-700 rounded-full h-2">
                       <div
                         className={`h-2 rounded-full ${
-                          endpoint.latency >= 80 ? 'bg-green-400' : endpoint.latency >= 60 ? 'bg-yellow-400' : 'bg-red-400'
+                          ep.latencyScore >= 80 ? 'bg-green-400' : ep.latencyScore >= 60 ? 'bg-yellow-400' : 'bg-red-400'
                         }`}
-                        style={{ width: `${endpoint.latency}%` }}
+                        style={{ width: `${ep.latencyScore}%` }}
                       />
                     </div>
                   </div>
                   <div>
                     <div className="flex justify-between text-sm mb-1">
                       <span className="text-gray-400">Reliability</span>
-                      <span className="text-white font-medium">{endpoint.reliability.toFixed(1)}</span>
+                      <span className="text-white font-medium">{ep.reliabilityScore.toFixed(1)}</span>
                     </div>
                     <div className="w-full bg-gray-700 rounded-full h-2">
                       <div
                         className={`h-2 rounded-full ${
-                          endpoint.reliability >= 80 ? 'bg-green-400' : endpoint.reliability >= 60 ? 'bg-yellow-400' : 'bg-red-400'
+                          ep.reliabilityScore >= 80 ? 'bg-green-400' : ep.reliabilityScore >= 60 ? 'bg-yellow-400' : 'bg-red-400'
                         }`}
-                        style={{ width: `${endpoint.reliability}%` }}
+                        style={{ width: `${ep.reliabilityScore}%` }}
                       />
                     </div>
                   </div>

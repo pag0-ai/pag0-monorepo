@@ -38,12 +38,23 @@ export function createApiFetcher(apiKey: string) {
     fetchApi<T>(path, { ...options, apiKey });
 }
 
+// ============================================================
 // Analytics APIs
+// ============================================================
+
 export interface AnalyticsSummary {
+  period: string;
   totalRequests: number;
-  totalCost: string;
   cacheHitRate: number;
   avgLatency: number;
+  successRate: number;
+  totalCost: string;
+  cacheSavings: string;
+  topEndpoints: Array<{ endpoint: string; requestCount: number }>;
+  budgetUsage: {
+    daily: { limit: string; spent: string; remaining: string; percentage: number };
+    monthly: { limit: string; spent: string; remaining: string; percentage: number };
+  };
 }
 
 export async function fetchAnalyticsSummary(period: string = '7d', apiKey?: string): Promise<AnalyticsSummary> {
@@ -53,9 +64,10 @@ export async function fetchAnalyticsSummary(period: string = '7d', apiKey?: stri
 export interface EndpointMetrics {
   endpoint: string;
   requestCount: number;
+  cacheHitCount: number;
+  avgLatencyMs: number;
+  p95LatencyMs: number;
   totalCost: string;
-  avgLatency: number;
-  cacheHitRate: number;
 }
 
 export async function fetchAnalyticsEndpoints(params?: {
@@ -66,12 +78,15 @@ export async function fetchAnalyticsEndpoints(params?: {
   const query = new URLSearchParams();
   if (params?.period) query.set('period', params.period);
   if (params?.limit) query.set('limit', params.limit.toString());
-  return fetchApi(`/api/analytics/endpoints?${query}`, { apiKey: params?.apiKey });
+  const res = await fetchApi<{ endpoints: EndpointMetrics[] }>(`/api/analytics/endpoints?${query}`, { apiKey: params?.apiKey });
+  return res.endpoints;
 }
 
 export interface CostDataPoint {
   timestamp: string;
-  cost: string;
+  spent: string;
+  saved: string;
+  requestCount: number;
 }
 
 export async function fetchAnalyticsCosts(params?: {
@@ -82,66 +97,75 @@ export async function fetchAnalyticsCosts(params?: {
   const query = new URLSearchParams();
   if (params?.period) query.set('period', params.period);
   if (params?.granularity) query.set('granularity', params.granularity);
-  return fetchApi(`/api/analytics/costs?${query}`, { apiKey: params?.apiKey });
+  const res = await fetchApi<{ timeseries: CostDataPoint[] }>(`/api/analytics/costs?${query}`, { apiKey: params?.apiKey });
+  return res.timeseries;
 }
 
 export interface CacheStats {
+  hitCount: number;
+  missCount: number;
   hitRate: number;
-  totalHits: number;
-  totalMisses: number;
-  savedCost: string;
+  totalSavings: string;
+  topCachedEndpoints: Array<{ endpoint: string; cacheHits: number }>;
 }
 
 export async function fetchAnalyticsCache(period: string = '7d', apiKey?: string): Promise<CacheStats> {
   return fetchApi(`/api/analytics/cache?period=${period}`, { apiKey });
 }
 
+// ============================================================
 // Policy APIs
+// ============================================================
+
 export interface Policy {
   id: string;
   projectId: string;
   name: string;
-  dailyBudget: string;
-  monthlyBudget: string;
-  whitelist: string[];
-  blacklist: string[];
-  enabled: boolean;
+  maxPerRequest: string;
+  dailyLimit: string;
+  monthlyLimit: string;
+  allowedEndpoints: string[];
+  blockedEndpoints: string[];
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
 export async function fetchPolicies(apiKey?: string): Promise<Policy[]> {
-  return fetchApi('/api/policies', { apiKey });
+  const res = await fetchApi<{ policies: Policy[]; total: number }>('/api/policies', { apiKey });
+  return res.policies;
 }
 
 export async function fetchPolicy(id: string, apiKey?: string): Promise<Policy> {
-  return fetchApi(`/api/policies/${id}`, { apiKey });
+  const res = await fetchApi<{ policy: Policy }>(`/api/policies/${id}`, { apiKey });
+  return res.policy;
 }
 
 export interface CreatePolicyData {
-  projectId: string;
   name: string;
+  maxPerRequest?: string;
   dailyBudget: string;
   monthlyBudget: string;
-  whitelist?: string[];
-  blacklist?: string[];
-  enabled?: boolean;
+  allowedEndpoints?: string[];
+  blockedEndpoints?: string[];
 }
 
 export async function createPolicy(data: CreatePolicyData, apiKey?: string): Promise<Policy> {
-  return fetchApi('/api/policies', {
+  const res = await fetchApi<{ policy: Policy }>('/api/policies', {
     method: 'POST',
     body: JSON.stringify(data),
     apiKey,
   });
+  return res.policy;
 }
 
 export async function updatePolicy(id: string, data: Partial<CreatePolicyData>, apiKey?: string): Promise<Policy> {
-  return fetchApi(`/api/policies/${id}`, {
+  const res = await fetchApi<{ policy: Policy }>(`/api/policies/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
     apiKey,
   });
+  return res.policy;
 }
 
 export async function deletePolicy(id: string, apiKey?: string): Promise<void> {
@@ -151,14 +175,18 @@ export async function deletePolicy(id: string, apiKey?: string): Promise<void> {
   });
 }
 
+// ============================================================
 // Curation APIs
+// ============================================================
+
 export interface EndpointScore {
   endpoint: string;
-  overall: number;
-  cost: number;
-  latency: number;
-  reliability: number;
   category: string;
+  overallScore: number;
+  costScore: number;
+  latencyScore: number;
+  reliabilityScore: number;
+  sampleSize: number;
 }
 
 export async function fetchRankings(params?: {
@@ -169,15 +197,18 @@ export async function fetchRankings(params?: {
   const query = new URLSearchParams();
   if (params?.category) query.set('category', params.category);
   if (params?.limit) query.set('limit', params.limit.toString());
-  return fetchApi(`/api/curation/rankings?${query}`, { apiKey: params?.apiKey });
+  const res = await fetchApi<{ data: EndpointScore[] }>(`/api/curation/rankings?${query}`, { apiKey: params?.apiKey });
+  return res.data;
 }
 
 export interface Category {
-  id: string;
   name: string;
   description: string;
+  endpointCount: number;
+  avgScore: number;
 }
 
 export async function fetchCategories(apiKey?: string): Promise<Category[]> {
-  return fetchApi('/api/curation/categories', { apiKey });
+  const res = await fetchApi<{ data: Category[] }>('/api/curation/categories', { apiKey });
+  return res.data;
 }

@@ -61,6 +61,7 @@ export default function PoliciesPage() {
     mutationFn: (data: CreatePolicyData) => createPolicy(data, apiKey),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['policies'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics'] });
       closeModal();
     },
     onError: (error: Error) => {
@@ -74,6 +75,7 @@ export default function PoliciesPage() {
       updatePolicy(id, data, apiKey),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['policies'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics'] });
       closeModal();
     },
     onError: (error: Error) => {
@@ -86,6 +88,7 @@ export default function PoliciesPage() {
     mutationFn: (id: string) => deletePolicy(id, apiKey),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['policies'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics'] });
       setDeleteConfirm(null);
     },
   });
@@ -108,11 +111,11 @@ export default function PoliciesPage() {
     setEditingPolicy(policy);
     setFormData({
       name: policy.name,
-      maxPerRequest: fromUsdcBigint(policy.dailyBudget), // Using dailyBudget as proxy for maxPerRequest
-      dailyBudget: fromUsdcBigint(policy.dailyBudget),
-      monthlyBudget: fromUsdcBigint(policy.monthlyBudget),
-      allowedEndpoints: policy.whitelist.join(', '),
-      blockedEndpoints: policy.blacklist.join(', '),
+      maxPerRequest: fromUsdcBigint(policy.maxPerRequest),
+      dailyBudget: fromUsdcBigint(policy.dailyLimit),
+      monthlyBudget: fromUsdcBigint(policy.monthlyLimit),
+      allowedEndpoints: (policy.allowedEndpoints || []).join(', '),
+      blockedEndpoints: (policy.blockedEndpoints || []).join(', '),
     });
     setFormError('');
     setIsModalOpen(true);
@@ -134,24 +137,23 @@ export default function PoliciesPage() {
     const monthlyBudget = parseFloat(formData.monthlyBudget || '0');
 
     if (maxPerRequest > dailyBudget || dailyBudget > monthlyBudget) {
-      setFormError('Budget constraints: Max Per Request ≤ Daily Budget ≤ Monthly Budget');
+      setFormError('Budget constraints: Max Per Request <= Daily Budget <= Monthly Budget');
       return;
     }
 
     const data: CreatePolicyData = {
-      projectId: 'default-project', // TODO: Get from user context
       name: formData.name,
+      maxPerRequest: toUsdcBigint(formData.maxPerRequest),
       dailyBudget: toUsdcBigint(formData.dailyBudget),
       monthlyBudget: toUsdcBigint(formData.monthlyBudget),
-      whitelist: formData.allowedEndpoints
+      allowedEndpoints: formData.allowedEndpoints
         .split(',')
         .map(s => s.trim())
         .filter(Boolean),
-      blacklist: formData.blockedEndpoints
+      blockedEndpoints: formData.blockedEndpoints
         .split(',')
         .map(s => s.trim())
         .filter(Boolean),
-      enabled: true,
     };
 
     if (editingPolicy) {
@@ -225,13 +227,13 @@ export default function PoliciesPage() {
                 <tr key={policy.id} className="hover:bg-gray-700 transition-colors">
                   <td className="px-6 py-4 text-white font-medium">{policy.name}</td>
                   <td className="px-6 py-4 text-gray-300">
-                    ${fromUsdcBigint(policy.dailyBudget)}
+                    ${fromUsdcBigint(policy.dailyLimit)}
                   </td>
                   <td className="px-6 py-4 text-gray-300">
-                    ${fromUsdcBigint(policy.monthlyBudget)}
+                    ${fromUsdcBigint(policy.monthlyLimit)}
                   </td>
                   <td className="px-6 py-4">
-                    {policy.enabled ? (
+                    {policy.isActive ? (
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-900 text-green-200">
                         Active
                       </span>
