@@ -16,6 +16,7 @@ import { CdpWallet } from "./cdp-wallet.js";
 import { registerWalletTools } from "./tools/wallet.js";
 import { registerWalletFundTools } from "./tools/wallet-fund.js";
 import { registerProxyTools } from "./tools/proxy.js";
+import { createProxyFetch } from "./proxy-fetch.js";
 import { registerPolicyTools } from "./tools/policy.js";
 import { registerCurationTools } from "./tools/curation.js";
 import { registerAnalyticsTools } from "./tools/analytics.js";
@@ -66,10 +67,13 @@ if (WALLET_MODE === "cdp") {
   console.error("[pag0-mcp] Local ethers.Wallet initialized:", wallet.address);
 }
 
+// Create proxy-aware fetch (x402 SDK handles 402 → sign → retry)
+const proxyFetch = createProxyFetch(PAG0_API_URL, PAG0_API_KEY, wallet);
+
 // Register all tools
 registerWalletTools(server, wallet);
 registerWalletFundTools(server, wallet);
-registerProxyTools(server, client, wallet, API_CREDENTIALS);
+registerProxyTools(server, proxyFetch, API_CREDENTIALS);
 registerPolicyTools(server, client);
 registerCurationTools(server, client);
 registerAnalyticsTools(server, client);

@@ -1,24 +1,23 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import type { Pag0Client, PaymentRequest, ProxyResponse } from "../client.js";
-import type { IWallet } from "../wallet.js";
 import { injectAuthHeaders } from "./auth.js";
+import type { ProxyMetadata } from "../proxy-fetch.js";
+import { extractProxyMetadata } from "../proxy-fetch.js";
 
 export function registerProxyTools(
   server: McpServer,
-  client: Pag0Client,
-  wallet: IWallet,
+  proxyFetch: typeof globalThis.fetch,
   credentials: Record<string, string> = {},
 ) {
   server.tool(
     "pag0_request",
     [
       "Send an HTTP request through the Pag0 proxy to an x402-enabled API.",
-      "Handles payment automatically: if the server returns 402, signs the payment with the agent wallet and retries.",
+      "Handles payment automatically via the x402 SDK (402 → sign → retry).",
       "Returns the API response along with cost, cache status, and latency metadata.",
     ].join(" "),
     {
-      url: z.string().url().describe("Target API URL (e.g. https://api.openai.com/v1/models)"),
+      url: z.string().url().describe("Target API URL (e.g. https://x402-ai-starter.vercel.app/api/add)"),
       method: z.enum(["GET", "POST", "PUT", "DELETE"]).default("GET").describe("HTTP method"),
       headers: z.record(z.string()).optional().describe("Custom headers to forward"),
       body: z.any().optional().describe("Request body (for POST/PUT)"),
@@ -26,114 +25,63 @@ export function registerProxyTools(
     async (args) => {
       const headers = injectAuthHeaders(args.url, args.headers ?? {}, credentials);
 
-      // 1) First attempt — may return 402
-      const res = await client.proxyRequest({
-        targetUrl: args.url,
-        method: args.method,
-        headers,
-        body: args.body,
-      });
-
-      // 2) Success on first try (cache hit or free endpoint)
-      if (res.status === 200) {
-        const data = (await res.json()) as ProxyResponse;
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(
-                {
-                  status: data.status,
-                  body: data.body,
-                  cost: data.metadata.cost,
-                  cached: data.metadata.cached,
-                  latency: data.metadata.latency,
-                  budgetRemaining: data.metadata.budgetRemaining,
-                },
-                null,
-                2,
-              ),
-            },
-          ],
-        };
-      }
-
-      // 3) 402 Payment Required — sign and retry
-      if (res.status === 402) {
-        const paymentRes = await res.json() as {
-          body: { paymentRequest: PaymentRequest };
-          metadata: { cost: string; endpoint: string };
-        };
-
-        const paymentRequest = paymentRes.body.paymentRequest;
-
-        // Sign payment with agent wallet
-        const signedPayment = await wallet.signPayment({
-          id: paymentRequest.id,
-          amount: paymentRequest.amount,
-          recipient: paymentRequest.recipient,
-        });
-
-        // Retry with signed payment
-        const retryRes = await client.proxyRequest({
-          targetUrl: args.url,
+      try {
+        const response = await proxyFetch(args.url, {
           method: args.method,
-          headers,
-          body: args.body,
-          signedPayment,
+          headers: {
+            "content-type": "application/json",
+            ...headers,
+          },
+          body: args.body != null ? JSON.stringify(args.body) : undefined,
         });
 
-        if (!retryRes.ok) {
-          const err = await retryRes.json().catch(() => ({
-            message: retryRes.statusText,
-          }));
+        const metadata = extractProxyMetadata(response);
+
+        // Try to parse response body
+        let body: unknown;
+        const ct = response.headers.get("content-type") || "";
+        if (ct.includes("application/json")) {
+          body = await response.json().catch(() => null);
+        } else {
+          body = await response.text().catch(() => null);
+        }
+
+        if (!response.ok) {
           return {
-            content: [
-              {
-                type: "text" as const,
-                text: `Payment retry failed (${retryRes.status}): ${JSON.stringify(err)}`,
-              },
-            ],
+            content: [{
+              type: "text" as const,
+              text: `Proxy error (${response.status}): ${JSON.stringify(body, null, 2)}`,
+            }],
             isError: true,
           };
         }
 
-        const data = (await retryRes.json()) as ProxyResponse;
         return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(
-                {
-                  status: data.status,
-                  body: data.body,
-                  cost: data.metadata.cost,
-                  cached: data.metadata.cached,
-                  latency: data.metadata.latency,
-                  budgetRemaining: data.metadata.budgetRemaining,
-                  paymentId: paymentRequest.id,
-                },
-                null,
-                2,
-              ),
-            },
-          ],
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                status: response.status,
+                body,
+                cost: metadata.cost,
+                cached: metadata.cached,
+                latency: metadata.latency,
+                budgetRemaining: metadata.budgetRemaining,
+              },
+              null,
+              2,
+            ),
+          }],
+        };
+      } catch (err) {
+        return {
+          content: [{
+            type: "text" as const,
+            text: `Request failed: ${err instanceof Error ? err.message : String(err)}`,
+          }],
+          isError: true,
         };
       }
-
-      // 4) Other errors (403 policy violation, 429 rate limit, etc.)
-      const err = await res.json().catch(() => ({
-        message: res.statusText,
-      }));
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: `Proxy error (${res.status}): ${JSON.stringify(err, null, 2)}`,
-          },
-        ],
-        isError: true,
-      };
     },
   );
 }
