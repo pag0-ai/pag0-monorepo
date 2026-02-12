@@ -1,0 +1,33 @@
+# ── Stage 1: Build (pnpm for deps, bun for build) ───────────
+FROM node:22-slim AS builder
+WORKDIR /app
+
+# Install pnpm + bun
+RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN npm install -g bun
+
+# Copy workspace config + lockfile first (layer cache)
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY packages/proxy/package.json packages/proxy/package.json
+COPY tsconfig.json ./
+
+# Install dependencies (pnpm respects its own lockfile)
+RUN pnpm install --frozen-lockfile
+
+# Copy proxy source
+COPY packages/proxy/ packages/proxy/
+
+# Build
+RUN cd packages/proxy && bun run build
+
+# ── Stage 2: Runtime (bun only) ─────────────────────────────
+FROM oven/bun:1-slim
+WORKDIR /app
+
+COPY --from=builder /app/packages/proxy/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/packages/proxy/node_modules ./packages/proxy/node_modules
+
+EXPOSE 3000
+
+CMD ["bun", "run", "dist/index.js"]

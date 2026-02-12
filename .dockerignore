@@ -1,0 +1,61 @@
+# flyctl launch added from .gitignore
+# Dependencies
+**/node_modules
+**/.pnpm-store
+
+# Build
+**/dist
+**/.next
+**/out
+**/tsconfig.tsbuildinfo
+
+# Environment
+**/.env
+**/.env.local
+**/.env.*.local
+
+# IDE
+**/.vscode
+**/.idea
+**/*.swp
+**/*.swo
+**/.DS_Store
+
+# Logs
+**/*.log
+**/npm-debug.log*
+
+# Test
+**/coverage
+
+# Turbo / Cache
+**/.turbo
+**/.cache
+
+# Fly.io
+**/fly.toml
+
+# Vercel
+**/.vercel
+
+
+**/prepare-hackathon
+
+# flyctl launch added from node_modules/.pnpm/jayson@4.3.0_bufferutil@4.1.0_utf-8-validate@5.0.10/node_modules/jayson/.gitignore
+node_modules/.pnpm/jayson@4.3.0_bufferutil@4.1.0_utf-8-validate@5.0.10/node_modules/jayson/node_modules
+node_modules/.pnpm/jayson@4.3.0_bufferutil@4.1.0_utf-8-validate@5.0.10/node_modules/jayson/**/.*
+!node_modules/.pnpm/jayson@4.3.0_bufferutil@4.1.0_utf-8-validate@5.0.10/node_modules/jayson/**/.gitignore
+!node_modules/.pnpm/jayson@4.3.0_bufferutil@4.1.0_utf-8-validate@5.0.10/node_modules/jayson/**/.travis.yml
+!node_modules/.pnpm/jayson@4.3.0_bufferutil@4.1.0_utf-8-validate@5.0.10/node_modules/jayson/**/.jshintrc
+!node_modules/.pnpm/jayson@4.3.0_bufferutil@4.1.0_utf-8-validate@5.0.10/node_modules/jayson/**/.npmignore
+node_modules/.pnpm/jayson@4.3.0_bufferutil@4.1.0_utf-8-validate@5.0.10/node_modules/jayson/coverage
+node_modules/.pnpm/jayson@4.3.0_bufferutil@4.1.0_utf-8-validate@5.0.10/node_modules/jayson/yarn-error.log
+
+# flyctl launch added from packages/mcp/.gitignore
+packages/mcp/**/node_modules
+packages/mcp/**/dist
+packages/mcp/**/.env
+packages/mcp/**/*.tsbuildinfo
+
+# flyctl launch added from prepare-hackathon/.gitignore
+prepare-hackathon/**/node_modules
