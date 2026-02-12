@@ -128,6 +128,19 @@ TASK-22 (Deployment)          ← TASK-11, TASK-12
 
 > ~~**핵심 문제**: 백엔드는 `{ data: [...] }`, `{ policies: [...] }` 등 래퍼 객체로 응답하지만, 프론트엔드 fetch 함수들은 배열을 직접 기대함.~~ **해결 완료** (커밋 `7f02774`)
 
+### Phase 9: Demo Polish — Seed 보강 + UX 완성 + 배포 준비
+
+| ID | 태스크 | 패키지 | 우선순위 | 의존성 |
+|----|--------|--------|----------|--------|
+| [TASK-29](./TASK-29-seed-apikey-format.md) | seed API key format 수정 (auth regex 일치) | proxy | **P0** | — |
+| [TASK-30](./TASK-30-seed-requests-data.md) | seed에 synthetic requests 데이터 추가 | proxy | **P0** | TASK-29 |
+| [TASK-31](./TASK-31-seed-more-endpoints.md) | seed endpoint_scores를 전체 카테고리로 확장 | proxy | **P0** | — |
+| [TASK-32](./TASK-32-onboarding-no-sidebar.md) | Onboarding/Login 사이드바 제거 | dashboard | **P1** | — |
+| [TASK-33](./TASK-33-compare-winner-display.md) | Rankings Compare winner 표시 | dashboard | **P1** | TASK-31 |
+| [TASK-34](./TASK-34-error-state-handling.md) | 전체 페이지 에러 상태 처리 | dashboard | **P1** | — |
+| [TASK-35](./TASK-35-env-example-dashboard.md) | .env.example에 Dashboard 환경변수 추가 | 전체 | **P2** | — |
+| [TASK-36](./TASK-36-nextconfig-rewrite-env.md) | next.config rewrite 환경변수 분기 | dashboard | **P2** | TASK-35 |
+
 ## 병렬 실행 가능 그룹
 
 - **그룹 A** (독립): TASK-01
