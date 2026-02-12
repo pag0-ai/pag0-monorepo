@@ -265,18 +265,16 @@ export class ProxyCore {
     }).catch((err) => console.error('[ProxyCore] Analytics error:', err));
 
     // ─── Step 7b: ERC-8004 Audit (async, fire-and-forget) ───
-    if (actualCost !== '0') {
-      void erc8004Audit.recordPaymentFeedback({
-        agentId: endpoint, // x402 server identity (hostname as fallback)
-        endpoint,
-        cost: actualCost,
-        latencyMs: latency,
-        statusCode: response.status,
-        txHash: response.headers.get('x-transaction-hash') || '',
-        sender: request.signedPayment?.sender || '',
-        receiver: endpoint,
-      }).catch((err) => console.warn('[ProxyCore] ERC-8004 audit error:', err));
-    }
+    void erc8004Audit.recordPaymentFeedback({
+      agentId: endpoint, // x402 server identity (hostname as fallback)
+      endpoint,
+      cost: actualCost,
+      latencyMs: latency,
+      statusCode: response.status,
+      txHash: response.headers.get('x-transaction-hash') || '',
+      sender: request.signedPayment?.sender || '',
+      receiver: endpoint,
+    }).catch((err) => console.warn('[ProxyCore] ERC-8004 audit error:', err));
 
     // ─── Step 8: Budget Deduct ───────────────────────────────
     if (actualCost !== '0') {
