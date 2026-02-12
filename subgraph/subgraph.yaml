@@ -6,9 +6,9 @@ dataSources:
     name: ReputationRegistry
     network: skale
     source:
-      address: "0x0000000000000000000000000000000000000000" # Replace with deployed address
+      address: "0xeBEf8A66D614ac91dA4397a5d37A1a2daAD240de"
       abi: ReputationRegistry
-      startBlock: 0 # Replace with deployment block
+      startBlock: 20436
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -27,9 +27,9 @@ dataSources:
     name: ValidationRegistry
     network: skale
     source:
-      address: "0x0000000000000000000000000000000000000000" # Replace with deployed address
+      address: "0x719dBB83664Ad25091CB91b0a39BF52BD7685c0A"
       abi: ValidationRegistry
-      startBlock: 0 # Replace with deployment block
+      startBlock: 20436
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
