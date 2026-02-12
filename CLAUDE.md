@@ -66,6 +66,14 @@ pag0-monorepo/
 │   │   ├── lib/api.ts
 │   │   ├── package.json
 │   │   └── tsconfig.json
+│   ├── contracts/                 # @pag0/contracts — Foundry (ERC-8004 Solidity)
+│   │   ├── src/
+│   │   │   ├── ReputationRegistry.sol  # giveFeedback() + FeedbackGiven event
+│   │   │   └── ValidationRegistry.sol  # validationRequest() + ValidationRequested event
+│   │   ├── script/Deploy.s.sol         # Forge deploy script → deployments.json
+│   │   ├── test/                       # Forge tests
+│   │   ├── foundry.toml                # Solc 0.8.19, Shanghai EVM, SKALE RPC
+│   │   └── deployments.json            # Deployed addresses (SKALE bite-v2-sandbox)
 │   └── mcp/                      # @pag0/mcp — Demo Agent MCP Server
 │       ├── src/
 │       │   ├── index.ts          # MCP Server entry (stdio transport)
@@ -80,6 +88,14 @@ pag0-monorepo/
 │       ├── .env                  # PAG0_API_URL, PAG0_API_KEY, WALLET_PRIVATE_KEY
 │       ├── package.json
 │       └── tsconfig.json
+├── subgraph/                     # The Graph subgraph (ERC-8004 indexer)
+│   ├── schema.graphql            # Agent, FeedbackEvent, ValidationRequest/Response
+│   ├── subgraph.yaml             # Data sources (SKALE bite-v2-sandbox)
+│   ├── src/mapping.ts            # Event handlers
+│   └── package.json              # graph-cli, graph-ts
+├── scripts/
+│   └── subgraph-deploy.sh        # One-command: graph-node + build + deploy
+├── docker-compose.yml            # postgres, redis, graph-node, graph-postgres, ipfs
 ├── docs/                         # 제품/기술 문서 (pag0/ 원본)
 ├── .env.example                  # 환경변수 템플릿
 ├── package.json                  # 루트 (pnpm workspace)
@@ -106,6 +122,15 @@ pnpm test                          # 테스트 (proxy)
 # Database
 pnpm db:migrate                    # 스키마 마이그레이션
 pnpm db:seed                       # 시드 데이터 삽입
+
+# Contracts (Foundry)
+cd packages/contracts && forge build    # 컴파일
+cd packages/contracts && forge test     # 테스트
+cd packages/contracts && forge script script/Deploy.s.sol:Deploy --rpc-url $SKALE_RPC_URL --broadcast --legacy  # 배포
+
+# Subgraph
+./scripts/subgraph-deploy.sh            # 로컬 graph-node + 배포
+cd subgraph && npm run deploy:goldsky   # Goldsky 배포
 
 # 배포
 fly launch && fly deploy           # Backend → Fly.io

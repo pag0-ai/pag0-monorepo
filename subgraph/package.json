@@ -6,7 +6,8 @@
     "codegen": "graph codegen",
     "build": "graph codegen && graph build",
     "create-local": "graph create --node http://localhost:8020/ pag0/erc8004",
-    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 --version-label v0.0.1 pag0/erc8004"
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 --version-label v0.0.1 pag0/erc8004",
+    "deploy:goldsky": "graph codegen && graph build && goldsky subgraph deploy pag0-erc8004/v1 --path ."
   },
   "dependencies": {
     "@graphprotocol/graph-cli": "^0.93.2",

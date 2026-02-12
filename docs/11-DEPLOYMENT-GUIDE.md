@@ -140,11 +140,11 @@ X402_CHAIN_ID=84532
 # ============================================
 # SKALE Configuration (Zero Gas Audit Logs)
 # ============================================
-SKALE_RPC_URL=https://testnet.skalenodes.com/v1/[CHAIN_NAME]
+SKALE_RPC_URL=https://base-sepolia-testnet.skalenodes.com/v1/bite-v2-sandbox
 ERC8004_SIGNER_KEY=0x[64_HEX_CHARS]
-ERC8004_REPUTATION_REGISTRY=0x[40_HEX_CHARS]
-ERC8004_VALIDATION_REGISTRY=0x[40_HEX_CHARS]
-ERC8004_SUBGRAPH_URL=http://localhost:8000/subgraphs/name/pag0/erc8004
+ERC8004_REPUTATION_REGISTRY=0xeBEf8A66D614ac91dA4397a5d37A1a2daAD240de
+ERC8004_VALIDATION_REGISTRY=0x719dBB83664Ad25091CB91b0a39BF52BD7685c0A
+ERC8004_SUBGRAPH_URL=https://api.goldsky.com/api/public/project_cmliyvfm2vyq701v0gm02a234/subgraphs/pag0-erc8004/v1/gn
 
 # ============================================
 # Authentication
@@ -200,9 +200,9 @@ X402_CHAIN_ID=84532
 
 SKALE_RPC_URL=https://testnet.skalenodes.com/v1/CHAIN_NAME
 ERC8004_SIGNER_KEY=0x$(openssl rand -hex 32)
-ERC8004_REPUTATION_REGISTRY=0x0000000000000000000000000000000000000000
-ERC8004_VALIDATION_REGISTRY=0x0000000000000000000000000000000000000000
-ERC8004_SUBGRAPH_URL=http://localhost:8000/subgraphs/name/pag0/erc8004
+ERC8004_REPUTATION_REGISTRY=0xeBEf8A66D614ac91dA4397a5d37A1a2daAD240de
+ERC8004_VALIDATION_REGISTRY=0x719dBB83664Ad25091CB91b0a39BF52BD7685c0A
+ERC8004_SUBGRAPH_URL=https://api.goldsky.com/api/public/project_cmliyvfm2vyq701v0gm02a234/subgraphs/pag0-erc8004/v1/gn
 
 CORS_ORIGINS=http://localhost:3000
 EOF

@@ -997,55 +997,53 @@ class FacilitatorClient {
 }
 ```
 
-### 3.6 SKALE Integration (On-chain Metrics)
+### 3.6 SKALE Integration (On-chain ERC-8004 Contracts)
+
+**Network**: SKALE bite-v2-sandbox (Chain ID: `103698795`, Shanghai EVM, zero gas)
+**RPC**: `https://base-sepolia-testnet.skalenodes.com/v1/bite-v2-sandbox`
+
+| Contract | Address |
+|----------|---------|
+| ReputationRegistry | `0xeBEf8A66D614ac91dA4397a5d37A1a2daAD240de` |
+| ValidationRegistry | `0x719dBB83664Ad25091CB91b0a39BF52BD7685c0A` |
+
+```solidity
+// packages/contracts/src/ReputationRegistry.sol
+contract ReputationRegistry {
+    event FeedbackGiven(
+        string indexed agentId, uint256 value,
+        bytes32 tag1, bytes32 tag2,
+        string feedbackURI, bytes32 feedbackHash
+    );
+
+    function giveFeedback(
+        string calldata agentId, uint256 value, uint8 valueDecimals,
+        bytes32 tag1, bytes32 tag2,
+        string calldata feedbackURI, bytes32 feedbackHash
+    ) external {
+        emit FeedbackGiven(agentId, value, tag1, tag2, feedbackURI, feedbackHash);
+    }
+}
+
+// packages/contracts/src/ValidationRegistry.sol
+contract ValidationRegistry {
+    event ValidationRequested(
+        string indexed agentId, bytes data, uint256 timestamp
+    );
+
+    function validationRequest(
+        string calldata agentId, bytes calldata data
+    ) external {
+        emit ValidationRequested(agentId, data, block.timestamp);
+    }
+}
+```
 
 ```typescript
 import { ethers } from 'ethers';
 
-class SKALEMetrics {
-  private contract: ethers.Contract;
-
-  async emitMetric(metric: {
-    endpoint: string;
-    cost: string;
-    latency: number;
-    timestamp: number;
-  }): Promise<void> {
-    // Emit to SKALE (zero gas)
-    const tx = await this.contract.logMetric(
-      metric.endpoint,
-      metric.cost,
-      metric.latency,
-      metric.timestamp
-    );
-
-    await tx.wait();
-  }
-
-  async getOnChainMetrics(endpoint: string): Promise<any[]> {
-    // Query historical metrics from SKALE
-    return await this.contract.getMetrics(endpoint);
-  }
-}
-
-// Smart Contract (Solidity)
-// contract Pag0Metrics {
-//   event MetricLogged(
-//     string indexed endpoint,
-//     uint256 cost,
-//     uint256 latency,
-//     uint256 timestamp
-//   );
-//
-//   function logMetric(
-//     string memory endpoint,
-//     uint256 cost,
-//     uint256 latency,
-//     uint256 timestamp
-//   ) public {
-//     emit MetricLogged(endpoint, cost, latency, timestamp);
-//   }
-// }
+// Deploy: cd packages/contracts && forge script script/Deploy.s.sol --rpc-url skale --broadcast --legacy
+// Both contracts are minimal event emitters — no storage, no access control, zero gas on SKALE.
 ```
 
 ### 3.4 ERC-8004 Audit Trail Integration
@@ -1227,29 +1225,26 @@ class PostProcessor {
 
 ### 3.5 The Graph Integration (Subgraph)
 
+**Goldsky Endpoint**: `https://api.goldsky.com/api/public/project_cmliyvfm2vyq701v0gm02a234/subgraphs/pag0-erc8004/v1/gn`
+
+**Network**: `skale-bite-sandbox` (SKALE bite-v2-sandbox)
+
 ```graphql
-# schema.graphql
-type PaymentEvent @entity {
-  id: ID!
-  endpoint: String!
-  amount: BigInt!
-  timestamp: BigInt!
-  txHash: String!
-  agent: String!
-  project: String!
+# subgraph/schema.graphql — ERC-8004 Audit Events
+
+type Agent @entity {
+  id: ID!                                                          # keccak256(agentId string)
+  feedbacks: [FeedbackEvent!]! @derivedFrom(field: "agent")
+  validationRequests: [ValidationRequestEvent!]! @derivedFrom(field: "agent")
+  validationResponses: [ValidationResponseEvent!]! @derivedFrom(field: "agent")
+  eventCount: Int!
+  firstSeen: BigInt!
+  lastSeen: BigInt!
 }
 
-type EndpointAggregate @entity {
-  id: ID!  # endpoint
-  totalPayments: BigInt!
-  totalAmount: BigInt!
-  avgAmount: BigInt!
-  lastPaymentTimestamp: BigInt!
-}
-
-# ERC-8004 Audit Events
 type FeedbackEvent @entity {
   id: ID!
+  agent: Agent!
   agentId: String!
   value: Int!
   tag1: String!
@@ -1262,6 +1257,7 @@ type FeedbackEvent @entity {
 
 type ValidationRequestEvent @entity {
   id: ID!
+  agent: Agent!
   agentId: String!
   requestData: Bytes!
   timestamp: BigInt!
@@ -1270,6 +1266,7 @@ type ValidationRequestEvent @entity {
 
 type ValidationResponseEvent @entity {
   id: ID!
+  agent: Agent!
   agentId: String!
   approved: Boolean!
   responseData: Bytes!
@@ -1280,32 +1277,66 @@ type ValidationResponseEvent @entity {
 
 ```typescript
 // Subgraph query client
+const SUBGRAPH_URL = 'https://api.goldsky.com/api/public/project_cmliyvfm2vyq701v0gm02a234/subgraphs/pag0-erc8004/v1/gn';
+
 class GraphClient {
-  async queryPaymentHistory(endpoint: string): Promise<PaymentEvent[]> {
+  // Query all feedback events for an agent
+  async queryAgentFeedbacks(agentId: string): Promise<FeedbackEvent[]> {
     const query = `
-      query PaymentHistory($endpoint: String!) {
-        paymentEvents(
-          where: { endpoint: $endpoint }
+      query AgentFeedbacks($agentId: String!) {
+        feedbackEvents(
+          where: { agentId: $agentId }
           orderBy: timestamp
           orderDirection: desc
           first: 100
         ) {
           id
-          amount
+          agentId
+          value
+          tag1
+          tag2
+          feedbackURI
+          feedbackHash
           timestamp
           txHash
-          agent
         }
       }
     `;
 
-    const response = await fetch(this.graphUrl, {
+    const response = await fetch(SUBGRAPH_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, variables: { endpoint } })
+      body: JSON.stringify({ query, variables: { agentId } })
     });
 
-    return (await response.json()).data.paymentEvents;
+    return (await response.json()).data.feedbackEvents;
+  }
+
+  // Query agent overview with event counts
+  async queryAgent(agentIdHash: string): Promise<Agent> {
+    const query = `
+      query AgentOverview($id: ID!) {
+        agent(id: $id) {
+          id
+          eventCount
+          firstSeen
+          lastSeen
+          feedbacks(first: 10, orderBy: timestamp, orderDirection: desc) {
+            value
+            tag1
+            timestamp
+          }
+        }
+      }
+    `;
+
+    const response = await fetch(SUBGRAPH_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, variables: { id: agentIdHash } })
+    });
+
+    return (await response.json()).data.agent;
   }
 }
 ```
@@ -1567,4 +1598,4 @@ interface EndpointScore {
 ---
 
 **Version**: 1.0
-**Last Updated**: 2026-02-10
+**Last Updated**: 2026-02-12
