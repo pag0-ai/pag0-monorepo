@@ -22,18 +22,6 @@ app.get('/recommend', async (c) => {
       | 'reliability'
       | undefined;
 
-    if (!category) {
-      return c.json(
-        {
-          error: {
-            code: 'MISSING_PARAMETER',
-            message: 'category parameter is required',
-          },
-        },
-        400,
-      );
-    }
-
     const limit = limitStr ? parseInt(limitStr, 10) : 5;
     if (isNaN(limit) || limit < 1 || limit > 50) {
       return c.json(
@@ -62,7 +50,7 @@ app.get('/recommend', async (c) => {
     }
 
     const recommendations = await curationEngine.getRecommendations(
-      category,
+      category || undefined,
       limit,
       sort as 'overall' | 'cost' | 'latency' | 'reliability',
     );

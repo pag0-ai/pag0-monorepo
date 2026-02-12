@@ -218,11 +218,11 @@ export default function RecommendationsPage() {
                 })}
               </div>
 
-              {ep.evidence && (
+              {ep.evidence && (ep.evidence.sampleSize != null || ep.evidence.avgLatencyMs != null || ep.evidence.successRate != null) && (
                 <div className="mt-4 pt-3 flex gap-4 text-[11px] border-t" style={{ borderColor: 'var(--color-obsidian-border)', color: 'var(--color-txt-muted)' }}>
-                  <span>{ep.evidence.sampleSize} samples</span>
-                  <span>{ep.evidence.avgLatencyMs.toFixed(0)}ms avg</span>
-                  <span>{(ep.evidence.successRate * 100).toFixed(1)}% success</span>
+                  <span>{ep.evidence.sampleSize != null ? `${ep.evidence.sampleSize} samples` : 'N/A samples'}</span>
+                  <span>{ep.evidence.avgLatencyMs != null ? `${ep.evidence.avgLatencyMs.toFixed(0)}ms avg` : 'N/A ms'}</span>
+                  <span>{ep.evidence.successRate != null ? `${(ep.evidence.successRate * 100).toFixed(1)}% success` : 'N/A% success'}</span>
                 </div>
               )}
             </div>
