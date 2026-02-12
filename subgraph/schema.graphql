@@ -1,7 +1,18 @@
 # ERC-8004 Audit Events — Pag0 Smart Proxy
 
+type Agent @entity {
+  id: ID!
+  feedbacks: [FeedbackEvent!]! @derivedFrom(field: "agent")
+  validationRequests: [ValidationRequestEvent!]! @derivedFrom(field: "agent")
+  validationResponses: [ValidationResponseEvent!]! @derivedFrom(field: "agent")
+  eventCount: Int!
+  firstSeen: BigInt!
+  lastSeen: BigInt!
+}
+
 type FeedbackEvent @entity {
   id: ID!
+  agent: Agent!
   agentId: String!
   value: Int!
   tag1: String!
@@ -14,6 +25,7 @@ type FeedbackEvent @entity {
 
 type ValidationRequestEvent @entity {
   id: ID!
+  agent: Agent!
   agentId: String!
   requestData: Bytes!
   timestamp: BigInt!
@@ -22,6 +34,7 @@ type ValidationRequestEvent @entity {
 
 type ValidationResponseEvent @entity {
   id: ID!
+  agent: Agent!
   agentId: String!
   approved: Boolean!
   responseData: Bytes!
