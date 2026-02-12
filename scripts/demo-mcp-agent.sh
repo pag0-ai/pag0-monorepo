@@ -282,6 +282,10 @@ run_agent "4.8" "Individual Endpoint Score" \
 run_agent "4.9" "Transaction History" \
   "Use pag0_tx_history with period '24h' to show recent transaction history. For each transaction, show the endpoint, cost, latency, and whether it was cached."
 
+# ===== Step 4.10: On-Chain Audit Trail (ERC-8004) =====
+run_agent "4.10" "On-Chain Audit Trail (ERC-8004)" \
+  "Use pag0_audit_trail without an endpoint filter (period 'week') to show ALL recent on-chain ERC-8004 feedback events. For each event, show the agentId, quality score (value), tags, timestamp, and transaction hash. This data is indexed from the SKALE blockchain via a subgraph — it proves every API payment is auditable on-chain."
+
 # ===== Summary =====
 echo -e "${BLUE}"
 echo "╔══════════════════════════════════════════╗"
@@ -289,7 +293,7 @@ echo "║  MCP Agent Demo Complete!                ║"
 echo "╚══════════════════════════════════════════╝"
 echo -e "${NC}"
 
-echo -e "  ${GREEN}Passed: $PASS${NC}  ${RED}Failed: $FAIL${NC}  Total: $((PASS + FAIL)) / 9"
+echo -e "  ${GREEN}Passed: $PASS${NC}  ${RED}Failed: $FAIL${NC}  Total: $((PASS + FAIL)) / 10"
 echo ""
 echo -e "  Temp dir: ${CYAN}$DEMO_DIR${NC}"
 echo -e "  MCP config: ${CYAN}$DEMO_DIR/.mcp.json${NC}"
