@@ -5,8 +5,10 @@ libs = ["lib"]
 solc_version = "0.8.19"
 evm_version = "shanghai"
 
+fs_permissions = [{ access = "read-write", path = "./" }]
+
 [rpc_endpoints]
-skale = "${SKALE_RPC_URL}"
+skale = "https://base-sepolia-testnet.skalenodes.com/v1/bite-v2-sandbox"
 
 [etherscan]
 # SKALE doesn't use Etherscan verification
