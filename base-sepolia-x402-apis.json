@@ -20,12 +20,12 @@
           }
         },
         "payTo": "0x78397B97E4CC96Ddb46FDeAE391b05546316A218",
-        "resource": "https://x402-ai-starter.vercel.app/api/add",
+        "resource": "https://x402-ai-starter-alpha.vercel.app/api/add",
         "scheme": "exact"
       }
     ],
     "lastUpdated": "2026-02-04T14:23:26.186Z",
-    "resource": "https://x402-ai-starter.vercel.app/api/add",
+    "resource": "https://x402-ai-starter-alpha.vercel.app/api/add",
     "type": "http",
     "x402Version": 1,
     "category": "Starter/Demo"

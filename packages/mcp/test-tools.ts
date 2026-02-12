@@ -311,7 +311,7 @@ console.log();
 console.log(`${YELLOW}[500 Feedback Loop]${RESET}`);
 
 await test("500s are recorded in analytics and lower success rate", async () => {
-  // Use a known x402 endpoint that currently 500s — the proxy already tracks it
+  // Use old (non-alpha) URL that currently returns 500 — intentional for error tracking test
   const TARGET_500_URL = "https://x402-ai-starter.vercel.app/api/add";
   const ENDPOINT_HOST = "x402-ai-starter.vercel.app";
   const N = 3; // number of 500-producing calls

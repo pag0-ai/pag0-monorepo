@@ -17,7 +17,7 @@ export function registerProxyTools(
       "Returns the API response along with cost, cache status, and latency metadata.",
     ].join(" "),
     {
-      url: z.string().url().describe("Target API URL (e.g. https://x402-ai-starter.vercel.app/api/add)"),
+      url: z.string().url().describe("Target API URL (e.g. https://x402-ai-starter-alpha.vercel.app/api/add)"),
       method: z.enum(["GET", "POST", "PUT", "DELETE"]).default("GET").describe("HTTP method"),
       headers: z.record(z.string()).optional().describe("Custom headers to forward"),
       body: z.any().optional().describe("Request body (for POST/PUT)"),
