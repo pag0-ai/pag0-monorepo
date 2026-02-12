@@ -184,7 +184,14 @@ curl ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/curation/
 curl -X POST ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/proxy \\
   -H "X-Pag0-API-Key: ${apiKey}" \\
   -H "Content-Type: application/json" \\
-  -d '{"targetUrl":"https://api.example.com/data","method":"GET"}'`}</pre>
+  -d '{"targetUrl":"https://api.example.com/data","method":"GET"}'
+
+# Transparent relay (raw 402 pass-through for x402 SDK)
+curl -X POST ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/relay \\
+  -H "X-Pag0-API-Key: ${apiKey}" \\
+  -H "X-Pag0-Target-URL: https://x402-ai-starter.vercel.app/api/add" \\
+  -H "Content-Type: application/json" \\
+  -d '{"a":1,"b":2}'`}</pre>
             </div>
           </div>
         </div>
