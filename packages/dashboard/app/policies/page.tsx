@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2, X, Shield } from 'lucide-react';
 import {
@@ -32,6 +33,8 @@ interface PolicyFormData {
 }
 
 export default function PoliciesPage() {
+  const { data: session } = useSession();
+  const apiKey = session?.apiKey;
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPolicy, setEditingPolicy] = useState<Policy | null>(null);
@@ -49,12 +52,13 @@ export default function PoliciesPage() {
   // Fetch policies
   const { data: policies = [], isLoading } = useQuery({
     queryKey: ['policies'],
-    queryFn: fetchPolicies,
+    queryFn: () => fetchPolicies(apiKey),
+    enabled: !!apiKey,
   });
 
   // Create policy mutation
   const createMutation = useMutation({
-    mutationFn: createPolicy,
+    mutationFn: (data: CreatePolicyData) => createPolicy(data, apiKey),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['policies'] });
       closeModal();
@@ -67,7 +71,7 @@ export default function PoliciesPage() {
   // Update policy mutation
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<CreatePolicyData> }) =>
-      updatePolicy(id, data),
+      updatePolicy(id, data, apiKey),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['policies'] });
       closeModal();
@@ -79,7 +83,7 @@ export default function PoliciesPage() {
 
   // Delete policy mutation
   const deleteMutation = useMutation({
-    mutationFn: deletePolicy,
+    mutationFn: (id: string) => deletePolicy(id, apiKey),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['policies'] });
       setDeleteConfirm(null);

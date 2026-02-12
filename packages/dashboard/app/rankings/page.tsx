@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchRankings, fetchCategories, fetchApi, type EndpointScore, type Category } from '../../lib/api';
 import { Award, Trophy, Medal } from 'lucide-react';
@@ -40,6 +41,8 @@ interface ComparisonData {
 }
 
 export default function RankingsPage() {
+  const { data: session } = useSession();
+  const apiKey = session?.apiKey;
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedEndpoints, setSelectedEndpoints] = useState<string[]>([]);
   const [showComparison, setShowComparison] = useState(false);
@@ -47,18 +50,21 @@ export default function RankingsPage() {
   const { data: rankings, isLoading: rankingsLoading } = useQuery({
     queryKey: ['rankings', selectedCategory],
     queryFn: () => fetchRankings({
-      category: selectedCategory === 'all' ? undefined : selectedCategory
+      category: selectedCategory === 'all' ? undefined : selectedCategory,
+      apiKey,
     }),
+    enabled: !!apiKey,
   });
 
   const { data: categories, isLoading: categoriesLoading } = useQuery({
     queryKey: ['categories'],
-    queryFn: fetchCategories,
+    queryFn: () => fetchCategories(apiKey),
+    enabled: !!apiKey,
   });
 
   const { data: comparison, isLoading: comparisonLoading, refetch: compareRefetch } = useQuery({
     queryKey: ['compare', selectedEndpoints],
-    queryFn: () => fetchApi<ComparisonData>(`/api/curation/compare?endpoints=${selectedEndpoints.join(',')}`),
+    queryFn: () => fetchApi<ComparisonData>(`/api/curation/compare?endpoints=${selectedEndpoints.join(',')}`, { apiKey }),
     enabled: false,
   });
 

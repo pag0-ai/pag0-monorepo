@@ -1,22 +1,26 @@
+import { useSession } from 'next-auth/react';
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 
-function getApiKey(): string {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem('pag0_api_key') || '';
-  }
-  return process.env.NEXT_PUBLIC_API_KEY || '';
+// Hook for client components to get the API key from session
+export function useApiKey(): string {
+  const { data: session } = useSession();
+  return session?.apiKey || '';
 }
 
-export async function fetchApi<T>(path: string, options?: RequestInit): Promise<T> {
-  const apiKey = getApiKey();
+// Server-side or manual fetchApi with explicit API key
+export async function fetchApi<T>(path: string, options?: RequestInit & { apiKey?: string }): Promise<T> {
+  const apiKey = options?.apiKey || '';
+  const { apiKey: _, ...restOptions } = options || {};
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(apiKey && { 'X-Pag0-API-Key': apiKey }),
-    ...(options?.headers as Record<string, string>),
+    ...(restOptions?.headers as Record<string, string>),
   };
 
   const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
+    ...restOptions,
     headers,
   });
 
@@ -28,6 +32,12 @@ export async function fetchApi<T>(path: string, options?: RequestInit): Promise<
   return res.json();
 }
 
+// Helper to create a fetchApi bound to a specific API key (for use with react-query)
+export function createApiFetcher(apiKey: string) {
+  return <T>(path: string, options?: RequestInit) =>
+    fetchApi<T>(path, { ...options, apiKey });
+}
+
 // Analytics APIs
 export interface AnalyticsSummary {
   totalRequests: number;
@@ -36,8 +46,8 @@ export interface AnalyticsSummary {
   avgLatency: number;
 }
 
-export async function fetchAnalyticsSummary(period: string = '7d'): Promise<AnalyticsSummary> {
-  return fetchApi(`/api/analytics/summary?period=${period}`);
+export async function fetchAnalyticsSummary(period: string = '7d', apiKey?: string): Promise<AnalyticsSummary> {
+  return fetchApi(`/api/analytics/summary?period=${period}`, { apiKey });
 }
 
 export interface EndpointMetrics {
@@ -51,11 +61,12 @@ export interface EndpointMetrics {
 export async function fetchAnalyticsEndpoints(params?: {
   period?: string;
   limit?: number;
+  apiKey?: string;
 }): Promise<EndpointMetrics[]> {
   const query = new URLSearchParams();
   if (params?.period) query.set('period', params.period);
   if (params?.limit) query.set('limit', params.limit.toString());
-  return fetchApi(`/api/analytics/endpoints?${query}`);
+  return fetchApi(`/api/analytics/endpoints?${query}`, { apiKey: params?.apiKey });
 }
 
 export interface CostDataPoint {
@@ -66,11 +77,12 @@ export interface CostDataPoint {
 export async function fetchAnalyticsCosts(params?: {
   period?: string;
   granularity?: string;
+  apiKey?: string;
 }): Promise<CostDataPoint[]> {
   const query = new URLSearchParams();
   if (params?.period) query.set('period', params.period);
   if (params?.granularity) query.set('granularity', params.granularity);
-  return fetchApi(`/api/analytics/costs?${query}`);
+  return fetchApi(`/api/analytics/costs?${query}`, { apiKey: params?.apiKey });
 }
 
 export interface CacheStats {
@@ -80,8 +92,8 @@ export interface CacheStats {
   savedCost: string;
 }
 
-export async function fetchAnalyticsCache(period: string = '7d'): Promise<CacheStats> {
-  return fetchApi(`/api/analytics/cache?period=${period}`);
+export async function fetchAnalyticsCache(period: string = '7d', apiKey?: string): Promise<CacheStats> {
+  return fetchApi(`/api/analytics/cache?period=${period}`, { apiKey });
 }
 
 // Policy APIs
@@ -98,12 +110,12 @@ export interface Policy {
   updatedAt: string;
 }
 
-export async function fetchPolicies(): Promise<Policy[]> {
-  return fetchApi('/api/policies');
+export async function fetchPolicies(apiKey?: string): Promise<Policy[]> {
+  return fetchApi('/api/policies', { apiKey });
 }
 
-export async function fetchPolicy(id: string): Promise<Policy> {
-  return fetchApi(`/api/policies/${id}`);
+export async function fetchPolicy(id: string, apiKey?: string): Promise<Policy> {
+  return fetchApi(`/api/policies/${id}`, { apiKey });
 }
 
 export interface CreatePolicyData {
@@ -116,23 +128,26 @@ export interface CreatePolicyData {
   enabled?: boolean;
 }
 
-export async function createPolicy(data: CreatePolicyData): Promise<Policy> {
+export async function createPolicy(data: CreatePolicyData, apiKey?: string): Promise<Policy> {
   return fetchApi('/api/policies', {
     method: 'POST',
     body: JSON.stringify(data),
+    apiKey,
   });
 }
 
-export async function updatePolicy(id: string, data: Partial<CreatePolicyData>): Promise<Policy> {
+export async function updatePolicy(id: string, data: Partial<CreatePolicyData>, apiKey?: string): Promise<Policy> {
   return fetchApi(`/api/policies/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
+    apiKey,
   });
 }
 
-export async function deletePolicy(id: string): Promise<void> {
+export async function deletePolicy(id: string, apiKey?: string): Promise<void> {
   return fetchApi(`/api/policies/${id}`, {
     method: 'DELETE',
+    apiKey,
   });
 }
 
@@ -149,11 +164,12 @@ export interface EndpointScore {
 export async function fetchRankings(params?: {
   category?: string;
   limit?: number;
+  apiKey?: string;
 }): Promise<EndpointScore[]> {
   const query = new URLSearchParams();
   if (params?.category) query.set('category', params.category);
   if (params?.limit) query.set('limit', params.limit.toString());
-  return fetchApi(`/api/curation/rankings?${query}`);
+  return fetchApi(`/api/curation/rankings?${query}`, { apiKey: params?.apiKey });
 }
 
 export interface Category {
@@ -162,6 +178,6 @@ export interface Category {
   description: string;
 }
 
-export async function fetchCategories(): Promise<Category[]> {
-  return fetchApi('/api/curation/categories');
+export async function fetchCategories(apiKey?: string): Promise<Category[]> {
+  return fetchApi('/api/curation/categories', { apiKey });
 }

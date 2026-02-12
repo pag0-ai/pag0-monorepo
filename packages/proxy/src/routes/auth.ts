@@ -156,6 +156,125 @@ app.post('/register', async (c) => {
   }
 });
 
+// === POST /oauth-register ===
+// Called by Dashboard (NextAuth) after Google OAuth sign-in.
+// New users: creates user + project + policy + budget, returns API key.
+// Existing users: regenerates API key (hash updated), returns new key.
+
+app.post('/oauth-register', async (c) => {
+  try {
+    // Verify internal secret
+    const internalSecret = c.req.header('X-Pag0-Internal-Secret');
+    if (!internalSecret || internalSecret !== process.env.PAG0_INTERNAL_SECRET) {
+      return c.json(
+        { error: { code: 'UNAUTHORIZED', message: 'Invalid internal secret' } },
+        401,
+      );
+    }
+
+    const body = await c.req.json();
+    const { email, name } = body;
+
+    if (!email) {
+      return c.json(
+        { error: { code: 'VALIDATION_ERROR', message: 'Email is required' } },
+        400,
+      );
+    }
+
+    // Check if user already exists
+    const existingUsers = await sql`
+      SELECT id, email, subscription_tier, created_at
+      FROM users WHERE email = ${email}
+    `;
+
+    if (existingUsers.length > 0) {
+      // Existing user — regenerate API key
+      const user = existingUsers[0];
+      const apiKey = generateApiKey();
+      const apiKeyHash = hashApiKey(apiKey);
+
+      await sql`
+        UPDATE users SET api_key_hash = ${apiKeyHash} WHERE id = ${user.id}
+      `;
+
+      // Get existing project
+      const projects = await sql`
+        SELECT id, name FROM projects WHERE user_id = ${user.id} ORDER BY created_at ASC LIMIT 1
+      `;
+      const project = projects[0] || { id: null, name: null };
+
+      return c.json({
+        user: {
+          id: user.id,
+          email: user.email,
+          tier: user.subscription_tier,
+          createdAt: user.created_at,
+        },
+        project: { id: project.id, name: project.name },
+        apiKey,
+        isNewUser: false,
+      });
+    }
+
+    // New user — create user + project + policy + budget
+    const apiKey = generateApiKey();
+    const apiKeyHash = hashApiKey(apiKey);
+    const passwordHash = await hashPassword(randomBytes(32).toString('hex')); // random password for OAuth users
+
+    const [user] = await sql`
+      INSERT INTO users (email, password_hash, api_key_hash, subscription_tier)
+      VALUES (${email}, ${passwordHash}, ${apiKeyHash}, 'free')
+      RETURNING id, email, created_at, subscription_tier
+    `;
+
+    const projectName = name ? `${name}'s Project` : 'Default Project';
+    const [project] = await sql`
+      INSERT INTO projects (user_id, name, is_active)
+      VALUES (${user.id}, ${projectName}, true)
+      RETURNING id, name
+    `;
+
+    await sql`
+      INSERT INTO policies (
+        project_id, name, is_active,
+        max_per_request, daily_budget, monthly_budget,
+        allowed_endpoints, blocked_endpoints
+      ) VALUES (
+        ${project.id}, 'Default Policy', true,
+        1000000, 10000000, 100000000,
+        '[]'::jsonb, '[]'::jsonb
+      )
+    `;
+
+    await sql`
+      INSERT INTO budgets (project_id, daily_spent, monthly_spent)
+      VALUES (${project.id}, 0, 0)
+    `;
+
+    return c.json(
+      {
+        user: {
+          id: user.id,
+          email: user.email,
+          tier: user.subscription_tier,
+          createdAt: user.created_at,
+        },
+        project: { id: project.id, name: project.name },
+        apiKey,
+        isNewUser: true,
+      },
+      201,
+    );
+  } catch (error) {
+    console.error('OAuth register error:', error);
+    return c.json(
+      { error: { code: 'INTERNAL_ERROR', message: 'Failed to process OAuth registration' } },
+      500,
+    );
+  }
+});
+
 // === POST /login ===
 
 app.post('/login', async (c) => {

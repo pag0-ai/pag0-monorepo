@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { useQuery } from '@tanstack/react-query';
 import { Activity, Zap, Clock, DollarSign } from 'lucide-react';
 import {
@@ -34,26 +35,32 @@ function getBudgetColor(percentage: number): string {
 }
 
 export default function DashboardPage() {
+  const { data: session } = useSession();
+  const apiKey = session?.apiKey;
   const [period, setPeriod] = useState<Period>('7d');
 
   const { data: summary, isLoading: summaryLoading } = useQuery({
     queryKey: ['analytics', 'summary', period],
-    queryFn: () => fetchAnalyticsSummary(period),
+    queryFn: () => fetchAnalyticsSummary(period, apiKey),
+    enabled: !!apiKey,
   });
 
   const { data: costs, isLoading: costsLoading } = useQuery({
     queryKey: ['analytics', 'costs', period],
-    queryFn: () => fetchAnalyticsCosts({ period, granularity: 'hourly' }),
+    queryFn: () => fetchAnalyticsCosts({ period, granularity: 'hourly', apiKey }),
+    enabled: !!apiKey,
   });
 
   const { data: endpoints, isLoading: endpointsLoading } = useQuery({
     queryKey: ['analytics', 'endpoints', period],
-    queryFn: () => fetchAnalyticsEndpoints({ period, limit: 10 }),
+    queryFn: () => fetchAnalyticsEndpoints({ period, limit: 10, apiKey }),
+    enabled: !!apiKey,
   });
 
   const { data: cacheStats } = useQuery({
     queryKey: ['analytics', 'cache', period],
-    queryFn: () => fetchAnalyticsCache(period),
+    queryFn: () => fetchAnalyticsCache(period, apiKey),
+    enabled: !!apiKey,
   });
 
   const isLoading = summaryLoading || costsLoading || endpointsLoading;
