@@ -82,8 +82,8 @@ export class ProxyCore {
     const startTime = Date.now();
     const endpoint = this.extractHostname(request.targetUrl);
 
-    // Default estimated cost for policy check (will be updated with actual cost later)
-    const estimatedCost: UsdcAmount = '0'; // Free for cache hits, will be updated
+    // Extract cost from signed payment if present (for policy budget checks)
+    const estimatedCost: UsdcAmount = this.extractCostFromPayment(request.signedPayment);
 
     // ─── Step 1: Policy Check ────────────────────────────────
     const policyEval = await this.policyEngine.evaluate(request, estimatedCost);
@@ -331,6 +331,25 @@ export class ProxyCore {
     } catch {
       return url;
     }
+  }
+
+  /**
+   * Extract payment cost from the signed payment object (V1 or V2).
+   * Used for pre-forward policy checks so budget limits are enforced
+   * on requests that include a signed payment.
+   *
+   * V2: signedPayment.accepted.amount
+   * V1: signedPayment.payload.authorization.value
+   */
+  private extractCostFromPayment(signedPayment: any): UsdcAmount {
+    if (!signedPayment) return '0';
+    try {
+      // V2: accepted.amount
+      if (signedPayment.accepted?.amount) return String(signedPayment.accepted.amount);
+      // V1: payload.authorization.value
+      if (signedPayment.payload?.authorization?.value) return String(signedPayment.payload.authorization.value);
+    } catch { /* malformed payment, fall through */ }
+    return '0';
   }
 
   /**

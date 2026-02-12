@@ -53,6 +53,34 @@ function extractCost(response: Response): UsdcAmount {
   );
 }
 
+/**
+ * Extract payment cost from the signed payment header (V1 or V2).
+ * Used for pre-forward policy checks so budget limits are enforced
+ * on the retry request (after 402 → sign → retry).
+ *
+ * V2: PAYMENT-SIGNATURE header → decoded.accepted.amount
+ * V1: X-PAYMENT header → decoded.payload.authorization.value
+ */
+function extractCostFromPaymentHeader(c: Context): UsdcAmount {
+  // V2: PAYMENT-SIGNATURE header
+  const v2 = c.req.header('payment-signature');
+  if (v2) {
+    try {
+      const decoded = JSON.parse(Buffer.from(v2, 'base64').toString());
+      if (decoded?.accepted?.amount) return String(decoded.accepted.amount);
+    } catch { /* malformed header, fall through */ }
+  }
+  // V1: X-PAYMENT header
+  const v1 = c.req.header('x-payment');
+  if (v1) {
+    try {
+      const decoded = JSON.parse(Buffer.from(v1, 'base64').toString());
+      if (decoded?.payload?.authorization?.value) return String(decoded.payload.authorization.value);
+    } catch { /* malformed header, fall through */ }
+  }
+  return '0';
+}
+
 export async function handleRelay(c: Context): Promise<Response> {
   const startTime = Date.now();
 
@@ -75,9 +103,10 @@ export async function handleRelay(c: Context): Promise<Response> {
     : null;
 
   // ── 2. Policy check ──────────────────────────────────────
+  const estimatedCost = extractCostFromPaymentHeader(c);
   const policyEval = await policyEngine.evaluate(
     { targetUrl, method, projectId },
-    '0',
+    estimatedCost,
   );
 
   if (!policyEval.allowed) {

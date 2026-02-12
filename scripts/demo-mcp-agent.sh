@@ -22,6 +22,19 @@ NC='\033[0m'
 PASS=0
 FAIL=0
 
+# Timestamp-seeded combinatorial prompts — virtually no repeats across runs
+TS=$(date +%s)
+STYLES=("funny" "creative" "witty" "clever" "nerdy" "absurd" "poetic" "sarcastic" "philosophical" "dramatic" "wholesome" "unexpected")
+SUBJECTS=("robots" "cats" "aliens" "pirates" "penguins" "wizards" "dragons" "unicorns" "ninjas" "astronauts" "time travelers" "ghosts")
+TOPICS=("programming" "AI" "databases" "the internet" "cloud computing" "open source" "cybersecurity" "APIs" "machine learning" "DevOps" "blockchain" "startups" "algorithms" "Git")
+
+S1=$((TS % ${#STYLES[@]}))
+S2=$(( (TS / ${#STYLES[@]}) % ${#SUBJECTS[@]} ))
+S3=$(( (TS / (${#STYLES[@]} * ${#SUBJECTS[@]})) % ${#TOPICS[@]} ))
+
+SWARM_PROMPT="Tell me something ${STYLES[$S1]} about ${SUBJECTS[$S2]} in one sentence"
+SMART_PROMPT="Tell me a ${STYLES[$S1]} joke about ${TOPICS[$S3]} featuring ${SUBJECTS[$S2]}."
+
 # Create temp working directory
 DEMO_DIR="/tmp/pag0-mcp-demo-$(date +%s)"
 mkdir -p "$DEMO_DIR"
@@ -226,14 +239,14 @@ run_agent "4.5" "Naive Select and Call (x402 payment)" \
 3. Identify the overall winner from step 2.
 
 4. Call the winning provider via pag0_request. The winner should be api-dev.intra-tls2.dctx.link — call it with:
-   POST https://api-dev.intra-tls2.dctx.link/x402/swarm/qrn:swarm:68f9dcfbc87f09b659144239 with body {\"prompt\": \"Say hello in one sentence\", \"max_tokens\": 50}
+   POST https://api-dev.intra-tls2.dctx.link/x402/swarm/qrn:swarm:68f9dcfbc87f09b659144239 with body {\"prompt\": \"${SWARM_PROMPT}\", \"max_tokens\": 50}
    If the server returns a 402 payment response, the wallet will sign the payment automatically.
 
 5. Show a summary: which provider was selected, why (score breakdown), and the API response with latency/cost/cache metadata."
 
 # ===== Step 4.6: Smart Select & Call (single tool) =====
 run_agent "4.6" "Smart Select and Call (x402 payment)" \
-  "Use the pag0_smart_request tool with category 'Content & Media' and prompt 'Tell me a joke about programming.'
+  "Use the pag0_smart_request tool with category 'Content & Media' and prompt '${SMART_PROMPT}'
 
 This should automatically pick the best endpoint, call it via x402 payment, and return the result."
 
