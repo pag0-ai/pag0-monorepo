@@ -8,6 +8,8 @@ importers:
 
   .: {}
 
+  packages/contracts: {}
+
   packages/dashboard:
     dependencies:
       '@tanstack/react-query':

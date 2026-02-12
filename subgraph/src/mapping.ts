@@ -14,7 +14,7 @@ export function handleFeedbackGiven(event: FeedbackGivenEvent): void {
   const id = event.transaction.hash.toHexString() + "-" + event.logIndex.toString();
   const entity = new FeedbackEvent(id);
 
-  entity.agentId = event.params.agentId;
+  entity.agentId = event.params.agentId.toHexString();
   entity.value = event.params.value.toI32();
   entity.tag1 = event.params.tag1.toString();
   entity.tag2 = event.params.tag2.toString();
@@ -30,7 +30,7 @@ export function handleValidationRequested(event: ValidationRequestedEvent): void
   const id = event.transaction.hash.toHexString() + "-" + event.logIndex.toString();
   const entity = new ValidationRequestEvent(id);
 
-  entity.agentId = event.params.agentId;
+  entity.agentId = event.params.agentId.toHexString();
   entity.requestData = event.params.data;
   entity.timestamp = event.block.timestamp;
   entity.txHash = event.transaction.hash.toHexString();

@@ -57,10 +57,12 @@ services:
   graph-postgres:
     image: postgres:16-alpine
     container_name: pag0-graph-postgres
+    command: ["postgres", "-c", "log_statement=none"]
     environment:
       POSTGRES_USER: graph
       POSTGRES_PASSWORD: graphsecret
       POSTGRES_DB: graph-node
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=C --lc-ctype=C"
     ports:
       - "5434:5432"
     volumes:
