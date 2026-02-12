@@ -210,6 +210,7 @@ export interface SmartSelectResult {
   targetUrl: string;
   method: string;
   body: unknown;
+  isPassthrough?: boolean; // true for x402 endpoints with unknown body schema
   selection: {
     winner: string;
     rationale: string;

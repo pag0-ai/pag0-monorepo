@@ -106,6 +106,7 @@ interface SelectResult {
   targetUrl: string;
   method: string;
   body: unknown;
+  isPassthrough?: boolean; // true for x402 endpoints with unknown body schema
   selection: {
     winner: string;
     rationale: string;
@@ -191,10 +192,8 @@ async function selectEndpoint(input: SelectInput): Promise<SelectResult> {
   return {
     targetUrl: recentReq.full_url,
     method: recentReq.method || "POST",
-    body:
-      recentReq.method === "GET"
-        ? undefined
-        : { prompt: input.prompt, max_tokens: input.maxTokens },
+    body: undefined, // x402 endpoints have varied schemas; caller builds the body
+    isPassthrough: true,
     selection,
   };
 }
@@ -316,6 +315,7 @@ app.post("/", async (c) => {
     maxTokens?: number;
     sortBy?: string;
     signedPayment?: unknown;
+    requestBody?: unknown; // caller-provided body for x402 pass-through endpoints
   };
   try {
     body = await c.req.json();
@@ -384,11 +384,14 @@ app.post("/", async (c) => {
     // ── 2. Inject auth headers + call via proxyCore ───────────
     const headers = injectAuthHeaders(sel.targetUrl);
 
+    // For x402 pass-through endpoints, use caller's requestBody if provided
+    const requestBody = sel.isPassthrough ? body.requestBody : sel.body;
+
     const result = await proxyCore.handleRequest({
       targetUrl: sel.targetUrl,
-      method: "POST",
+      method: sel.method || "POST",
       headers,
-      body: sel.body,
+      body: requestBody,
       projectId,
       signedPayment: body.signedPayment,
     });

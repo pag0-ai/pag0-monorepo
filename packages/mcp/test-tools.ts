@@ -279,7 +279,12 @@ await test("full smart flow (Developer Tools)", async () => {
   );
 
   // 3. Execute via proxyFetch
-  const reqBody = sel.body != null ? JSON.stringify(sel.body) : undefined;
+  // For x402 pass-through endpoints, build the correct body (caller's responsibility)
+  const reqBody = sel.body != null
+    ? JSON.stringify(sel.body)
+    : sel.isPassthrough
+      ? JSON.stringify({ a: 2, b: 3 }) // x402-ai-starter-alpha expects { a, b }
+      : undefined;
   const response = await proxyFetch(sel.targetUrl, {
     method: sel.method,
     headers,
