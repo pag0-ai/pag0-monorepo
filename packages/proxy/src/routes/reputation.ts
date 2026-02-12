@@ -27,15 +27,7 @@ app.get('/agent', async (c) => {
     const profile = await subgraphClient.getAgentProfile(agentId);
 
     if (!profile) {
-      return c.json(
-        {
-          error: {
-            code: 'NOT_FOUND',
-            message: `No on-chain reputation found for: ${agentId}`,
-          },
-        },
-        404,
-      );
+      return c.json({ data: null });
     }
 
     // Compute avg score from recent feedbacks

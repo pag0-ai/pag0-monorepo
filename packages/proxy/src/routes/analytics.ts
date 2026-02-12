@@ -284,9 +284,9 @@ analyticsRoutes.get('/costs', async (c) => {
     const interval = periodToInterval(period);
     const truncUnit = granularityToTrunc(granularity);
 
-    const results = await sql`
+    const results = await sql.unsafe(`
       SELECT
-        DATE_TRUNC(${truncUnit}, created_at) as timestamp,
+        DATE_TRUNC($1, created_at) as timestamp,
         COALESCE(SUM(cost), 0) as spent,
         COALESCE(
           SUM(CASE WHEN cached THEN cost ELSE 0 END),
@@ -294,11 +294,11 @@ analyticsRoutes.get('/costs', async (c) => {
         ) as saved,
         COUNT(*) as request_count
       FROM requests
-      WHERE project_id = ${projectId}::uuid
-        AND created_at >= NOW() - ${interval}::interval
-      GROUP BY DATE_TRUNC(${truncUnit}, created_at)
+      WHERE project_id = $2::uuid
+        AND created_at >= NOW() - $3::interval
+      GROUP BY DATE_TRUNC($1, created_at)
       ORDER BY timestamp ASC
-    `;
+    `, [truncUnit, projectId, interval]);
 
     const timeseries: CostTimeseriesPoint[] = results.map((r) => ({
       timestamp: (r.timestamp as Date).toISOString(),
