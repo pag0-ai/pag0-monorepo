@@ -13,6 +13,7 @@ contract ReputationRegistryTest is Test {
 
     event FeedbackGiven(
         string indexed agentId,
+        string agentIdRaw,
         uint256 value,
         bytes32 tag1,
         bytes32 tag2,
@@ -23,6 +24,7 @@ contract ReputationRegistryTest is Test {
     function test_giveFeedback_emitsEvent() public {
         vm.expectEmit(false, false, false, true);
         emit FeedbackGiven(
+            "agent-001",
             "agent-001",
             1000000,
             bytes32("quality"),

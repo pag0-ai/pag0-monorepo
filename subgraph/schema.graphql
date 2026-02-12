@@ -2,6 +2,7 @@
 
 type Agent @entity {
   id: ID!
+  name: String!
   feedbacks: [FeedbackEvent!]! @derivedFrom(field: "agent")
   validationRequests: [ValidationRequestEvent!]! @derivedFrom(field: "agent")
   validationResponses: [ValidationResponseEvent!]! @derivedFrom(field: "agent")
@@ -14,6 +15,7 @@ type FeedbackEvent @entity {
   id: ID!
   agent: Agent!
   agentId: String!
+  agentName: String!
   value: Int!
   tag1: String!
   tag2: String!

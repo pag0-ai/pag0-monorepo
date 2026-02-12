@@ -19,6 +19,7 @@ export const AGENT_PROFILE = `
   query AgentProfile($agentId: String!) {
     agent(id: $agentId) {
       id
+      name
       eventCount
       firstSeen
       lastSeen
@@ -31,6 +32,7 @@ export const AGENT_PROFILE = `
     ) {
       id
       agentId
+      agentName
       value
       tag1
       tag2
@@ -53,6 +55,7 @@ export const FEEDBACK_HISTORY = `
     ) {
       id
       agentId
+      agentName
       value
       tag1
       tag2
@@ -72,6 +75,7 @@ export const LEADERBOARD = `
       first: $first
     ) {
       id
+      name
       eventCount
       firstSeen
       lastSeen

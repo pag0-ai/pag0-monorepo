@@ -11,10 +11,11 @@ import {
   ValidationRequestEvent,
 } from "../generated/schema";
 
-function getOrCreateAgent(agentId: string, timestamp: BigInt): Agent {
+function getOrCreateAgent(agentId: string, name: string, timestamp: BigInt): Agent {
   let agent = Agent.load(agentId);
   if (agent == null) {
     agent = new Agent(agentId);
+    agent.name = name;
     agent.eventCount = 0;
     agent.firstSeen = timestamp;
     agent.lastSeen = timestamp;
@@ -28,11 +29,13 @@ function getOrCreateAgent(agentId: string, timestamp: BigInt): Agent {
 export function handleFeedbackGiven(event: FeedbackGivenEvent): void {
   const id = event.transaction.hash.toHexString() + "-" + event.logIndex.toString();
   const agentId = event.params.agentId.toHexString();
-  const agent = getOrCreateAgent(agentId, event.block.timestamp);
+  const agentName = event.params.agentIdRaw;
+  const agent = getOrCreateAgent(agentId, agentName, event.block.timestamp);
 
   const entity = new FeedbackEvent(id);
   entity.agent = agent.id;
   entity.agentId = agentId;
+  entity.agentName = agentName;
   entity.value = event.params.value.toI32();
   entity.tag1 = event.params.tag1.toString();
   entity.tag2 = event.params.tag2.toString();
@@ -46,7 +49,7 @@ export function handleFeedbackGiven(event: FeedbackGivenEvent): void {
 export function handleValidationRequested(event: ValidationRequestedEvent): void {
   const id = event.transaction.hash.toHexString() + "-" + event.logIndex.toString();
   const agentId = event.params.agentId.toHexString();
-  const agent = getOrCreateAgent(agentId, event.block.timestamp);
+  const agent = getOrCreateAgent(agentId, agentId, event.block.timestamp);
 
   const entity = new ValidationRequestEvent(id);
   entity.agent = agent.id;

@@ -81,6 +81,7 @@ export class SubgraphClient {
 
     return {
       agentId: data.agent.id,
+      agentName: data.agent.name,
       eventCount: data.agent.eventCount,
       firstSeen: Number(data.agent.firstSeen),
       lastSeen: Number(data.agent.lastSeen),
@@ -130,6 +131,7 @@ export class SubgraphClient {
 
       return {
         agentId: agent.id,
+        agentName: agent.name,
         eventCount: agent.eventCount,
         avgScore,
       };

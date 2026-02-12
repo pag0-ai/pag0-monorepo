@@ -4,6 +4,7 @@ pragma solidity ^0.8.19;
 contract ReputationRegistry {
     event FeedbackGiven(
         string indexed agentId,
+        string agentIdRaw,
         uint256 value,
         bytes32 tag1,
         bytes32 tag2,
@@ -20,6 +21,6 @@ contract ReputationRegistry {
         string calldata feedbackURI,
         bytes32 feedbackHash
     ) external {
-        emit FeedbackGiven(agentId, value, tag1, tag2, feedbackURI, feedbackHash);
+        emit FeedbackGiven(agentId, agentId, value, tag1, tag2, feedbackURI, feedbackHash);
     }
 }

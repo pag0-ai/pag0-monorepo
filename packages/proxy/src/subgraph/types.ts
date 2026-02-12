@@ -2,6 +2,7 @@
 
 export interface SubgraphAgent {
   id: string;
+  name?: string;
   eventCount: number;
   firstSeen: string;  // BigInt as string
   lastSeen: string;
@@ -10,6 +11,7 @@ export interface SubgraphAgent {
 export interface SubgraphFeedbackEvent {
   id: string;
   agentId: string;
+  agentName?: string;
   value: number;
   tag1: string;
   tag2: string;
@@ -35,6 +37,7 @@ export interface AgentReputation {
 
 export interface AgentProfile {
   agentId: string;
+  agentName?: string;
   eventCount: number;
   firstSeen: number;
   lastSeen: number;
@@ -43,6 +46,7 @@ export interface AgentProfile {
 
 export interface AgentSummary {
   agentId: string;
+  agentName?: string;
   eventCount: number;
   avgScore: number;
 }

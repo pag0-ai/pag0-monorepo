@@ -184,6 +184,7 @@ async function querySubgraph(
     ) {
       id
       agentId
+      agentName
       value
       tag1
       tag2
@@ -191,6 +192,9 @@ async function querySubgraph(
       feedbackHash
       timestamp
       txHash
+      agent {
+        name
+      }
     }
   }`;
 
@@ -213,6 +217,10 @@ async function queryReputation(endpoint: string): Promise<unknown> {
     ) {
       value
       timestamp
+      agentName
+      agent {
+        name
+      }
     }
   }`;
 

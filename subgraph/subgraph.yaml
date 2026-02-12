@@ -6,7 +6,7 @@ dataSources:
     name: ReputationRegistry
     network: skale-bite-sandbox
     source:
-      address: "0xeBEf8A66D614ac91dA4397a5d37A1a2daAD240de"
+      address: "0xCC46EFB2118C323D5E1543115C4b4DfA3bc02131"
       abi: ReputationRegistry
       startBlock: 20436
     mapping:
@@ -19,7 +19,7 @@ dataSources:
         - name: ReputationRegistry
           file: ./abis/ReputationRegistry.json
       eventHandlers:
-        - event: FeedbackGiven(indexed string,uint256,bytes32,bytes32,string,bytes32)
+        - event: FeedbackGiven(indexed string,string,uint256,bytes32,bytes32,string,bytes32)
           handler: handleFeedbackGiven
       file: ./src/mapping.ts
 
@@ -27,7 +27,7 @@ dataSources:
     name: ValidationRegistry
     network: skale-bite-sandbox
     source:
-      address: "0x719dBB83664Ad25091CB91b0a39BF52BD7685c0A"
+      address: "0x05bf80675DcFD3fdD1F7889685CB925C9c56c308"
       abi: ValidationRegistry
       startBlock: 20436
     mapping:

@@ -42,6 +42,7 @@ app.get('/agent', async (c) => {
     return c.json({
       data: {
         agentId: profile.agentId,
+        agentName: profile.agentName,
         avgScore,
         feedbackCount: profile.eventCount,
         firstSeen: new Date(profile.firstSeen * 1000).toISOString(),
@@ -93,6 +94,7 @@ app.get('/feedbacks', async (c) => {
         feedbacks: feedbacks.map((f) => ({
           id: f.id,
           agentId: f.agentId,
+          agentName: f.agentName,
           qualityScore: f.value,
           tag1: f.tag1,
           tag2: f.tag2,
