@@ -118,24 +118,22 @@ fi
 echo ""
 
 # ---- Setup: Load or register API key ----
-API_KEY="${PAG0_API_KEY:-}"
-
-if [ -n "$API_KEY" ]; then
-  echo -e "${GREEN}✓ PAG0_API_KEY loaded from .env: ${API_KEY:0:20}...${NC}"
+if [ -n "${PAG0_API_KEY:-}" ]; then
+  echo -e "${GREEN}✓ PAG0_API_KEY loaded from .env: ${PAG0_API_KEY:0:20}...${NC}"
 else
   echo -e "${YELLOW}=== Setup: Creating demo user ===${NC}"
   DEMO_EMAIL="mcp-demo-${RANDOM}@pag0.io"
   REGISTER_RESP=$(curl -s -X POST "$BASE_URL/api/auth/register" \
     -H "Content-Type: application/json" \
     -d '{"email":"'"$DEMO_EMAIL"'","password":"Demo1234x","name":"MCP Agent"}')
-  API_KEY=$(echo "$REGISTER_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('apiKey',''))" 2>/dev/null || echo "")
+  PAG0_API_KEY=$(echo "$REGISTER_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('apiKey',''))" 2>/dev/null || echo "")
 
-  if [ -z "$API_KEY" ]; then
+  if [ -z "$PAG0_API_KEY" ]; then
     echo -e "${RED}✗ Failed to register demo user${NC}"
     echo "  Response: $REGISTER_RESP"
     exit 1
   fi
-  echo -e "${GREEN}✓ API Key: ${API_KEY:0:20}...${NC}"
+  echo -e "${GREEN}✓ API Key: ${PAG0_API_KEY:0:20}...${NC}"
 fi
 
 # ---- Setup: Generate wallet key (local mode only) ----
@@ -159,7 +157,7 @@ cat > "$DEMO_DIR/.mcp.json" << EOF
       "env": {
         "NODE_PATH": "$MCP_DIR/node_modules",
         "PAG0_API_URL": "$BASE_URL",
-        "PAG0_API_KEY": "$API_KEY",
+        "PAG0_API_KEY": "$PAG0_API_KEY",
         "WALLET_MODE": "cdp",
         "CDP_API_KEY_ID": "${CDP_API_KEY_ID}",
         "CDP_API_KEY_SECRET": "${CDP_API_KEY_SECRET}",
@@ -182,7 +180,7 @@ cat > "$DEMO_DIR/.mcp.json" << EOF
       "env": {
         "NODE_PATH": "$MCP_DIR/node_modules",
         "PAG0_API_URL": "$BASE_URL",
-        "PAG0_API_KEY": "$API_KEY",
+        "PAG0_API_KEY": "$PAG0_API_KEY",
         "WALLET_MODE": "local",
         "WALLET_PRIVATE_KEY": "$WALLET_KEY",
         "NETWORK": "base-sepolia",
