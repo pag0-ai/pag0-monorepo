@@ -113,20 +113,33 @@ else
 fi
 echo ""
 
-# ---- Setup: Register demo user ----
-echo -e "${YELLOW}=== Setup: Creating demo user ===${NC}"
-DEMO_EMAIL="mcp-demo-${RANDOM}@pag0.io"
-REGISTER_RESP=$(curl -s -X POST "$BASE_URL/api/auth/register" \
-  -H "Content-Type: application/json" \
-  -d '{"email":"'"$DEMO_EMAIL"'","password":"Demo1234x","name":"MCP Agent"}')
-API_KEY=$(echo "$REGISTER_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('apiKey',''))" 2>/dev/null || echo "")
+# ---- Setup: Load or register API key ----
+# Check PAG0_API_KEY from .env files first
+API_KEY=""
+for _envfile in "$MCP_DIR/.env" "$MONOREPO_ROOT/.env" "$MONOREPO_ROOT/.env.local"; do
+  if [ -f "$_envfile" ] && [ -z "$API_KEY" ]; then
+    _key=$(grep -E '^PAG0_API_KEY=' "$_envfile" 2>/dev/null | head -1 | cut -d'=' -f2- | sed 's/^["'\'']*//;s/["'\'']*$//' || true)
+    [ -n "$_key" ] && API_KEY="$_key"
+  fi
+done
 
-if [ -z "$API_KEY" ]; then
-  echo -e "${RED}✗ Failed to register demo user${NC}"
-  echo "  Response: $REGISTER_RESP"
-  exit 1
+if [ -n "$API_KEY" ]; then
+  echo -e "${GREEN}✓ PAG0_API_KEY loaded from .env: ${API_KEY:0:20}...${NC}"
+else
+  echo -e "${YELLOW}=== Setup: Creating demo user ===${NC}"
+  DEMO_EMAIL="mcp-demo-${RANDOM}@pag0.io"
+  REGISTER_RESP=$(curl -s -X POST "$BASE_URL/api/auth/register" \
+    -H "Content-Type: application/json" \
+    -d '{"email":"'"$DEMO_EMAIL"'","password":"Demo1234x","name":"MCP Agent"}')
+  API_KEY=$(echo "$REGISTER_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('apiKey',''))" 2>/dev/null || echo "")
+
+  if [ -z "$API_KEY" ]; then
+    echo -e "${RED}✗ Failed to register demo user${NC}"
+    echo "  Response: $REGISTER_RESP"
+    exit 1
+  fi
+  echo -e "${GREEN}✓ API Key: ${API_KEY:0:20}...${NC}"
 fi
-echo -e "${GREEN}✓ API Key: ${API_KEY:0:20}...${NC}"
 
 # ---- Setup: Generate wallet key (local mode only) ----
 if [ "$WALLET_MODE" = "local" ]; then
