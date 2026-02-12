@@ -20,6 +20,7 @@ import { registerPolicyTools } from "./tools/policy.js";
 import { registerCurationTools } from "./tools/curation.js";
 import { registerAnalyticsTools } from "./tools/analytics.js";
 import { registerSmartTools } from "./tools/smart.js";
+import { registerAuditTools } from "./tools/audit.js";
 
 // ── Environment ────────────────────────────────────────────
 
@@ -73,6 +74,7 @@ registerPolicyTools(server, client);
 registerCurationTools(server, client);
 registerAnalyticsTools(server, client);
 registerSmartTools(server, client, wallet, API_CREDENTIALS);
+registerAuditTools(server, client);
 
 // ── Connect ────────────────────────────────────────────────
 

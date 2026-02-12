@@ -1,0 +1,30 @@
+# ERC-8004 Audit Events — Pag0 Smart Proxy
+
+type FeedbackEvent @entity {
+  id: ID!
+  agentId: String!
+  value: Int!
+  tag1: String!
+  tag2: String!
+  feedbackURI: String!
+  feedbackHash: Bytes!
+  timestamp: BigInt!
+  txHash: String!
+}
+
+type ValidationRequestEvent @entity {
+  id: ID!
+  agentId: String!
+  requestData: Bytes!
+  timestamp: BigInt!
+  txHash: String!
+}
+
+type ValidationResponseEvent @entity {
+  id: ID!
+  agentId: String!
+  approved: Boolean!
+  responseData: Bytes!
+  timestamp: BigInt!
+  txHash: String!
+}

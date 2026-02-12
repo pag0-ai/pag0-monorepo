@@ -1,0 +1,22 @@
+[
+  {
+    "inputs": [
+      { "name": "agentId", "type": "string" },
+      { "name": "data", "type": "bytes" }
+    ],
+    "name": "validationRequest",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "name": "agentId", "type": "string" },
+      { "indexed": false, "name": "data", "type": "bytes" },
+      { "indexed": false, "name": "timestamp", "type": "uint256" }
+    ],
+    "name": "ValidationRequested",
+    "type": "event"
+  }
+]

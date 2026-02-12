@@ -126,10 +126,10 @@ type ValidationResponseEvent @entity {
 
 ## 완료 기준
 
-- [ ] `pag0_audit_trail` MCP tool 구현 + 등록
-- [ ] `pag0_reputation` MCP tool 구현 + 등록
-- [ ] MCP client.ts에 audit/reputation API 메서드 추가
-- [ ] The Graph subgraph schema 정의
-- [ ] Event mapping 구현
-- [ ] subgraph.yaml 설정
-- [ ] MCP build 성공
+- [x] `pag0_audit_trail` MCP tool 구현 + 등록
+- [x] `pag0_reputation` MCP tool 구현 + 등록
+- [x] MCP client.ts에 audit/reputation API 메서드 추가
+- [x] The Graph subgraph schema 정의
+- [x] Event mapping 구현
+- [x] subgraph.yaml 설정
+- [x] MCP build 성공

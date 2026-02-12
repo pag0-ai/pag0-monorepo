@@ -157,6 +157,21 @@ export class Pag0Client {
     );
   }
 
+  // ── ERC-8004 Audit ─────────────────────────────────────────
+
+  async getAuditTrail(params?: { endpoint?: string; period?: string }) {
+    const qs = new URLSearchParams();
+    if (params?.endpoint) qs.set("endpoint", params.endpoint);
+    if (params?.period) qs.set("period", params.period);
+    return this.get(`/api/audit/trail?${qs}`);
+  }
+
+  async getReputation(endpoint: string) {
+    return this.get(
+      `/api/audit/reputation/${encodeURIComponent(endpoint)}`,
+    );
+  }
+
   // ── Smart Request ──────────────────────────────────────────
 
   async smartRequest(params: {
