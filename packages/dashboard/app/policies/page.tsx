@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2, X, Shield, AlertCircle, RefreshCw } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Shield, AlertTriangle, RotateCcw } from 'lucide-react';
 import {
   fetchPolicies,
   createPolicy,
@@ -13,7 +13,6 @@ import {
   type CreatePolicyData,
 } from '../../lib/api';
 
-// USDC conversion utilities
 const toUsdcBigint = (dollars: string): string => {
   const num = parseFloat(dollars || '0');
   return String(Math.floor(num * 1_000_000));
@@ -25,9 +24,9 @@ const fromUsdcBigint = (usdc: string): string => {
 
 interface PolicyFormData {
   name: string;
-  maxPerRequest: string; // dollars
-  dailyBudget: string; // dollars
-  monthlyBudget: string; // dollars
+  maxPerRequest: string;
+  dailyBudget: string;
+  monthlyBudget: string;
   allowedEndpoints: string;
   blockedEndpoints: string;
 }
@@ -40,16 +39,10 @@ export default function PoliciesPage() {
   const [editingPolicy, setEditingPolicy] = useState<Policy | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [formData, setFormData] = useState<PolicyFormData>({
-    name: '',
-    maxPerRequest: '',
-    dailyBudget: '',
-    monthlyBudget: '',
-    allowedEndpoints: '',
-    blockedEndpoints: '',
+    name: '', maxPerRequest: '', dailyBudget: '', monthlyBudget: '',
+    allowedEndpoints: '', blockedEndpoints: '',
   });
   const [formError, setFormError] = useState('');
-
-  // Fetch policies
   const [deleteError, setDeleteError] = useState('');
 
   const { data: policies = [], isLoading, isError: policiesError, refetch: policiesRefetch } = useQuery({
@@ -58,57 +51,27 @@ export default function PoliciesPage() {
     enabled: !!apiKey,
   });
 
-  // Create policy mutation
   const createMutation = useMutation({
     mutationFn: (data: CreatePolicyData) => createPolicy(data, apiKey),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['policies'] });
-      queryClient.invalidateQueries({ queryKey: ['analytics'] });
-      closeModal();
-    },
-    onError: (error: Error) => {
-      setFormError(error.message);
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['policies'] }); queryClient.invalidateQueries({ queryKey: ['analytics'] }); closeModal(); },
+    onError: (error: Error) => { setFormError(error.message); },
   });
 
-  // Update policy mutation
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<CreatePolicyData> }) =>
-      updatePolicy(id, data, apiKey),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['policies'] });
-      queryClient.invalidateQueries({ queryKey: ['analytics'] });
-      closeModal();
-    },
-    onError: (error: Error) => {
-      setFormError(error.message);
-    },
+    mutationFn: ({ id, data }: { id: string; data: Partial<CreatePolicyData> }) => updatePolicy(id, data, apiKey),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['policies'] }); queryClient.invalidateQueries({ queryKey: ['analytics'] }); closeModal(); },
+    onError: (error: Error) => { setFormError(error.message); },
   });
 
-  // Delete policy mutation
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deletePolicy(id, apiKey),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['policies'] });
-      queryClient.invalidateQueries({ queryKey: ['analytics'] });
-      setDeleteConfirm(null);
-      setDeleteError('');
-    },
-    onError: (error: Error) => {
-      setDeleteError(error.message);
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['policies'] }); queryClient.invalidateQueries({ queryKey: ['analytics'] }); setDeleteConfirm(null); setDeleteError(''); },
+    onError: (error: Error) => { setDeleteError(error.message); },
   });
 
   const openCreateModal = () => {
     setEditingPolicy(null);
-    setFormData({
-      name: '',
-      maxPerRequest: '',
-      dailyBudget: '',
-      monthlyBudget: '',
-      allowedEndpoints: '',
-      blockedEndpoints: '',
-    });
+    setFormData({ name: '', maxPerRequest: '', dailyBudget: '', monthlyBudget: '', allowedEndpoints: '', blockedEndpoints: '' });
     setFormError('');
     setIsModalOpen(true);
   };
@@ -127,157 +90,155 @@ export default function PoliciesPage() {
     setIsModalOpen(true);
   };
 
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setEditingPolicy(null);
-    setFormError('');
-  };
+  const closeModal = () => { setIsModalOpen(false); setEditingPolicy(null); setFormError(''); };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
-
-    // Validation
     const maxPerRequest = parseFloat(formData.maxPerRequest || '0');
     const dailyBudget = parseFloat(formData.dailyBudget || '0');
     const monthlyBudget = parseFloat(formData.monthlyBudget || '0');
-
     if (maxPerRequest > dailyBudget || dailyBudget > monthlyBudget) {
       setFormError('Budget constraints: Max Per Request <= Daily Budget <= Monthly Budget');
       return;
     }
-
     const data: CreatePolicyData = {
       name: formData.name,
       maxPerRequest: toUsdcBigint(formData.maxPerRequest),
       dailyBudget: toUsdcBigint(formData.dailyBudget),
       monthlyBudget: toUsdcBigint(formData.monthlyBudget),
-      allowedEndpoints: formData.allowedEndpoints
-        .split(',')
-        .map(s => s.trim())
-        .filter(Boolean),
-      blockedEndpoints: formData.blockedEndpoints
-        .split(',')
-        .map(s => s.trim())
-        .filter(Boolean),
+      allowedEndpoints: formData.allowedEndpoints.split(',').map(s => s.trim()).filter(Boolean),
+      blockedEndpoints: formData.blockedEndpoints.split(',').map(s => s.trim()).filter(Boolean),
     };
+    if (editingPolicy) { updateMutation.mutate({ id: editingPolicy.id, data }); }
+    else { createMutation.mutate(data); }
+  };
 
-    if (editingPolicy) {
-      updateMutation.mutate({ id: editingPolicy.id, data });
-    } else {
-      createMutation.mutate(data);
-    }
+  const inputStyle = {
+    background: 'var(--color-obsidian-base)',
+    border: '1px solid var(--color-obsidian-border-bright)',
+    borderRadius: '10px',
+    color: 'var(--color-txt-primary)',
+    fontFamily: 'var(--font-mono)',
+    fontSize: '13px',
   };
 
   return (
-    <div>
+    <div className="max-w-[1400px]">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-8 animate-fade-up">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Policies</h1>
-          <p className="text-gray-400">Manage spending policies and budgets</p>
+          <h1 className="text-3xl font-bold tracking-tight mb-1" style={{ color: 'var(--color-txt-primary)' }}>
+            Policies
+          </h1>
+          <p className="text-sm" style={{ color: 'var(--color-txt-muted)' }}>
+            Manage spending policies and endpoint access rules
+          </p>
         </div>
-        <button
-          onClick={openCreateModal}
-          className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
-        >
-          <Plus className="w-5 h-5" />
+        <button onClick={openCreateModal} className="btn-primary flex items-center gap-2 px-5 py-2.5 text-sm">
+          <Plus size={16} />
           Create Policy
         </button>
       </div>
 
       {/* Error State */}
       {policiesError && (
-        <div className="bg-red-900/20 border border-red-800/50 rounded-lg p-6 mb-6 flex items-center gap-4">
-          <AlertCircle className="w-8 h-8 text-red-400 shrink-0" />
-          <div className="flex-1">
-            <h3 className="text-white font-medium">Failed to load policies</h3>
-            <p className="text-gray-400 text-sm">Check that the proxy server is running.</p>
+        <div className="glass-card p-5 mb-6 flex items-center gap-4" style={{ borderColor: 'rgba(244,63,94,0.3)' }}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(244,63,94,0.1)' }}>
+            <AlertTriangle size={20} style={{ color: 'var(--color-neon-rose)' }} />
           </div>
-          <button onClick={() => policiesRefetch()} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm transition-colors flex items-center gap-2">
-            <RefreshCw size={14} /> Retry
+          <div className="flex-1">
+            <p className="text-sm font-semibold" style={{ color: 'var(--color-txt-primary)' }}>Failed to load policies</p>
+            <p className="text-xs" style={{ color: 'var(--color-txt-muted)' }}>Check that the proxy server is running.</p>
+          </div>
+          <button onClick={() => policiesRefetch()} className="btn-primary px-4 py-2 text-xs flex items-center gap-2">
+            <RotateCcw size={12} /> Retry
           </button>
         </div>
       )}
 
-      {/* Loading State */}
+      {/* Loading */}
       {isLoading && (
-        <div className="text-center py-12 text-gray-400">Loading policies...</div>
+        <div className="flex items-center justify-center py-16" style={{ color: 'var(--color-txt-muted)' }}>
+          <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin mr-3" style={{ borderColor: 'var(--color-neon-indigo)', borderTopColor: 'transparent' }} />
+          Loading policies...
+        </div>
       )}
 
       {/* Empty State */}
       {!isLoading && policies.length === 0 && (
-        <div className="bg-gray-800 rounded-lg p-12 text-center">
-          <Shield className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-white mb-2">No policies yet</h3>
-          <p className="text-gray-400 mb-6">
+        <div className="glass-card p-16 text-center animate-fade-up">
+          <div
+            className="w-16 h-16 rounded-2xl mx-auto mb-5 flex items-center justify-center"
+            style={{ background: 'rgba(99,102,241,0.08)' }}
+          >
+            <Shield size={28} style={{ color: 'var(--color-neon-indigo)' }} />
+          </div>
+          <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--color-txt-primary)' }}>No policies yet</h3>
+          <p className="text-sm mb-6 max-w-md mx-auto" style={{ color: 'var(--color-txt-muted)' }}>
             Create your first policy to control spending and endpoint access
           </p>
-          <button
-            onClick={openCreateModal}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
-          >
-            <Plus className="w-5 h-5" />
-            Create Policy
+          <button onClick={openCreateModal} className="btn-primary inline-flex items-center gap-2 px-5 py-2.5 text-sm">
+            <Plus size={16} /> Create Policy
           </button>
         </div>
       )}
 
       {/* Policies Table */}
       {!isLoading && policies.length > 0 && (
-        <div className="bg-gray-800 rounded-lg overflow-hidden">
+        <div className="glass-card overflow-hidden animate-fade-up">
           <table className="w-full">
-            <thead className="bg-gray-900">
-              <tr>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Name</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">
-                  Daily Budget
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">
-                  Monthly Budget
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Status</th>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-gray-300">
-                  Actions
-                </th>
+            <thead>
+              <tr style={{ background: 'var(--color-obsidian-base)' }}>
+                {['Name', 'Daily Budget', 'Monthly Budget', 'Status', 'Actions'].map((h, i) => (
+                  <th
+                    key={h}
+                    className={`px-6 py-3.5 text-[10px] font-semibold uppercase tracking-widest ${i === 4 ? 'text-right' : 'text-left'}`}
+                    style={{ color: 'var(--color-txt-muted)' }}
+                  >
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-700">
+            <tbody>
               {policies.map(policy => (
-                <tr key={policy.id} className="hover:bg-gray-700 transition-colors">
-                  <td className="px-6 py-4 text-white font-medium">{policy.name}</td>
-                  <td className="px-6 py-4 text-gray-300">
+                <tr key={policy.id} className="table-row-hover border-t" style={{ borderColor: 'var(--color-obsidian-border)' }}>
+                  <td className="px-6 py-4 text-sm font-medium" style={{ color: 'var(--color-txt-primary)' }}>{policy.name}</td>
+                  <td className="px-6 py-4 text-sm metric-value" style={{ color: 'var(--color-txt-secondary)' }}>
                     ${fromUsdcBigint(policy.dailyBudget)}
                   </td>
-                  <td className="px-6 py-4 text-gray-300">
+                  <td className="px-6 py-4 text-sm metric-value" style={{ color: 'var(--color-txt-secondary)' }}>
                     ${fromUsdcBigint(policy.monthlyBudget)}
                   </td>
                   <td className="px-6 py-4">
-                    {policy.isActive ? (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-900 text-green-200">
-                        Active
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-700 text-gray-300">
-                        Inactive
-                      </span>
-                    )}
+                    <span
+                      className="text-[11px] font-semibold px-2.5 py-1 rounded-lg"
+                      style={{
+                        color: policy.isActive ? 'var(--color-neon-green)' : 'var(--color-txt-muted)',
+                        background: policy.isActive ? 'rgba(16,185,129,0.1)' : 'var(--color-obsidian-border)',
+                      }}
+                    >
+                      {policy.isActive ? 'Active' : 'Inactive'}
+                    </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
+                    <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() => openEditModal(policy)}
-                        className="p-2 text-gray-400 hover:text-white hover:bg-gray-600 rounded transition-colors"
+                        className="p-2 rounded-lg transition-all hover:scale-105"
+                        style={{ color: 'var(--color-txt-muted)' }}
                         title="Edit"
                       >
-                        <Pencil className="w-4 h-4" />
+                        <Pencil size={15} />
                       </button>
                       <button
                         onClick={() => setDeleteConfirm(policy.id)}
-                        className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-600 rounded transition-colors"
+                        className="p-2 rounded-lg transition-all hover:scale-105"
+                        style={{ color: 'var(--color-txt-muted)' }}
                         title="Delete"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 size={15} />
                       </button>
                     </div>
                   </td>
@@ -290,171 +251,104 @@ export default function PoliciesPage() {
 
       {/* Create/Edit Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-gray-900/75 flex items-center justify-center z-50">
-          <div className="bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-700">
-              <h2 className="text-2xl font-bold text-white">
+        <div className="fixed inset-0 flex items-center justify-center z-50" style={{ background: 'rgba(7,7,14,0.85)', backdropFilter: 'blur(8px)' }}>
+          <div className="glass-card max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto glow-indigo" style={{ borderColor: 'rgba(99,102,241,0.2)' }}>
+            <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: 'var(--color-obsidian-border)' }}>
+              <h2 className="text-xl font-bold" style={{ color: 'var(--color-txt-primary)' }}>
                 {editingPolicy ? 'Edit Policy' : 'Create Policy'}
               </h2>
-              <button
-                onClick={closeModal}
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                <X className="w-6 h-6" />
+              <button onClick={closeModal} className="p-1 rounded-lg transition-colors" style={{ color: 'var(--color-txt-muted)' }}>
+                <X size={20} />
               </button>
             </div>
 
-            {/* Modal Body */}
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            <form onSubmit={handleSubmit} className="p-6 space-y-5">
               {formError && (
-                <div className="bg-red-900/20 border border-red-900 text-red-400 px-4 py-3 rounded">
+                <div className="text-xs px-4 py-3 rounded-xl" style={{ color: 'var(--color-neon-rose)', background: 'rgba(244,63,94,0.08)', border: '1px solid rgba(244,63,94,0.2)' }}>
                   {formError}
                 </div>
               )}
 
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--color-txt-muted)' }}>
                   Policy Name
                 </label>
                 <input
                   type="text"
-                  id="name"
                   value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-2.5"
+                  style={inputStyle}
                   placeholder="Production Policy"
                   required
                 />
               </div>
 
               <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label
-                    htmlFor="maxPerRequest"
-                    className="block text-sm font-medium text-gray-300 mb-2"
-                  >
-                    Max Per Request
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-2 text-gray-400">$</span>
-                    <input
-                      type="number"
-                      id="maxPerRequest"
-                      step="0.01"
-                      min="0"
-                      value={formData.maxPerRequest}
-                      onChange={e => setFormData({ ...formData, maxPerRequest: e.target.value })}
-                      className="w-full pl-7 pr-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                      placeholder="10.00"
-                      required
-                    />
+                {[
+                  { id: 'maxPerRequest', label: 'Max Per Request', placeholder: '10.00' },
+                  { id: 'dailyBudget', label: 'Daily Budget', placeholder: '100.00' },
+                  { id: 'monthlyBudget', label: 'Monthly Budget', placeholder: '1000.00' },
+                ].map(({ id, label, placeholder }) => (
+                  <div key={id}>
+                    <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--color-txt-muted)' }}>
+                      {label}
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-2.5 text-xs" style={{ color: 'var(--color-txt-muted)' }}>$</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={formData[id as keyof PolicyFormData]}
+                        onChange={e => setFormData({ ...formData, [id]: e.target.value })}
+                        className="w-full pl-7 pr-3 py-2.5"
+                        style={inputStyle}
+                        placeholder={placeholder}
+                        required
+                      />
+                    </div>
                   </div>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="dailyBudget"
-                    className="block text-sm font-medium text-gray-300 mb-2"
-                  >
-                    Daily Budget
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-2 text-gray-400">$</span>
-                    <input
-                      type="number"
-                      id="dailyBudget"
-                      step="0.01"
-                      min="0"
-                      value={formData.dailyBudget}
-                      onChange={e => setFormData({ ...formData, dailyBudget: e.target.value })}
-                      className="w-full pl-7 pr-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                      placeholder="100.00"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="monthlyBudget"
-                    className="block text-sm font-medium text-gray-300 mb-2"
-                  >
-                    Monthly Budget
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-2 text-gray-400">$</span>
-                    <input
-                      type="number"
-                      id="monthlyBudget"
-                      step="0.01"
-                      min="0"
-                      value={formData.monthlyBudget}
-                      onChange={e => setFormData({ ...formData, monthlyBudget: e.target.value })}
-                      className="w-full pl-7 pr-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                      placeholder="1000.00"
-                      required
-                    />
-                  </div>
-                </div>
+                ))}
               </div>
 
-              <div>
-                <label
-                  htmlFor="allowedEndpoints"
-                  className="block text-sm font-medium text-gray-300 mb-2"
-                >
-                  Allowed Endpoints (comma-separated)
-                </label>
-                <textarea
-                  id="allowedEndpoints"
-                  value={formData.allowedEndpoints}
-                  onChange={e => setFormData({ ...formData, allowedEndpoints: e.target.value })}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
-                  rows={3}
-                  placeholder="https://api.example.com/v1/*, https://api.another.com/*"
-                />
-                <p className="mt-1 text-xs text-gray-400">
-                  Leave empty to allow all endpoints
-                </p>
-              </div>
+              {[
+                { id: 'allowedEndpoints', label: 'Allowed Endpoints', placeholder: 'https://api.example.com/v1/*', hint: 'Leave empty to allow all' },
+                { id: 'blockedEndpoints', label: 'Blocked Endpoints', placeholder: 'https://api.expensive.com/*', hint: '' },
+              ].map(({ id, label, placeholder, hint }) => (
+                <div key={id}>
+                  <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--color-txt-muted)' }}>
+                    {label} <span className="normal-case tracking-normal font-normal">(comma-separated)</span>
+                  </label>
+                  <textarea
+                    value={formData[id as keyof PolicyFormData]}
+                    onChange={e => setFormData({ ...formData, [id]: e.target.value })}
+                    className="w-full px-4 py-2.5 resize-none"
+                    style={inputStyle}
+                    rows={2}
+                    placeholder={placeholder}
+                  />
+                  {hint && <p className="mt-1 text-[11px]" style={{ color: 'var(--color-txt-muted)' }}>{hint}</p>}
+                </div>
+              ))}
 
-              <div>
-                <label
-                  htmlFor="blockedEndpoints"
-                  className="block text-sm font-medium text-gray-300 mb-2"
-                >
-                  Blocked Endpoints (comma-separated)
-                </label>
-                <textarea
-                  id="blockedEndpoints"
-                  value={formData.blockedEndpoints}
-                  onChange={e => setFormData({ ...formData, blockedEndpoints: e.target.value })}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
-                  rows={3}
-                  placeholder="https://api.expensive.com/*, https://api.unreliable.com/*"
-                />
-              </div>
-
-              {/* Modal Footer */}
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-700">
+              <div className="flex justify-end gap-3 pt-4 border-t" style={{ borderColor: 'var(--color-obsidian-border)' }}>
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+                  className="px-5 py-2.5 text-sm font-medium rounded-xl transition-colors"
+                  style={{ color: 'var(--color-txt-secondary)', background: 'var(--color-obsidian-elevated)' }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={createMutation.isPending || updateMutation.isPending}
-                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="btn-primary px-5 py-2.5 text-sm"
                 >
                   {createMutation.isPending || updateMutation.isPending
                     ? 'Saving...'
-                    : editingPolicy
-                    ? 'Update Policy'
-                    : 'Create Policy'}
+                    : editingPolicy ? 'Update Policy' : 'Create Policy'}
                 </button>
               </div>
             </form>
@@ -464,28 +358,30 @@ export default function PoliciesPage() {
 
       {/* Delete Confirmation */}
       {deleteConfirm && (
-        <div className="fixed inset-0 bg-gray-900/75 flex items-center justify-center z-50">
-          <div className="bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
-            <h3 className="text-xl font-bold text-white mb-4">Delete Policy</h3>
-            <p className="text-gray-300 mb-4">
-              Are you sure you want to delete this policy? This action cannot be undone.
+        <div className="fixed inset-0 flex items-center justify-center z-50" style={{ background: 'rgba(7,7,14,0.85)', backdropFilter: 'blur(8px)' }}>
+          <div className="glass-card max-w-md w-full mx-4 p-6" style={{ borderColor: 'rgba(244,63,94,0.2)' }}>
+            <h3 className="text-lg font-bold mb-3" style={{ color: 'var(--color-txt-primary)' }}>Delete Policy</h3>
+            <p className="text-sm mb-5" style={{ color: 'var(--color-txt-secondary)' }}>
+              Are you sure? This action cannot be undone.
             </p>
             {deleteError && (
-              <div className="bg-red-900/20 border border-red-900 text-red-400 px-4 py-3 rounded mb-4 text-sm">
+              <div className="text-xs px-4 py-3 rounded-xl mb-4" style={{ color: 'var(--color-neon-rose)', background: 'rgba(244,63,94,0.08)' }}>
                 {deleteError}
               </div>
             )}
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setDeleteConfirm(null)}
-                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+                className="px-4 py-2 text-sm font-medium rounded-xl"
+                style={{ color: 'var(--color-txt-secondary)', background: 'var(--color-obsidian-elevated)' }}
               >
                 Cancel
               </button>
               <button
                 onClick={() => deleteMutation.mutate(deleteConfirm)}
                 disabled={deleteMutation.isPending}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 text-sm font-semibold rounded-xl text-white transition-all"
+                style={{ background: 'var(--color-neon-rose)', boxShadow: '0 0 12px rgba(244,63,94,0.3)' }}
               >
                 {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
               </button>

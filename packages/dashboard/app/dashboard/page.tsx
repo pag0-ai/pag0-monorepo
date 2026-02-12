@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useQuery } from '@tanstack/react-query';
-import { Activity, Zap, Clock, DollarSign, Rocket, AlertCircle, RefreshCw } from 'lucide-react';
+import { Activity, Zap, Clock, DollarSign, Rocket, AlertTriangle, RotateCcw } from 'lucide-react';
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   Tooltip,
@@ -29,9 +29,9 @@ function formatUsdc(amount: string): string {
 }
 
 function getBudgetColor(percentage: number): string {
-  if (percentage < 70) return 'bg-green-500';
-  if (percentage < 90) return 'bg-yellow-500';
-  return 'bg-red-500';
+  if (percentage < 70) return 'var(--color-neon-green)';
+  if (percentage < 90) return 'var(--color-neon-amber)';
+  return 'var(--color-neon-rose)';
 }
 
 export default function DashboardPage() {
@@ -65,13 +65,11 @@ export default function DashboardPage() {
 
   const isLoading = summaryLoading || costsLoading || endpointsLoading;
 
-  // Budget data from real API response
   const dailyBudget = summary?.budgetUsage?.daily || { spent: '0', limit: '0', percentage: 0 };
   const monthlyBudget = summary?.budgetUsage?.monthly || { spent: '0', limit: '0', percentage: 0 };
   const dailyPercentage = dailyBudget.percentage || 0;
   const monthlyPercentage = monthlyBudget.percentage || 0;
 
-  // Transform costs data for chart
   const chartData =
     costs?.map((point) => ({
       timestamp: new Date(point.timestamp).toLocaleTimeString([], {
@@ -91,25 +89,38 @@ export default function DashboardPage() {
   const isEmpty = !summary || summary.totalRequests === 0;
 
   return (
-    <div>
+    <div className="max-w-[1400px]">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-8 animate-fade-up">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Dashboard</h1>
-          <p className="text-gray-400">Overview of your Pag0 proxy metrics</p>
+          <h1
+            className="text-3xl font-bold tracking-tight mb-1"
+            style={{ color: 'var(--color-txt-primary)', fontFamily: 'var(--font-display)' }}
+          >
+            Dashboard
+          </h1>
+          <p className="text-sm" style={{ color: 'var(--color-txt-muted)' }}>
+            Real-time overview of your proxy metrics
+          </p>
         </div>
 
         {/* Period Selector */}
-        <div className="flex gap-2 bg-gray-800 rounded-lg p-1">
+        <div
+          className="flex gap-1 p-1 rounded-xl"
+          style={{ background: 'var(--color-obsidian-surface)', border: '1px solid var(--color-obsidian-border)' }}
+        >
           {(['1h', '24h', '7d', '30d'] as Period[]).map((p) => (
             <button
               key={p}
               onClick={() => setPeriod(p)}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                period === p
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-400 hover:text-white hover:bg-gray-700'
-              }`}
+              className="px-4 py-2 rounded-lg text-xs font-semibold tracking-wide transition-all duration-200"
+              style={{
+                background: period === p
+                  ? 'linear-gradient(135deg, var(--color-neon-indigo), #7c3aed)'
+                  : 'transparent',
+                color: period === p ? 'white' : 'var(--color-txt-muted)',
+                boxShadow: period === p ? '0 0 12px rgba(99, 102, 241, 0.3)' : 'none',
+              }}
             >
               {p}
             </button>
@@ -119,39 +130,57 @@ export default function DashboardPage() {
 
       {/* Error State */}
       {hasError && (
-        <div className="bg-red-900/20 border border-red-800/50 rounded-lg p-6 mb-8 flex items-center gap-4">
-          <AlertCircle className="w-8 h-8 text-red-400 shrink-0" />
-          <div className="flex-1">
-            <h3 className="text-white font-medium">Failed to load dashboard data</h3>
-            <p className="text-gray-400 text-sm">Check that the proxy server is running.</p>
+        <div
+          className="glass-card p-5 mb-6 flex items-center gap-4 animate-fade-up"
+          style={{ borderColor: 'rgba(244, 63, 94, 0.3)' }}
+        >
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(244, 63, 94, 0.1)' }}>
+            <AlertTriangle size={20} style={{ color: 'var(--color-neon-rose)' }} />
           </div>
-          <button onClick={() => summaryRefetch()} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm transition-colors flex items-center gap-2">
-            <RefreshCw size={14} /> Retry
+          <div className="flex-1">
+            <p className="text-sm font-semibold" style={{ color: 'var(--color-txt-primary)' }}>Failed to load dashboard data</p>
+            <p className="text-xs" style={{ color: 'var(--color-txt-muted)' }}>Check that the proxy server is running.</p>
+          </div>
+          <button
+            onClick={() => summaryRefetch()}
+            className="btn-primary px-4 py-2 text-xs flex items-center gap-2"
+          >
+            <RotateCcw size={12} /> Retry
           </button>
         </div>
       )}
 
       {/* Empty State CTA */}
       {isEmpty && (
-        <div className="bg-gradient-to-r from-blue-900/40 to-purple-900/40 border border-blue-700/50 rounded-xl p-8 mb-8">
-          <div className="flex items-start gap-4">
-            <div className="p-3 bg-blue-600/20 rounded-lg">
-              <Rocket className="w-8 h-8 text-blue-400" />
+        <div
+          className="glass-card p-8 mb-8 animate-fade-up glow-indigo"
+          style={{ borderColor: 'rgba(99, 102, 241, 0.2)' }}
+        >
+          <div className="flex items-start gap-5">
+            <div
+              className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
+              style={{ background: 'linear-gradient(135deg, var(--color-neon-indigo), #7c3aed)' }}
+            >
+              <Rocket size={24} className="text-white" />
             </div>
             <div className="flex-1">
-              <h2 className="text-xl font-bold text-white mb-2">Welcome to Pag0!</h2>
-              <p className="text-gray-300 mb-4">
-                Your proxy is ready. Make your first API request through the proxy to start seeing analytics here.
+              <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--color-txt-primary)' }}>Welcome to Pag0</h2>
+              <p className="text-sm mb-5" style={{ color: 'var(--color-txt-secondary)' }}>
+                Your proxy is ready. Make your first API request to start seeing analytics.
               </p>
-              <pre className="bg-gray-900/80 rounded-lg p-4 font-mono text-sm text-gray-300 whitespace-pre-wrap">{`# 1. Check API rankings
+              <pre
+                className="rounded-xl p-5 text-xs leading-relaxed overflow-x-auto"
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  background: 'var(--color-obsidian-base)',
+                  border: '1px solid var(--color-obsidian-border)',
+                  color: 'var(--color-txt-secondary)',
+                }}
+              >{`# Check API rankings
 curl ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/curation/rankings \\
   -H "X-Pag0-API-Key: ${apiKey}"
 
-# 2. Get recommended APIs by category
-curl "${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/curation/recommend?category=AI" \\
-  -H "X-Pag0-API-Key: ${apiKey}"
-
-# 3. Proxy a request through Pag0
+# Proxy a request through Pag0
 curl -X POST ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/proxy \\
   -H "X-Pag0-API-Key: ${apiKey}" \\
   -H "Content-Type: application/json" \\
@@ -162,177 +191,217 @@ curl -X POST ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/proxy
       )}
 
       {/* Metric Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
         <MetricCard
           icon={Activity}
           title="Total Requests"
           value={summary?.totalRequests.toLocaleString() || '0'}
+          accentColor="var(--color-neon-cyan)"
+          delay={0}
         />
         <MetricCard
           icon={Zap}
           title="Cache Hit Rate"
           value={`${((summary?.cacheHitRate || 0) * 100).toFixed(1)}%`}
+          accentColor="var(--color-neon-green)"
+          delay={80}
         />
         <MetricCard
           icon={Clock}
           title="Avg Latency"
           value={`${(summary?.avgLatency || 0).toFixed(0)}ms`}
+          accentColor="var(--color-neon-amber)"
+          delay={160}
         />
         <MetricCard
           icon={DollarSign}
           title="Cache Savings"
           value={formatUsdc(cacheStats?.totalSavings || '0')}
+          accentColor="var(--color-neon-indigo)"
+          delay={240}
         />
       </div>
 
       {/* Cost Chart */}
-      <div className="bg-gray-800 rounded-xl p-6 mb-8">
-        <h2 className="text-xl font-bold text-white mb-6">Cost Over Time</h2>
+      <div className="glass-card p-6 mb-8 animate-fade-up" style={{ animationDelay: '300ms' }}>
+        <h2 className="text-base font-semibold mb-5" style={{ color: 'var(--color-txt-primary)' }}>
+          Cost Over Time
+        </h2>
         {chartData.length > 0 ? (
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+            <AreaChart data={chartData}>
+              <defs>
+                <linearGradient id="gradientSpent" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#818cf8" stopOpacity={0.3} />
+                  <stop offset="100%" stopColor="#818cf8" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="gradientSaved" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#10b981" stopOpacity={0.3} />
+                  <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="var(--color-obsidian-border)"
+                vertical={false}
+              />
               <XAxis
                 dataKey="timestamp"
-                stroke="#9CA3AF"
-                tick={{ fill: '#9CA3AF' }}
-                tickLine={{ stroke: '#9CA3AF' }}
+                stroke="var(--color-obsidian-border-bright)"
+                tick={{ fill: 'var(--color-txt-muted)', fontSize: 11, fontFamily: 'var(--font-mono)' }}
+                tickLine={false}
+                axisLine={false}
               />
               <YAxis
-                stroke="#9CA3AF"
-                tick={{ fill: '#9CA3AF' }}
-                tickLine={{ stroke: '#9CA3AF' }}
-                label={{ value: 'USDC', angle: -90, position: 'insideLeft', fill: '#9CA3AF' }}
+                stroke="var(--color-obsidian-border-bright)"
+                tick={{ fill: 'var(--color-txt-muted)', fontSize: 11, fontFamily: 'var(--font-mono)' }}
+                tickLine={false}
+                axisLine={false}
+                label={{
+                  value: 'USDC',
+                  angle: -90,
+                  position: 'insideLeft',
+                  fill: 'var(--color-txt-muted)',
+                  fontSize: 10,
+                  fontFamily: 'var(--font-mono)',
+                }}
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#1F2937',
-                  border: '1px solid #374151',
-                  borderRadius: '0.5rem',
-                  color: '#F9FAFB',
+                  background: 'var(--color-obsidian-elevated)',
+                  border: '1px solid var(--color-obsidian-border-bright)',
+                  borderRadius: '12px',
+                  color: 'var(--color-txt-primary)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '12px',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
                 }}
-                labelStyle={{ color: '#9CA3AF' }}
+                labelStyle={{ color: 'var(--color-txt-muted)' }}
               />
-              <Line
+              <Area
                 type="monotone"
                 dataKey="spent"
-                stroke="#A78BFA"
+                stroke="#818cf8"
                 strokeWidth={2}
-                dot={false}
+                fill="url(#gradientSpent)"
                 name="Spent"
               />
-              <Line
+              <Area
                 type="monotone"
                 dataKey="saved"
-                stroke="#34D399"
+                stroke="#10b981"
                 strokeWidth={2}
-                dot={false}
+                fill="url(#gradientSaved)"
                 name="Saved"
               />
-            </LineChart>
+            </AreaChart>
           </ResponsiveContainer>
         ) : (
-          <div className="flex items-center justify-center h-[300px] text-gray-500">
-            No cost data yet. Make some requests through the proxy to see charts here.
+          <div className="flex items-center justify-center h-[300px]" style={{ color: 'var(--color-txt-muted)' }}>
+            <p className="text-sm">No cost data yet. Make requests through the proxy to see charts.</p>
           </div>
         )}
       </div>
 
       {/* Budget Usage */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <div className="bg-gray-800 rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Daily Budget</h3>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-400">
-                {formatUsdc(dailyBudget.spent)} / {formatUsdc(dailyBudget.limit)}
-              </span>
-              <span className="text-white font-medium">{dailyPercentage.toFixed(1)}%</span>
-            </div>
-            <div className="w-full bg-gray-700 rounded-full h-3">
-              <div
-                className={`h-3 rounded-full transition-all ${getBudgetColor(dailyPercentage)}`}
-                style={{ width: `${Math.min(dailyPercentage, 100)}%` }}
-              />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
+        {[
+          { label: 'Daily Budget', budget: dailyBudget, pct: dailyPercentage },
+          { label: 'Monthly Budget', budget: monthlyBudget, pct: monthlyPercentage },
+        ].map(({ label, budget, pct }, i) => (
+          <div
+            key={label}
+            className="glass-card p-5 animate-fade-up"
+            style={{ animationDelay: `${380 + i * 80}ms` }}
+          >
+            <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--color-txt-primary)' }}>
+              {label}
+            </h3>
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs">
+                <span className="metric-value" style={{ color: 'var(--color-txt-secondary)' }}>
+                  {formatUsdc(budget.spent)} / {formatUsdc(budget.limit)}
+                </span>
+                <span className="metric-value font-semibold" style={{ color: getBudgetColor(pct) }}>
+                  {pct.toFixed(1)}%
+                </span>
+              </div>
+              <div className="w-full h-2.5 rounded-full overflow-hidden" style={{ background: 'var(--color-obsidian-border)' }}>
+                <div
+                  className="h-full rounded-full transition-all duration-700 ease-out progress-glow"
+                  style={{
+                    width: `${Math.min(pct, 100)}%`,
+                    background: `linear-gradient(90deg, ${getBudgetColor(pct)}, color-mix(in srgb, ${getBudgetColor(pct)} 70%, white))`,
+                    boxShadow: `0 0 8px ${getBudgetColor(pct)}40`,
+                  }}
+                />
+              </div>
             </div>
           </div>
-        </div>
-
-        <div className="bg-gray-800 rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Monthly Budget</h3>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-400">
-                {formatUsdc(monthlyBudget.spent)} / {formatUsdc(monthlyBudget.limit)}
-              </span>
-              <span className="text-white font-medium">{monthlyPercentage.toFixed(1)}%</span>
-            </div>
-            <div className="w-full bg-gray-700 rounded-full h-3">
-              <div
-                className={`h-3 rounded-full transition-all ${getBudgetColor(monthlyPercentage)}`}
-                style={{ width: `${Math.min(monthlyPercentage, 100)}%` }}
-              />
-            </div>
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* Top Endpoints Table */}
-      <div className="bg-gray-800 rounded-xl overflow-hidden">
-        <div className="p-6 border-b border-gray-700">
-          <h2 className="text-xl font-bold text-white">Top Endpoints</h2>
+      <div className="glass-card overflow-hidden animate-fade-up" style={{ animationDelay: '540ms' }}>
+        <div className="px-6 py-4 border-b" style={{ borderColor: 'var(--color-obsidian-border)' }}>
+          <h2 className="text-base font-semibold" style={{ color: 'var(--color-txt-primary)' }}>
+            Top Endpoints
+          </h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-900">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                  Endpoint
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                  Requests
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                  Cost
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                  Cache Hits
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                  Avg Latency
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                  Success Rate
-                </th>
+            <thead>
+              <tr style={{ background: 'var(--color-obsidian-base)' }}>
+                {['Endpoint', 'Requests', 'Cost', 'Cache Hits', 'Avg Latency', 'Success Rate'].map((h) => (
+                  <th
+                    key={h}
+                    className="px-6 py-3 text-left text-[10px] font-semibold uppercase tracking-widest"
+                    style={{ color: 'var(--color-txt-muted)' }}
+                  >
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-700">
+            <tbody>
               {endpoints && endpoints.length > 0 ? (
                 endpoints.map((ep, idx) => (
-                  <tr key={idx} className="hover:bg-gray-700 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-white font-mono">
+                  <tr
+                    key={idx}
+                    className="table-row-hover border-t"
+                    style={{ borderColor: 'var(--color-obsidian-border)' }}
+                  >
+                    <td className="px-6 py-3.5 text-sm" style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-neon-cyan)' }}>
                       {ep.endpoint}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                    <td className="px-6 py-3.5 text-sm metric-value" style={{ color: 'var(--color-txt-secondary)' }}>
                       {ep.requestCount.toLocaleString()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                    <td className="px-6 py-3.5 text-sm metric-value" style={{ color: 'var(--color-txt-secondary)' }}>
                       {formatUsdc(ep.totalCost)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                    <td className="px-6 py-3.5 text-sm metric-value" style={{ color: 'var(--color-txt-secondary)' }}>
                       {ep.cacheHitCount}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                    <td className="px-6 py-3.5 text-sm metric-value" style={{ color: 'var(--color-txt-secondary)' }}>
                       {ep.avgLatencyMs.toFixed(0)}ms
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                      {((ep.successRate ?? 0) * 100).toFixed(1)}%
+                    <td className="px-6 py-3.5 text-sm metric-value">
+                      <span
+                        className="score-badge"
+                        style={{
+                          color: (ep.successRate ?? 0) >= 0.95 ? 'var(--color-neon-green)' : (ep.successRate ?? 0) >= 0.8 ? 'var(--color-neon-amber)' : 'var(--color-neon-rose)',
+                          background: (ep.successRate ?? 0) >= 0.95 ? 'rgba(16,185,129,0.1)' : (ep.successRate ?? 0) >= 0.8 ? 'rgba(245,158,11,0.1)' : 'rgba(244,63,94,0.1)',
+                        }}
+                      >
+                        {((ep.successRate ?? 0) * 100).toFixed(1)}%
+                      </span>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={6} className="px-6 py-12 text-center text-sm" style={{ color: 'var(--color-txt-muted)' }}>
                     No endpoint data available
                   </td>
                 </tr>

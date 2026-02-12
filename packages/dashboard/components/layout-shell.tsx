@@ -14,9 +14,9 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex h-screen bg-gray-950">
+    <div className="flex h-screen" style={{ background: 'var(--color-obsidian-base)' }}>
       <Sidebar />
-      <main className="flex-1 overflow-auto p-8">
+      <main className="flex-1 overflow-auto p-8 relative z-10">
         {children}
       </main>
     </div>
