@@ -16,6 +16,7 @@ import { policyEngine } from '../policy/engine';
 import { budgetTracker } from '../policy/budget';
 import { cacheLayer } from '../cache/layer';
 import { analyticsCollector } from '../analytics/collector';
+import { curationEngine } from '../curation/engine';
 import { erc8004Audit } from '../audit/erc8004';
 import type { UsdcAmount } from '../types';
 
@@ -141,6 +142,11 @@ export async function handleRelay(c: Context): Promise<Response> {
       cacheKey,
     }).catch((err) => console.error('[Relay] Analytics error:', err));
 
+    // Refresh curation score (fire-and-forget)
+    void curationEngine.refreshScore(endpoint).catch((err) =>
+      console.warn('[Relay] Score refresh error:', err),
+    );
+
     const cachedBody = JSON.stringify(cachedResponse);
     return new Response(cachedBody, {
       status: 200,
@@ -255,6 +261,11 @@ export async function handleRelay(c: Context): Promise<Response> {
     policyId: policyEval.policy.id,
     cacheKey: shouldCache ? cacheKey : undefined,
   }).catch((err) => console.error('[Relay] Analytics error:', err));
+
+  // Refresh curation score (fire-and-forget)
+  void curationEngine.refreshScore(endpoint).catch((err) =>
+    console.warn('[Relay] Score refresh error:', err),
+  );
 
   // ERC-8004 audit (async fire-and-forget)
   void erc8004Audit.recordPaymentFeedback({

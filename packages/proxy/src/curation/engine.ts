@@ -212,6 +212,42 @@ export class CurationEngine {
   }
 
   /**
+   * Recalculate score from requests table and upsert into endpoint_scores.
+   * Called fire-and-forget after each analytics record.
+   */
+  async refreshScore(endpoint: string): Promise<void> {
+    // Look up existing category from endpoint_scores
+    const [existing] = await sql<Array<{ category: string }>>`
+      SELECT category FROM endpoint_scores WHERE endpoint = ${endpoint}
+    `;
+    const category = existing?.category || 'Uncategorized';
+
+    const score = await this.calculateScore(endpoint, category);
+    if (score.sampleSize < 1) return;
+
+    // Upsert into endpoint_scores
+    await sql`
+      INSERT INTO endpoint_scores (endpoint, category, overall_score, cost_score, latency_score, reliability_score, weights, evidence)
+      VALUES (
+        ${endpoint}, ${category},
+        ${score.overallScore}, ${score.costScore}, ${score.latencyScore}, ${score.reliabilityScore},
+        ${JSON.stringify(score.weights)}, ${JSON.stringify(score.evidence)}
+      )
+      ON CONFLICT (endpoint) DO UPDATE SET
+        overall_score = EXCLUDED.overall_score,
+        cost_score = EXCLUDED.cost_score,
+        latency_score = EXCLUDED.latency_score,
+        reliability_score = EXCLUDED.reliability_score,
+        weights = EXCLUDED.weights,
+        evidence = EXCLUDED.evidence,
+        updated_at = NOW()
+    `;
+
+    // Invalidate Redis score cache so getScore() returns fresh data
+    await redis.del(`score:${endpoint}`);
+  }
+
+  /**
    * Get score for an endpoint (Redis cache first, then DB)
    */
   async getScore(endpoint: string): Promise<EndpointScore | null> {

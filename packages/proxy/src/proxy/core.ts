@@ -16,6 +16,7 @@ import { PolicyEngine, policyEngine } from '../policy/engine';
 import { budgetTracker } from '../policy/budget';
 import { cacheLayer } from '../cache/layer';
 import { analyticsCollector } from '../analytics/collector';
+import { curationEngine } from '../curation/engine';
 import { erc8004Audit } from '../audit/erc8004';
 import redis from '../cache/redis';
 import { x402Integration } from './x402';
@@ -132,6 +133,11 @@ export class ProxyCore {
         policyId: policyEval.policy.id,
         cacheKey,
       }).catch((err) => console.error('[ProxyCore] Analytics error:', err));
+
+      // Refresh curation score (fire-and-forget)
+      void curationEngine.refreshScore(endpoint).catch((err) =>
+        console.warn('[ProxyCore] Score refresh error:', err),
+      );
 
       return {
         status: 200,
@@ -272,6 +278,11 @@ export class ProxyCore {
       policyId: policyEval.policy.id,
       cacheKey: shouldCache ? cacheKey : undefined,
     }).catch((err) => console.error('[ProxyCore] Analytics error:', err));
+
+    // Refresh curation score (fire-and-forget)
+    void curationEngine.refreshScore(endpoint).catch((err) =>
+      console.warn('[ProxyCore] Score refresh error:', err),
+    );
 
     // ─── Step 7b: ERC-8004 Audit (async, fire-and-forget) ───
     void erc8004Audit.recordPaymentFeedback({
