@@ -135,11 +135,11 @@ IPFS_API_URL=https://ipfs.infura.io:5001
 
 ## 완료 기준
 
-- [ ] ERC8004AuditTrail 클래스 구현
-- [ ] IPFS 메타데이터 업로드 기능
-- [ ] ProxyCore Post-Processing에 비동기 연동
-- [ ] Quality Score 계산 로직
-- [ ] 컨트랙트 ABI 정의
-- [ ] 환경변수 `.env.example` 업데이트
-- [ ] 비활성화 모드 지원 (`ERC8004_ENABLED`)
-- [ ] 실패 시 응답 블로킹 없음 확인
+- [x] ERC8004AuditTrail 클래스 구현
+- [x] IPFS 메타데이터 업로드 기능
+- [x] ProxyCore Post-Processing에 비동기 연동
+- [x] Quality Score 계산 로직
+- [x] 컨트랙트 ABI 정의
+- [x] 환경변수 `.env.example` 업데이트
+- [x] 비활성화 모드 지원 (`ERC8004_ENABLED`)
+- [x] 실패 시 응답 블로킹 없음 확인

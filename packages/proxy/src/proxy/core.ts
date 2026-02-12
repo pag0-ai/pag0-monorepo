@@ -16,6 +16,7 @@ import { PolicyEngine, policyEngine } from '../policy/engine';
 import { budgetTracker } from '../policy/budget';
 import { cacheLayer } from '../cache/layer';
 import { analyticsCollector } from '../analytics/collector';
+import { erc8004Audit } from '../audit/erc8004';
 import redis from '../cache/redis';
 import { x402Integration } from './x402';
 import type { ProxyRequest, UsdcAmount, PolicyViolationError } from '../types';
@@ -246,6 +247,20 @@ export class ProxyCore {
       policyId: policyEval.policy.id,
       cacheKey: shouldCache ? cacheKey : undefined,
     }).catch((err) => console.error('[ProxyCore] Analytics error:', err));
+
+    // ─── Step 7b: ERC-8004 Audit (async, fire-and-forget) ───
+    if (actualCost !== '0') {
+      void erc8004Audit.recordPaymentFeedback({
+        agentId: endpoint, // x402 server identity (hostname as fallback)
+        endpoint,
+        cost: actualCost,
+        latencyMs: latency,
+        statusCode: response.status,
+        txHash: response.headers.get('x-transaction-hash') || '',
+        sender: request.signedPayment?.sender || '',
+        receiver: endpoint,
+      }).catch((err) => console.warn('[ProxyCore] ERC-8004 audit error:', err));
+    }
 
     // ─── Step 8: Budget Deduct ───────────────────────────────
     if (actualCost !== '0') {

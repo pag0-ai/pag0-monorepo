@@ -11,6 +11,7 @@ import smartRequestRoutes from './routes/smart-request';
 import { PolicyViolationError, UnauthorizedError, RateLimitError } from './types/index';
 import redis from './cache/redis';
 import sql from './db/postgres';
+import { erc8004Audit } from './audit/erc8004';
 
 type Variables = {
   user: {
@@ -148,6 +149,7 @@ app.notFound((c) => {
 // ─── 9. Graceful shutdown ────────────────────────────────
 process.on('SIGTERM', async () => {
   console.log('Shutting down gracefully...');
+  erc8004Audit.shutdown();
   await redis.quit();
   await sql.end();
   process.exit(0);
@@ -155,6 +157,7 @@ process.on('SIGTERM', async () => {
 
 process.on('SIGINT', async () => {
   console.log('Shutting down...');
+  erc8004Audit.shutdown();
   await redis.quit();
   await sql.end();
   process.exit(0);
