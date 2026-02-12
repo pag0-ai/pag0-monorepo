@@ -160,19 +160,27 @@ ERC8004_SUBGRAPH_URL=http://localhost:8000/subgraphs/name/pag0/erc8004
 
 ## 완료 기준
 
-- [ ] `packages/proxy/src/subgraph/client.ts` 생성 — GraphQL fetch + Redis 캐시
-- [ ] `packages/proxy/src/subgraph/queries.ts` 생성 — AgentReputation, AgentProfile, FeedbackHistory, Leaderboard 쿼리
-- [ ] `packages/proxy/src/subgraph/types.ts` 생성 — 서브그래프 응답 인터페이스
-- [ ] `SubgraphClient`가 `ERC8004_SUBGRAPH_URL` 미설정 시 graceful하게 비활성화됨
-- [ ] `SubgraphClient`가 서브그래프 장애 시 `null` 반환 (throw 안 함)
-- [ ] `SubgraphClient` 쿼리 결과가 Redis에 캐시됨 (키: `subgraph:{hash}`, TTL: 300s)
-- [ ] `CurationEngine.calculateScore()`에 `reputationScore` 4번째 차원 추가
-- [ ] `DEFAULT_WEIGHTS`에 `reputation: 0.2` 추가, 기존 가중치 재조정
-- [ ] 오프체인 샘플 < 10 + 온체인 데이터 존재 시 온체인 점수를 기본값으로 사용
-- [ ] `types/index.ts`의 `EndpointScore`에 `reputationScore` 필드 추가
-- [ ] `GET /api/reputation/agent?id={endpoint}` 라우트 동작 — 에이전트 평판 프로필 반환
-- [ ] `GET /api/reputation/feedbacks?agentId={endpoint}` 라우트 동작 — 피드백 이력 페이지네이션
-- [ ] `GET /api/reputation/leaderboard` 라우트 동작 — 상위 에이전트 랭킹
-- [ ] `ProxyCoreResponse.metadata.onChainReputation` 필드 추가
-- [ ] 프록시 빌드 성공 (`tsc --noEmit` 통과)
-- [ ] 서브그래프 미가동 상태에서도 프록시 정상 기동 확인
+- [x] `packages/proxy/src/subgraph/client.ts` 생성 — GraphQL fetch + Redis 캐시
+- [x] `packages/proxy/src/subgraph/queries.ts` 생성 — AgentReputation, AgentProfile, FeedbackHistory, Leaderboard 쿼리
+- [x] `packages/proxy/src/subgraph/types.ts` 생성 — 서브그래프 응답 인터페이스
+- [x] `SubgraphClient`가 `ERC8004_SUBGRAPH_URL` 미설정 시 graceful하게 비활성화됨
+- [x] `SubgraphClient`가 서브그래프 장애 시 `null` 반환 (throw 안 함)
+- [x] `SubgraphClient` 쿼리 결과가 Redis에 캐시됨 (키: `subgraph:{hash}`, TTL: 300s)
+- [x] `CurationEngine.calculateScore()`에 `reputationScore` 4번째 차원 추가
+- [x] `DEFAULT_WEIGHTS`에 `reputation: 0.2` 추가, 기존 가중치 재조정
+- [x] 오프체인 샘플 < 10 + 온체인 데이터 존재 시 온체인 점수를 기본값으로 사용
+- [x] `types/index.ts`의 `EndpointScore`에 `reputationScore` 필드 추가
+- [x] `GET /api/reputation/agent?id={endpoint}` 라우트 동작 — 에이전트 평판 프로필 반환
+- [x] `GET /api/reputation/feedbacks?agentId={endpoint}` 라우트 동작 — 피드백 이력 페이지네이션
+- [x] `GET /api/reputation/leaderboard` 라우트 동작 — 상위 에이전트 랭킹
+- [x] `ProxyCoreResponse.metadata.onChainReputation` 필드 추가
+- [x] 프록시 빌드 성공 (`tsc --noEmit` 통과)
+- [x] 서브그래프 미가동 상태에서도 프록시 정상 기동 확인
+
+## 검증 결과
+
+- **TypeScript**: `tsc --noEmit` 0 errors
+- **테스트**: 41 pass / 0 fail (3 files, 19ms)
+  - `subgraph/client.test.ts` — 13 tests (graceful degradation, parsing, calculation)
+  - `curation/engine.test.ts` — 8 tests (reputation 통합, cold-start, 장애 폴백)
+  - `policy/engine.test.ts` — 20 tests (기존 + 목 시그니처 수정)

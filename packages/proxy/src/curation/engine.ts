@@ -1,5 +1,6 @@
 import sql from '../db/postgres';
 import redis from '../cache/redis';
+import { subgraphClient } from '../subgraph/client';
 import type { EndpointScore } from '../types';
 
 /**
@@ -16,6 +17,7 @@ interface ScoreWeights {
   cost: number;
   latency: number;
   reliability: number;
+  reputation: number;
 }
 
 interface Benchmarks {
@@ -34,9 +36,10 @@ interface CompareResult {
 }
 
 const DEFAULT_WEIGHTS: ScoreWeights = {
-  cost: 0.4,
-  latency: 0.3,
-  reliability: 0.3,
+  cost: 0.3,
+  latency: 0.25,
+  reliability: 0.25,
+  reputation: 0.2,
 };
 
 export class CurationEngine {
@@ -79,12 +82,14 @@ export class CurationEngine {
     costScore: number,
     latencyScore: number,
     reliabilityScore: number,
+    reputationScore: number = 50,
     weights: ScoreWeights = DEFAULT_WEIGHTS,
   ): number {
     return Math.round(
       costScore * weights.cost +
         latencyScore * weights.latency +
-        reliabilityScore * weights.reliability,
+        reliabilityScore * weights.reliability +
+        reputationScore * weights.reputation,
     );
   }
 
@@ -134,15 +139,21 @@ export class CurationEngine {
         AND created_at >= NOW() - INTERVAL '30 days'
     `;
 
-    // If insufficient data, return default score
+    // Fetch on-chain reputation (non-blocking, returns null if unavailable)
+    const onChainRep = await subgraphClient.getAgentReputation(endpoint).catch(() => null);
+    const reputationScore = onChainRep?.avgScore ?? 50;
+
+    // If insufficient off-chain data, use on-chain score if available
     if (!metrics || Number(metrics.request_count) < 10) {
+      const defaultScore = onChainRep ? reputationScore : 50;
       return {
         endpoint,
         category,
-        overallScore: 50,
+        overallScore: defaultScore,
         costScore: 50,
         latencyScore: 50,
         reliabilityScore: 50,
+        reputationScore,
         sampleSize: Number(metrics?.request_count || 0),
         lastCalculated: new Date(),
       };
@@ -163,6 +174,7 @@ export class CurationEngine {
       costScore,
       latencyScore,
       reliabilityScore,
+      reputationScore,
     );
 
     return {
@@ -172,6 +184,7 @@ export class CurationEngine {
       costScore,
       latencyScore,
       reliabilityScore,
+      reputationScore,
       sampleSize: Number(metrics.request_count),
       lastCalculated: new Date(),
     };

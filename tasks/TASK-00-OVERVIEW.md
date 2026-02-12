@@ -115,7 +115,7 @@ TASK-22 (Deployment)          ← TASK-11, TASK-12
 | [TASK-20](./TASK-20-erc8004-audit.md) | ~~ERC-8004 Audit Trail (온체인 감사 기록)~~ | proxy | 3~4시간 | ✅ 완료 |
 | [TASK-21](./TASK-21-erc8004-mcp-subgraph.md) | ~~ERC-8004 MCP Tools + The Graph Subgraph~~ | mcp, subgraph | 2~3시간 | ✅ 완료 |
 | [TASK-22](./TASK-22-deployment.md) | Deployment (Fly.io + Vercel) | proxy, dashboard | 2시간 | ⏳ 수동 승인 대기 |
-| [TASK-37](./TASK-37-subgraph-query-integration.md) | Subgraph Query Integration (온체인 평판 읽기) | proxy | 3~4시간 | TASK-20, TASK-21 |
+| [TASK-37](./TASK-37-subgraph-query-integration.md) | ~~Subgraph Query Integration (온체인 평판 읽기)~~ | proxy | 3~4시간 | ✅ 완료 |
 
 ### Phase 8: 스토리보드 갭 수정 — 프론트엔드/백엔드 데이터 계약 정렬
 

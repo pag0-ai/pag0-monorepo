@@ -43,6 +43,7 @@ export interface EndpointScore {
   costScore: number;
   latencyScore: number;
   reliabilityScore: number;
+  reputationScore?: number;  // On-chain reputation score (0-100)
   sampleSize: number;
   lastCalculated: Date;
 }

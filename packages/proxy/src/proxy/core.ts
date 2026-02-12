@@ -19,6 +19,7 @@ import { analyticsCollector } from '../analytics/collector';
 import { erc8004Audit } from '../audit/erc8004';
 import redis from '../cache/redis';
 import { x402Integration } from './x402';
+import { subgraphClient } from '../subgraph/client';
 import type { ProxyRequest, UsdcAmount, PolicyViolationError } from '../types';
 
 export interface ProxyCoreRequest extends ProxyRequest {
@@ -38,6 +39,11 @@ export interface ProxyCoreResponse {
     budgetRemaining: {
       daily: string;
       monthly: string;
+    };
+    onChainReputation?: {
+      score: number;
+      feedbackCount: number;
+      lastVerified: string; // ISO timestamp
     };
   };
 }
@@ -103,6 +109,9 @@ export class ProxyCore {
       // Get budget status for metadata
       const budgetStatus = await budgetTracker.checkBudget(request.projectId);
 
+      // Fetch on-chain reputation (non-blocking)
+      const onChainRep = await subgraphClient.getAgentReputation(endpoint).catch(() => null);
+
       // Fire-and-forget analytics (cached request, cost=0)
       void analyticsCollector.record({
         projectId: request.projectId,
@@ -131,6 +140,13 @@ export class ProxyCore {
             daily: budgetStatus.dailySpent,
             monthly: budgetStatus.monthlySpent,
           },
+          ...(onChainRep && {
+            onChainReputation: {
+              score: onChainRep.avgScore,
+              feedbackCount: onChainRep.feedbackCount,
+              lastVerified: new Date(onChainRep.lastSeen * 1000).toISOString(),
+            },
+          }),
         },
       };
     }
@@ -270,6 +286,9 @@ export class ProxyCore {
     // Get updated budget status for response metadata
     const budgetStatus = await budgetTracker.checkBudget(request.projectId);
 
+    // Fetch on-chain reputation (non-blocking)
+    const onChainRep = await subgraphClient.getAgentReputation(endpoint).catch(() => null);
+
     // ─── Return Response ─────────────────────────────────────
     return {
       status: response.status,
@@ -284,6 +303,13 @@ export class ProxyCore {
           daily: budgetStatus.dailySpent,
           monthly: budgetStatus.monthlySpent,
         },
+        ...(onChainRep && {
+          onChainReputation: {
+            score: onChainRep.avgScore,
+            feedbackCount: onChainRep.feedbackCount,
+            lastVerified: new Date(onChainRep.lastSeen * 1000).toISOString(),
+          },
+        }),
       },
     };
   }

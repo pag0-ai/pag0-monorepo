@@ -8,11 +8,12 @@ mock.module('../db/postgres', () => ({ default: mockSql }));
 
 // Mock redis
 const mockRedis = {
-  get: mock(() => Promise.resolve(null)),
-  incrby: mock(() => Promise.resolve(0)),
-  ttl: mock(() => Promise.resolve(-2)),
-  expire: mock(() => Promise.resolve(1)),
-  del: mock(() => Promise.resolve(1)),
+  get: mock((_key: string) => Promise.resolve(null as string | null)),
+  incrby: mock((_key: string, _amount: number) => Promise.resolve(0)),
+  ttl: mock((_key: string) => Promise.resolve(-2)),
+  expire: mock((_key: string, _seconds: number) => Promise.resolve(1)),
+  del: mock((_key: string) => Promise.resolve(1)),
+  setex: mock((_key: string, _ttl: number, _value: string) => Promise.resolve('OK')),
 };
 mock.module('../cache/redis', () => ({ default: mockRedis }));
 
@@ -48,7 +49,7 @@ describe('PolicyEngine', () => {
     engine = new PolicyEngine();
     mockSql.mockReset();
     mockRedis.get.mockReset();
-    mockRedis.get.mockImplementation(() => Promise.resolve(null));
+    mockRedis.get.mockImplementation((_key: string) => Promise.resolve(null));
   });
 
   // Helper to make mockSql return a policy
