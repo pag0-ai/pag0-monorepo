@@ -94,6 +94,65 @@ app.get('/.well-known/agent.json', (c) => {
   });
 });
 
+// ─── 2.2 LLMs.txt (no auth required) ──────────────────
+app.get('/llms.txt', (c) => {
+  const baseUrl = process.env.PAG0_PUBLIC_URL ?? `http://localhost:${process.env.PORT ?? 3000}`;
+  return c.text(
+    `# Pag0 Smart Proxy
+
+> Smart proxy for the x402 ecosystem — Spend Firewall, API Curation, and Smart Cache in one middleware layer.
+
+- Auth: \`X-Pag0-API-Key\` header (register via POST /api/auth/register)
+- Network: Base Sepolia, USDC payments
+- Audit trail: ERC-8004 on SKALE (zero gas)
+- Base URL: ${baseUrl}
+
+## Core API
+
+- POST /proxy — Relay a request to an x402-enabled API. Body: \`{ targetUrl, method, headers?, body?, signedPayment? }\`. Returns the upstream response plus cost/cache metadata. On 402 the proxy returns payment requirements for the agent to sign.
+- ALL /relay — Transparent x402 pass-through. Forwards the request as-is and streams the raw upstream response including 402 payment negotiation.
+
+## Policy (Spend Firewall)
+
+- GET /api/policies — List all policies for the authenticated project.
+- POST /api/policies — Create a policy. Body: \`{ name, type, rules }\`. Types: budget, whitelist, blacklist.
+- GET /api/policies/:id — Get a single policy by ID.
+- PUT /api/policies/:id — Update a policy.
+- DELETE /api/policies/:id — Delete a policy.
+
+## Curation
+
+- GET /api/curation/recommend?category=:cat — Recommend top endpoints for a category.
+- GET /api/curation/compare?endpoints=:a,:b — Side-by-side comparison of endpoints.
+- GET /api/curation/rankings?category=:cat — Ranked list within a category.
+- GET /api/curation/categories — List all categories.
+- GET /api/curation/score/:endpoint — Get the score breakdown (cost, latency, reliability) for one endpoint.
+
+## Analytics
+
+- GET /api/analytics/summary — Aggregate spending, request count, and cache hit rate.
+- GET /api/analytics/endpoints — Per-endpoint breakdown.
+- GET /api/analytics/costs — Cost time-series (query params: period, from, to).
+- GET /api/analytics/cache — Cache performance metrics.
+
+## Reputation (ERC-8004)
+
+- POST /api/reputation/feedback — Submit on-chain feedback for an endpoint.
+- GET /api/reputation/score/:endpoint — Read aggregated on-chain reputation score.
+
+## Optional
+
+- GET /health — Health check (no auth).
+- GET /.well-known/agent.json — Machine-readable agent card (A2A protocol).
+- POST /api/auth/register — Create account. Body: \`{ email, password }\`. Returns API key.
+- POST /api/auth/login — Login. Returns JWT.
+- GET /api/auth/me — Current user info.
+`,
+    200,
+    { 'Content-Type': 'text/plain; charset=utf-8' },
+  );
+});
+
 // ─── 3. Auth routes (no auth middleware — register/login are public) ──
 app.route('/api/auth', authRoutes);
 
