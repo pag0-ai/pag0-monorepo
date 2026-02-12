@@ -12,6 +12,7 @@ export interface AnalyticsEvent {
   latencyMs: number;
   cost: string; // USDC BIGINT
   cached: boolean;
+  cacheSource?: 'proxy_cache' | 'passthrough';
   responseSize: number;
   timestamp?: Date;
   fullUrl?: string;
@@ -88,8 +89,8 @@ export class AnalyticsCollector {
       await redis
         .multi()
         .hincrby(key, 'count', 1)
-        .hincrby(key, 'cache_hits', event.cached ? 1 : 0)
-        .hincrby(key, 'cache_misses', event.cached ? 0 : 1)
+        .hincrby(key, 'cache_hits', event.cacheSource === 'proxy_cache' ? 1 : 0)
+        .hincrby(key, 'cache_misses', event.cacheSource === 'proxy_cache' ? 0 : 1)
         .hincrby(key, 'cost', Number(BigInt(event.cost)))
         .hincrby(key, 'latency_sum', event.latencyMs)
         .hincrby(key, 'response_size_sum', event.responseSize)

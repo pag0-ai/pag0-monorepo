@@ -11,11 +11,14 @@ export interface ProxyRequest {
   projectId: string;
 }
 
+export type CacheSource = 'proxy_cache' | 'passthrough';
+
 export interface ProxyResponse {
   status: number;
   body: unknown;
   metadata: {
     cached: boolean;
+    cacheSource: CacheSource;
     cost: UsdcAmount;
     latencyMs: number;
     policyApplied: string | null;

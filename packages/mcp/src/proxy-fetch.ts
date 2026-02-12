@@ -18,6 +18,7 @@ import type { IWallet } from "./wallet.js";
 export interface ProxyMetadata {
   cost: string;
   cached: boolean;
+  cacheSource: 'proxy_cache' | 'passthrough';
   latency: number;
   endpoint: string;
   budgetRemaining?: { daily: string; monthly: string };
@@ -90,9 +91,14 @@ export function extractProxyMetadata(response: Response): ProxyMetadata {
     try { budgetRemaining = JSON.parse(budgetRaw); } catch { /* ignore */ }
   }
 
+  const cacheSourceRaw = response.headers.get("x-pag0-cache-source");
+  const cacheSource: ProxyMetadata["cacheSource"] =
+    cacheSourceRaw === "proxy_cache" ? "proxy_cache" : "passthrough";
+
   return {
     cost: response.headers.get("x-pag0-cost") || "0",
     cached: response.headers.get("x-pag0-cached") === "true",
+    cacheSource,
     latency: Number(response.headers.get("x-pag0-latency") || "0"),
     endpoint: response.headers.get("x-pag0-endpoint") || "",
     budgetRemaining,

@@ -30,6 +30,13 @@ const STRIP_HEADERS = new Set([
   'content-length', // will be recalculated
 ]);
 
+/** Headers to strip from upstream response (fetch auto-decompresses, so forwarding these causes double-decompression) */
+const STRIP_RESPONSE_HEADERS = new Set([
+  'content-encoding',
+  'transfer-encoding',
+  'content-length', // length changes after decompression
+]);
+
 function extractHostname(url: string): string {
   try {
     return new URL(url).hostname;
@@ -98,6 +105,7 @@ export async function handleRelay(c: Context): Promise<Response> {
       latencyMs: latency,
       cost: '0',
       cached: true,
+      cacheSource: 'proxy_cache',
       responseSize: JSON.stringify(cachedResponse).length,
       fullUrl: targetUrl,
       policyId: policyEval.policy.id,
@@ -111,6 +119,7 @@ export async function handleRelay(c: Context): Promise<Response> {
         'content-type': 'application/json',
         'x-pag0-cost': '0',
         'x-pag0-cached': 'true',
+        'x-pag0-cache-source': 'proxy_cache',
         'x-pag0-latency': String(latency),
         'x-pag0-endpoint': endpoint,
         'x-pag0-budget-remaining': JSON.stringify({
@@ -158,9 +167,11 @@ export async function handleRelay(c: Context): Promise<Response> {
   if (upstreamRes.status === 402) {
     const latency = Date.now() - startTime;
 
-    // Clone upstream headers
+    // Clone upstream headers (strip compression — fetch already decompressed)
     const resHeaders = new Headers();
-    upstreamRes.headers.forEach((v, k) => resHeaders.set(k, v));
+    upstreamRes.headers.forEach((v, k) => {
+      if (!STRIP_RESPONSE_HEADERS.has(k.toLowerCase())) resHeaders.set(k, v);
+    });
 
     // Add Pag0 metadata
     resHeaders.set('x-pag0-latency', String(latency));
@@ -207,6 +218,7 @@ export async function handleRelay(c: Context): Promise<Response> {
     latencyMs: latency,
     cost: actualCost,
     cached: false,
+    cacheSource: 'passthrough',
     responseSize: upstreamBody.byteLength,
     fullUrl: targetUrl,
     policyId: policyEval.policy.id,
@@ -234,10 +246,13 @@ export async function handleRelay(c: Context): Promise<Response> {
 
   // ── 8. Build response with raw body + metadata headers ───
   const resHeaders = new Headers();
-  upstreamRes.headers.forEach((v, k) => resHeaders.set(k, v));
+  upstreamRes.headers.forEach((v, k) => {
+    if (!STRIP_RESPONSE_HEADERS.has(k.toLowerCase())) resHeaders.set(k, v);
+  });
 
   resHeaders.set('x-pag0-cost', actualCost);
   resHeaders.set('x-pag0-cached', 'false');
+  resHeaders.set('x-pag0-cache-source', 'passthrough');
   resHeaders.set('x-pag0-latency', String(latency));
   resHeaders.set('x-pag0-endpoint', endpoint);
   resHeaders.set('x-pag0-budget-remaining', JSON.stringify({

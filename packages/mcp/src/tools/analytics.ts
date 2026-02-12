@@ -121,11 +121,20 @@ export function registerAnalyticsTools(
         }>;
       };
 
+      const enriched = data.endpoints.map((ep) => ({
+        ...ep,
+        cacheNote: ep.cacheHitRate > 0
+          ? `${ep.cacheHitCount} proxy cache hits`
+          : ep.totalCost === "0"
+            ? "Server returned without payment (server-side cache or free)"
+            : "No proxy cache hits",
+      }));
+
       return {
         content: [
           {
             type: "text" as const,
-            text: JSON.stringify(data.endpoints, null, 2),
+            text: JSON.stringify(enriched, null, 2),
           },
         ],
       };

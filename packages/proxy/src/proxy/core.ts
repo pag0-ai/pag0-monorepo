@@ -33,6 +33,7 @@ export interface ProxyCoreResponse {
   metadata: {
     cost: UsdcAmount;
     cached: boolean;
+    cacheSource: 'proxy_cache' | 'passthrough';
     cacheAge?: number; // seconds since cached
     latency: number; // ms
     endpoint: string;
@@ -125,6 +126,7 @@ export class ProxyCore {
         latencyMs: latency,
         cost: '0',
         cached: true,
+        cacheSource: 'proxy_cache',
         responseSize: JSON.stringify(cachedResponse).length,
         fullUrl: request.targetUrl,
         policyId: policyEval.policy.id,
@@ -137,6 +139,7 @@ export class ProxyCore {
         metadata: {
           cost: '0',
           cached: true,
+          cacheSource: 'proxy_cache',
           cacheAge,
           latency,
           endpoint,
@@ -262,6 +265,7 @@ export class ProxyCore {
       latencyMs: latency,
       cost: actualCost,
       cached: false,
+      cacheSource: 'passthrough',
       responseSize: JSON.stringify(responseBody).length,
       fullUrl: request.targetUrl,
       policyId: policyEval.policy.id,
@@ -299,6 +303,7 @@ export class ProxyCore {
       metadata: {
         cost: actualCost,
         cached: false,
+        cacheSource: 'passthrough',
         latency,
         endpoint,
         budgetRemaining: {

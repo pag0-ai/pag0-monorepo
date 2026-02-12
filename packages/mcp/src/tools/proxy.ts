@@ -56,21 +56,24 @@ export function registerProxyTools(
           };
         }
 
+        const result: Record<string, unknown> = {
+          status: response.status,
+          body,
+          cost: metadata.cost,
+          cached: metadata.cached,
+          cacheSource: metadata.cacheSource,
+          latency: metadata.latency,
+          budgetRemaining: metadata.budgetRemaining,
+        };
+
+        if (metadata.cost === "0" && metadata.cacheSource === "passthrough") {
+          result.note = "Cost is 0 because the x402 server returned without requiring payment (server-side cache or free response)";
+        }
+
         return {
           content: [{
             type: "text" as const,
-            text: JSON.stringify(
-              {
-                status: response.status,
-                body,
-                cost: metadata.cost,
-                cached: metadata.cached,
-                latency: metadata.latency,
-                budgetRemaining: metadata.budgetRemaining,
-              },
-              null,
-              2,
-            ),
+            text: JSON.stringify(result, null, 2),
           }],
         };
       } catch (err) {
