@@ -1,7 +1,11 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import type { Pag0Client, PaymentRequest } from "../client.js";
+import type { Pag0Client } from "../client.js";
 import type { IWallet } from "../wallet.js";
+import {
+  createPaymentPayload,
+  type ProxyPaymentInfo,
+} from "../x402-payment.js";
 
 // ── Response types from POST /api/smart-request ───────────────
 
@@ -29,7 +33,7 @@ interface SmartRequestSuccess {
 
 interface SmartRequest402 {
   status: 402;
-  body: { paymentRequest: PaymentRequest };
+  body: { paymentRequest: ProxyPaymentInfo };
   metadata: { endpoint: string; latency: number };
   selection: { winner: string; rationale: string; comparison: unknown };
 }
@@ -51,7 +55,16 @@ export function registerSmartTools(
     ].join(" "),
     {
       category: z
-        .enum(["AI", "Data", "Blockchain", "IoT", "Finance"])
+        .enum([
+          "AI Agents",
+          "Data & Analytics",
+          "IPFS & Storage",
+          "Content & Media",
+          "Web & Automation",
+          "Agent Infrastructure",
+          "Crypto & NFT",
+          "Developer Tools",
+        ])
         .describe("API category to search"),
       prompt: z
         .string()
@@ -88,18 +101,27 @@ export function registerSmartTools(
         };
       }
 
-      // ── 3. 402 Payment Required — sign and retry ─────────────
+      // ── 3. 402 Payment Required — sign and retry through proxy
       if (res.status === 402) {
         const paymentRes = (await res.json()) as SmartRequest402;
-        const paymentRequest = paymentRes.body.paymentRequest;
+        const paymentInfo = paymentRes.body.paymentRequest;
 
-        const signedPayment = await wallet.signPayment({
-          id: paymentRequest.id,
-          amount: paymentRequest.amount,
-          recipient: paymentRequest.recipient,
-        });
+        if (!paymentInfo?.payTo || !paymentInfo?.asset || !paymentInfo?.extra) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `402 received but payment info incomplete. Selection: ${paymentRes.selection?.winner}. Info: ${JSON.stringify(paymentInfo)}`,
+              },
+            ],
+            isError: true,
+          };
+        }
 
-        // Retry with signed payment
+        // Create x402 PaymentPayload (EIP-3009 transferWithAuthorization)
+        const signedPayment = await createPaymentPayload(wallet, paymentInfo);
+
+        // Retry through proxy with signed payment
         const retryRes = await client.smartRequest({
           category: args.category,
           prompt: args.prompt,
@@ -108,30 +130,34 @@ export function registerSmartTools(
           signedPayment,
         });
 
-        if (!retryRes.ok) {
-          const err = await retryRes
-            .json()
-            .catch(() => ({ message: retryRes.statusText }));
+        if (retryRes.ok) {
+          const data = (await retryRes.json()) as SmartRequestSuccess;
           return {
             content: [
               {
                 type: "text" as const,
-                text: `Payment retry failed (${retryRes.status}): ${JSON.stringify(err)}`,
+                text: JSON.stringify(
+                  {
+                    ...data.data,
+                    payment: { success: true, note: "paid via x402 through proxy" },
+                  },
+                  null,
+                  2,
+                ),
               },
             ],
-            isError: true,
           };
         }
 
-        const data = (await retryRes.json()) as SmartRequestSuccess;
-        const result = {
-          ...data.data,
-          metadata: { ...data.data.metadata, paymentId: paymentRequest.id },
-        };
+        const err = await retryRes.text().catch(() => retryRes.statusText);
         return {
           content: [
-            { type: "text" as const, text: JSON.stringify(result, null, 2) },
+            {
+              type: "text" as const,
+              text: `x402 payment retry failed (${retryRes.status}): ${err}`,
+            },
           ],
+          isError: true,
         };
       }
 

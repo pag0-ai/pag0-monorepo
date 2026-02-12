@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { curationEngine } from "../curation/engine";
 import { proxyCore, type ProxyCoreResponse } from "../proxy/core";
 import type { EndpointScore } from "../types";
+import sql from "../db/postgres";
 
 type Variables = {
   projectId: string;
@@ -80,7 +81,16 @@ function injectAuthHeaders(url: string): Record<string, string> {
 
 // ── Route ─────────────────────────────────────────────────────
 
-const VALID_CATEGORIES = ["AI", "Data", "Blockchain", "IoT", "Finance"];
+const VALID_CATEGORIES = [
+  "AI Agents",
+  "Data & Analytics",
+  "IPFS & Storage",
+  "Content & Media",
+  "Web & Automation",
+  "Agent Infrastructure",
+  "Crypto & NFT",
+  "Developer Tools",
+];
 const VALID_SORT_BY = ["overall", "cost", "latency", "reliability"];
 
 const app = new Hono<{ Variables: Variables }>();
@@ -197,27 +207,58 @@ app.post("/", async (c) => {
       }
     }
 
-    // ── 4. Look up provider config ────────────────────────────
+    const selection = {
+      winner,
+      rationale,
+      comparison: comparisonResult,
+    };
+
+    // ── 4. Determine request target ─────────────────────────────
     const provider = PROVIDER_CONFIG[winner];
-    if (!provider) {
-      return c.json(
-        {
-          error: {
-            code: "UNSUPPORTED_PROVIDER",
-            message: `Winner "${winner}" is not in the supported provider list (${Object.keys(
-              PROVIDER_CONFIG,
-            ).join(", ")})`,
+    let targetUrl: string;
+    let requestBody: unknown;
+    let headers: Record<string, string>;
+    let extractText: (body: unknown) => string;
+
+    if (provider) {
+      // Known provider (OpenAI, Anthropic) — use specific config
+      targetUrl = provider.chatUrl;
+      requestBody = provider.buildBody(body.prompt, maxTokens);
+      headers = injectAuthHeaders(targetUrl);
+      extractText = provider.extractText;
+    } else {
+      // x402 generic pass-through — look up a recent successful URL
+      const [recentReq] = await sql<
+        Array<{ full_url: string; method: string }>
+      >`
+        SELECT full_url, method FROM requests
+        WHERE endpoint = ${winner} AND status_code = 200
+        ORDER BY created_at DESC LIMIT 1
+      `;
+
+      if (!recentReq) {
+        return c.json(
+          {
+            error: {
+              code: "NO_KNOWN_URL",
+              message: `No known URL for x402 endpoint "${winner}". Use /proxy with a specific URL instead.`,
+            },
           },
-        },
-        400,
-      );
+          400,
+        );
+      }
+
+      targetUrl = recentReq.full_url;
+      requestBody =
+        recentReq.method === "GET"
+          ? undefined
+          : { prompt: body.prompt, max_tokens: maxTokens };
+      headers = { "Content-Type": "application/json" };
+      extractText = (b: unknown) =>
+        typeof b === "string" ? b : JSON.stringify(b);
     }
 
-    // ── 5. Build request and call via proxyCore ───────────────
-    const targetUrl = provider.chatUrl;
-    const requestBody = provider.buildBody(body.prompt, maxTokens);
-    const headers = injectAuthHeaders(targetUrl);
-
+    // ── 5. Call via proxyCore ──────────────────────────────────
     const result = await proxyCore.handleRequest({
       targetUrl,
       method: "POST",
@@ -227,15 +268,13 @@ app.post("/", async (c) => {
       signedPayment: body.signedPayment,
     });
 
-    const selection = {
-      winner,
-      rationale,
-      comparison: comparisonResult,
-    };
-
     // ── 6. Handle 402 — return payment request with selection ──
     if (result.status === 402) {
-      const payment402 = result as { status: 402; paymentInfo: unknown; metadata: { endpoint: string; latency: number } };
+      const payment402 = result as {
+        status: 402;
+        paymentInfo: unknown;
+        metadata: { endpoint: string; latency: number };
+      };
       return c.json(
         {
           status: 402,
@@ -265,7 +304,7 @@ app.post("/", async (c) => {
     }
 
     // ── 8. Success — extract text and return ──────────────────
-    const responseText = provider.extractText(res.body);
+    const responseText = extractText(res.body);
 
     return c.json({
       data: {

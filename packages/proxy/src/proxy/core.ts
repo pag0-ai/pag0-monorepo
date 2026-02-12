@@ -56,6 +56,10 @@ export interface Payment402Response {
     scheme: string;
     network: string;
     description?: string;
+    payTo?: string;
+    maxTimeoutSeconds?: number;
+    asset?: string;
+    extra?: any;
   };
   metadata: {
     endpoint: string;
@@ -189,7 +193,7 @@ export class ProxyCore {
 
     // ─── Step 4: If 402, parse and relay payment info ────────
     if (response.status === 402) {
-      const paymentInfo = x402Integration.parsePaymentRequest(response);
+      const paymentInfo = await x402Integration.parsePaymentRequest(response);
 
       if (!paymentInfo) {
         throw new Error('Received 402 but could not parse payment info');

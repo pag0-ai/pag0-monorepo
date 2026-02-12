@@ -15,6 +15,10 @@ export interface PaymentInfo {
   scheme: string;
   network: string;
   description?: string;
+  payTo?: string;
+  maxTimeoutSeconds?: number;
+  asset?: string;
+  extra?: any;
 }
 
 export class X402Integration {
@@ -63,15 +67,16 @@ export class X402Integration {
 
   /**
    * Parse 402 PaymentRequired response
-   * Extracts payment info from response headers
+   * Extracts payment info from response headers or body
    *
-   * x402 uses headers like:
-   * - WWW-Authenticate: x402 <base64-json>
-   * - X-Payment-Required: <base64-json>
+   * x402 uses:
+   * - Header: WWW-Authenticate: x402 <base64-json>
+   * - Header: X-Payment-Required: <base64-json>
+   * - Body JSON: { accepts: [{ scheme, network, maxAmountRequired, resource, ... }] }
    *
-   * Returns null if response is not 402 or headers are invalid
+   * Returns null if response is not 402 or payment info can't be parsed
    */
-  parsePaymentRequest(response: Response): PaymentInfo | null {
+  async parsePaymentRequest(response: Response): Promise<PaymentInfo | null> {
     if (response.status !== 402) {
       return null;
     }
@@ -91,13 +96,44 @@ export class X402Integration {
         if (parsed) return parsed;
       }
 
-      // Fallback: try reading response body as JSON
-      // (some servers may send payment info in body)
+      // Fallback: parse response body (real x402 protocol format)
+      const body = await response.json().catch(() => null);
+      if (body) {
+        const parsed = this.parseX402Body(body);
+        if (parsed) return parsed;
+      }
+
       return null;
     } catch (error) {
       console.error('[X402Integration] Failed to parse 402 response:', error);
       return null;
     }
+  }
+
+  /**
+   * Parse x402 body format: { accepts: [{ scheme, network, maxAmountRequired, resource, payTo, ... }] }
+   */
+  private parseX402Body(body: any): PaymentInfo | null {
+    if (!body || !Array.isArray(body.accepts) || body.accepts.length === 0) {
+      return null;
+    }
+
+    const accept = body.accepts[0];
+    if (!accept.maxAmountRequired || !accept.resource || !accept.scheme || !accept.network) {
+      return null;
+    }
+
+    return {
+      maxAmountRequired: String(accept.maxAmountRequired),
+      resource: accept.resource,
+      scheme: accept.scheme,
+      network: accept.network,
+      description: accept.description,
+      payTo: accept.payTo,
+      maxTimeoutSeconds: accept.maxTimeoutSeconds ?? 60,
+      asset: accept.asset,
+      extra: accept.extra,
+    };
   }
 
   /**

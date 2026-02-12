@@ -30,6 +30,17 @@ export interface SignedPayment {
   timestamp: number;
 }
 
+/** EVM signer compatible with @x402/evm ClientEvmSigner */
+export interface EvmSigner {
+  readonly address: `0x${string}`;
+  signTypedData(message: {
+    domain: Record<string, unknown>;
+    types: Record<string, unknown>;
+    primaryType: string;
+    message: Record<string, unknown>;
+  }): Promise<`0x${string}`>;
+}
+
 /** Common wallet interface implemented by both LocalWallet (Pag0Wallet) and CdpWallet */
 export interface IWallet {
   readonly address: string;
@@ -40,6 +51,8 @@ export interface IWallet {
     amount: string;
     recipient: string;
   }): Promise<SignedPayment>;
+  /** Get an EVM signer for x402 payment authorization (EIP-3009/EIP-712) */
+  getEvmSigner(): EvmSigner;
 }
 
 export class Pag0Wallet implements IWallet {
@@ -96,6 +109,25 @@ export class Pag0Wallet implements IWallet {
       amount: paymentRequest.amount,
       signature,
       timestamp,
+    };
+  }
+
+  getEvmSigner(): EvmSigner {
+    const wallet = this.wallet;
+    return {
+      address: wallet.address as `0x${string}`,
+      async signTypedData(msg) {
+        // ethers v6: signTypedData(domain, types, value)
+        // types must NOT include EIP712Domain
+        const types = { ...msg.types };
+        delete types["EIP712Domain"];
+        const sig = await wallet.signTypedData(
+          msg.domain as any,
+          types as Record<string, Array<{ name: string; type: string }>>,
+          msg.message as Record<string, any>,
+        );
+        return sig as `0x${string}`;
+      },
     };
   }
 }

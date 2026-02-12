@@ -11,12 +11,7 @@ export interface ProxyRequestParams {
   headers?: Record<string, string>;
   body?: unknown;
   cacheBypass?: boolean;
-  signedPayment?: {
-    id: string;
-    amount: string;
-    signature: string;
-    timestamp: number;
-  };
+  signedPayment?: unknown;
 }
 
 export interface ProxyResponse {

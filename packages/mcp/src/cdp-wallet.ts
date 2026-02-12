@@ -141,6 +141,27 @@ export class CdpWallet implements IWallet {
     };
   }
 
+  getEvmSigner(): import("./wallet.js").EvmSigner {
+    if (!this.account) {
+      throw new Error("CdpWallet not initialized — call init() first");
+    }
+    const cdp = this.cdp;
+    const address = this.account.address as `0x${string}`;
+    return {
+      address,
+      async signTypedData(msg) {
+        const result = await cdp.evm.signTypedData({
+          address,
+          domain: msg.domain as any,
+          types: msg.types as any,
+          primaryType: msg.primaryType as any,
+          message: msg.message as any,
+        });
+        return result.signature as `0x${string}`;
+      },
+    };
+  }
+
   /** Request testnet USDC from faucet (Base Sepolia only) */
   async requestFaucet(): Promise<string> {
     await this.init();

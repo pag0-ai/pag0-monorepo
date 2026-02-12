@@ -102,26 +102,28 @@ echo "║  Smart API recommendations & comparison  ║"
 echo "╚══════════════════════════════════════════╝"
 echo -e "${NC}"
 
-echo -e "${YELLOW}3.1 View AI category rankings${NC}"
-run_demo "curl -s '$BASE_URL/api/curation/rankings?category=AI' -H 'X-Pag0-API-Key: $API_KEY' | python3 -m json.tool"
+echo -e "${YELLOW}3.1 View AI Agents category rankings${NC}"
+run_demo "curl -s '$BASE_URL/api/curation/rankings?category=AI+Agents' -H 'X-Pag0-API-Key: $API_KEY' | python3 -m json.tool"
 
 echo -e "${YELLOW}3.2 Get recommendations (cost-optimized)${NC}"
-run_demo "curl -s '$BASE_URL/api/curation/recommend?category=AI&limit=3&sortBy=cost' -H 'X-Pag0-API-Key: $API_KEY' | python3 -m json.tool"
+run_demo "curl -s '$BASE_URL/api/curation/recommend?category=AI+Agents&limit=3&sortBy=cost' -H 'X-Pag0-API-Key: $API_KEY' | python3 -m json.tool"
 
 echo -e "${YELLOW}3.3 Compare endpoints${NC}"
-run_demo "curl -s '$BASE_URL/api/curation/compare?endpoints=api.openai.com,api.anthropic.com' -H 'X-Pag0-API-Key: $API_KEY' | python3 -m json.tool"
+run_demo "curl -s '$BASE_URL/api/curation/compare?endpoints=api-dev.intra-tls2.dctx.link,api-staging.intra-tls2.dctx.link' -H 'X-Pag0-API-Key: $API_KEY' | python3 -m json.tool"
 
 echo -e "${YELLOW}3.4 Score spread (differences)${NC}"
-run_demo "curl -s '$BASE_URL/api/curation/compare?endpoints=api.openai.com,api.anthropic.com' -H 'X-Pag0-API-Key: $API_KEY' | python3 -c \"
+curl -s "$BASE_URL/api/curation/compare?endpoints=api-dev.intra-tls2.dctx.link,api-staging.intra-tls2.dctx.link" \
+  -H "X-Pag0-API-Key: $API_KEY" | python3 -c "
 import sys,json
 d = json.load(sys.stdin).get('data',{}).get('differences',{})
 for k,v in d.items():
     label = k.replace('Range','')
-    print(f'  {label:15s}: {v[\"min\"]:.1f} - {v[\"max\"]:.1f}  (delta: {v[\"delta\"]:.1f})')
-\""
+    print('  %-15s: %.1f - %.1f  (delta: %.1f)' % (label, v['min'], v['max'], v['delta']))
+"
+echo ""
 
 echo -e "${YELLOW}3.5 Individual endpoint score${NC}"
-run_demo "curl -s '$BASE_URL/api/curation/score/api.openai.com' -H 'X-Pag0-API-Key: $API_KEY' | python3 -m json.tool"
+run_demo "curl -s '$BASE_URL/api/curation/score/api-dev.intra-tls2.dctx.link' -H 'X-Pag0-API-Key: $API_KEY' | python3 -m json.tool"
 echo -e "${GREEN}→ Score includes weights and evidence for transparency${NC}"
 echo ""
 
