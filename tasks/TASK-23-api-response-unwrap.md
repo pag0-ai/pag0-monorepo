@@ -1,7 +1,7 @@
 # TASK-23: API 응답 언래핑 — 프론트엔드/백엔드 데이터 계약 정렬
 
 **Priority**: HIGH (모든 대시보드 페이지가 깨지는 원인)
-**Status**: TODO
+**Status**: ✅ 완료
 **Phase**: 5 (Dashboard with Data)
 
 ## 문제

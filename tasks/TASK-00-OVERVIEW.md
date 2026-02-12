@@ -119,14 +119,14 @@ TASK-22 (Deployment)          ← TASK-11, TASK-12
 
 | ID | 태스크 | 패키지 | 우선순위 | 의존성 |
 |----|--------|--------|----------|--------|
-| [TASK-23](./TASK-23-api-response-unwrap.md) | API 응답 언래핑 (모든 fetch 함수) | dashboard | **HIGH** | TASK-13~15 |
-| [TASK-24](./TASK-24-policy-field-mismatch.md) | Policy 필드명 불일치 수정 | dashboard | **HIGH** | TASK-14 |
-| [TASK-25](./TASK-25-analytics-field-mismatch.md) | Analytics 필드명 불일치 수정 | dashboard | **HIGH** | TASK-13 |
-| [TASK-26](./TASK-26-curation-field-mismatch.md) | Curation 점수 필드명 불일치 수정 | dashboard | **HIGH** | TASK-15 |
-| [TASK-27](./TASK-27-budget-mock-to-real.md) | Dashboard 예산 Mock → 실제 데이터 | dashboard | **HIGH** | TASK-25 |
-| [TASK-28](./TASK-28-empty-state-ux.md) | 빈 대시보드 UX (CTA + 빈 차트) | dashboard | **MEDIUM** | TASK-27 |
+| [TASK-23](./TASK-23-api-response-unwrap.md) | ~~API 응답 언래핑 (모든 fetch 함수)~~ | dashboard | **HIGH** | ✅ 완료 |
+| [TASK-24](./TASK-24-policy-field-mismatch.md) | ~~Policy 필드명 불일치 수정~~ | dashboard | **HIGH** | ✅ 완료 |
+| [TASK-25](./TASK-25-analytics-field-mismatch.md) | ~~Analytics 필드명 불일치 수정~~ | dashboard | **HIGH** | ✅ 완료 |
+| [TASK-26](./TASK-26-curation-field-mismatch.md) | ~~Curation 점수 필드명 불일치 수정~~ | dashboard | **HIGH** | ✅ 완료 |
+| [TASK-27](./TASK-27-budget-mock-to-real.md) | ~~Dashboard 예산 Mock → 실제 데이터~~ | dashboard | **HIGH** | ✅ 완료 |
+| [TASK-28](./TASK-28-empty-state-ux.md) | ~~빈 대시보드 UX (CTA + 빈 차트)~~ | dashboard | **MEDIUM** | ✅ 완료 |
 
-> **핵심 문제**: 백엔드는 `{ data: [...] }`, `{ policies: [...] }` 등 래퍼 객체로 응답하지만, 프론트엔드 fetch 함수들은 배열을 직접 기대함. TASK-23~26을 수정하면 대시보드가 실제 데이터를 표시할 수 있음.
+> ~~**핵심 문제**: 백엔드는 `{ data: [...] }`, `{ policies: [...] }` 등 래퍼 객체로 응답하지만, 프론트엔드 fetch 함수들은 배열을 직접 기대함.~~ **해결 완료** (커밋 `7f02774`)
 
 ## 병렬 실행 가능 그룹
 

@@ -1,7 +1,7 @@
 # TASK-24: Policy 필드명 불일치 수정
 
 **Priority**: HIGH
-**Status**: TODO
+**Status**: ✅ 완료
 **Phase**: 3 (Policy Management)
 
 ## 문제

@@ -1,7 +1,7 @@
 # TASK-27: Dashboard 예산 표시 — Mock → 실제 데이터
 
 **Priority**: HIGH
-**Status**: TODO
+**Status**: ✅ 완료
 **Phase**: 5 (Dashboard with Data)
 
 ## 문제

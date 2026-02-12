@@ -1,7 +1,7 @@
 # TASK-26: Curation 점수 필드명 불일치 수정
 
 **Priority**: HIGH
-**Status**: TODO
+**Status**: ✅ 완료
 **Phase**: 6 (Curation/Rankings)
 
 ## 문제

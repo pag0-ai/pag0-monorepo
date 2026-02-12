@@ -1,7 +1,7 @@
 # TASK-28: 빈 대시보드 UX — 첫 방문 CTA 및 빈 차트 처리
 
 **Priority**: MEDIUM
-**Status**: TODO
+**Status**: ✅ 완료
 **Phase**: 2 (Empty Dashboard)
 
 ## 문제

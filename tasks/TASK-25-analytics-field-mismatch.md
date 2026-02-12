@@ -1,7 +1,7 @@
 # TASK-25: Analytics 필드명 불일치 수정
 
 **Priority**: HIGH
-**Status**: TODO
+**Status**: ✅ 완료
 **Phase**: 5 (Dashboard with Data)
 
 ## 문제
