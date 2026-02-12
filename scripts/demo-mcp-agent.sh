@@ -82,6 +82,10 @@ for _envfile in "$MCP_DIR/.env" "$MONOREPO_ROOT/.env" "$MONOREPO_ROOT/.env.local
       _key=$(grep -E '^CDP_WALLET_SECRET=' "$_envfile" 2>/dev/null | head -1 | cut -d'=' -f2- | sed 's/^["'\'']*//;s/["'\'']*$//' || true)
       [ -n "$_key" ] && CDP_WALLET_SECRET="$_key"
     fi
+    if [ -z "${PAG0_API_KEY:-}" ]; then
+      _key=$(grep -E '^PAG0_API_KEY=' "$_envfile" 2>/dev/null | head -1 | cut -d'=' -f2- | sed 's/^["'\'']*//;s/["'\'']*$//' || true)
+      [ -n "$_key" ] && PAG0_API_KEY="$_key"
+    fi
   fi
 done
 if [ -z "${OPENAI_API_KEY:-}" ]; then
@@ -114,14 +118,7 @@ fi
 echo ""
 
 # ---- Setup: Load or register API key ----
-# Check PAG0_API_KEY from .env files first
-API_KEY=""
-for _envfile in "$MCP_DIR/.env" "$MONOREPO_ROOT/.env" "$MONOREPO_ROOT/.env.local"; do
-  if [ -f "$_envfile" ] && [ -z "$API_KEY" ]; then
-    _key=$(grep -E '^PAG0_API_KEY=' "$_envfile" 2>/dev/null | head -1 | cut -d'=' -f2- | sed 's/^["'\'']*//;s/["'\'']*$//' || true)
-    [ -n "$_key" ] && API_KEY="$_key"
-  fi
-done
+API_KEY="${PAG0_API_KEY:-}"
 
 if [ -n "$API_KEY" ]; then
   echo -e "${GREEN}✓ PAG0_API_KEY loaded from .env: ${API_KEY:0:20}...${NC}"
