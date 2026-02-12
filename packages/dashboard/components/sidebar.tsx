@@ -3,15 +3,20 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { BarChart3, Shield, Trophy, LogOut, Hexagon } from 'lucide-react';
+import { BarChart3, Shield, Trophy, Sparkles, LogOut, Hexagon } from 'lucide-react';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: BarChart3 },
   { href: '/policies', label: 'Policies', icon: Shield },
   { href: '/rankings', label: 'Rankings', icon: Trophy },
+  { href: '/recommendations', label: 'Recommendations', icon: Sparkles },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  onClose?: () => void;
+}
+
+export function Sidebar({ onClose }: SidebarProps) {
   const pathname = usePathname();
   const { data: session } = useSession();
 
@@ -61,6 +66,7 @@ export function Sidebar() {
               <li key={item.href}>
                 <Link
                   href={item.href}
+                  onClick={onClose}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
                     isActive ? 'nav-active-indicator' : ''
                   }`}

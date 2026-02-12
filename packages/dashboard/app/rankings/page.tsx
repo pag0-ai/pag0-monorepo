@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchRankings, fetchCategories, fetchApi, type EndpointScore, type Category } from '../../lib/api';
-import { Award, Trophy, Medal, Crown, AlertTriangle, RotateCcw } from 'lucide-react';
+import { fetchRankings, fetchCategories, fetchApi, fetchEndpointScore, type EndpointScore, type Category } from '../../lib/api';
+import { Award, Trophy, Medal, Crown, AlertTriangle, RotateCcw, X, Info } from 'lucide-react';
 
 function ScoreBadge({ score }: { score: number }) {
   const color = score >= 80
@@ -53,6 +53,7 @@ export default function RankingsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedEndpoints, setSelectedEndpoints] = useState<string[]>([]);
   const [showComparison, setShowComparison] = useState(false);
+  const [selectedEndpoint, setSelectedEndpoint] = useState<string | null>(null);
 
   const { data: rankings, isLoading: rankingsLoading, isError: rankingsError, refetch: rankingsRefetch } = useQuery({
     queryKey: ['rankings', selectedCategory],
@@ -73,6 +74,12 @@ export default function RankingsPage() {
       return res.data;
     },
     enabled: false,
+  });
+
+  const { data: endpointDetail, isLoading: detailLoading } = useQuery({
+    queryKey: ['endpoint-score', selectedEndpoint],
+    queryFn: () => fetchEndpointScore(selectedEndpoint!, apiKey),
+    enabled: !!selectedEndpoint && !!apiKey,
   });
 
   const handleCheckboxChange = (endpoint: string, checked: boolean) => {
@@ -159,11 +166,16 @@ export default function RankingsPage() {
       <div className="glass-card overflow-hidden mb-6 animate-fade-up" style={{ animationDelay: '160ms' }}>
         <div className="px-6 py-4 flex justify-between items-center border-b" style={{ borderColor: 'var(--color-obsidian-border)' }}>
           <h2 className="text-base font-semibold" style={{ color: 'var(--color-txt-primary)' }}>Leaderboard</h2>
-          {selectedEndpoints.length >= 2 && (
-            <button onClick={handleCompare} disabled={comparisonLoading} className="btn-primary px-4 py-2 text-xs">
-              {comparisonLoading ? 'Comparing...' : `Compare (${selectedEndpoints.length})`}
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            {selectedEndpoints.length < 2 && (
+              <span className="text-xs" style={{ color: 'var(--color-txt-muted)' }}>Select 2+ endpoints to compare</span>
+            )}
+            {selectedEndpoints.length >= 2 && (
+              <button onClick={handleCompare} disabled={comparisonLoading} className="btn-primary px-4 py-2 text-xs">
+                {comparisonLoading ? 'Comparing...' : `Compare (${selectedEndpoints.length})`}
+              </button>
+            )}
+          </div>
         </div>
 
         {rankingsLoading ? (
@@ -196,7 +208,7 @@ export default function RankingsPage() {
                     </td>
                     <td className="px-5 py-3.5"><RankBadge rank={index + 1} /></td>
                     <td className="px-5 py-3.5">
-                      <div className="text-sm font-medium" style={{ color: 'var(--color-neon-cyan)', fontFamily: 'var(--font-mono)' }}>{ranking.endpoint}</div>
+                      <div className="text-sm font-medium cursor-pointer hover:underline" style={{ color: 'var(--color-neon-cyan)', fontFamily: 'var(--font-mono)' }} onClick={() => setSelectedEndpoint(ranking.endpoint)}>{ranking.endpoint}</div>
                       <div className="text-[11px] mt-0.5" style={{ color: 'var(--color-txt-muted)' }}>{ranking.category}</div>
                     </td>
                     <td className="px-5 py-3.5"><ScoreBadge score={ranking.overallScore} /></td>
@@ -315,6 +327,71 @@ export default function RankingsPage() {
           ))}
         </div>
       </div>
+
+      {/* Endpoint Detail Modal */}
+      {selectedEndpoint && (
+        <div className="fixed inset-0 flex items-center justify-center z-50" style={{ background: 'rgba(7,7,14,0.85)', backdropFilter: 'blur(8px)' }}>
+          <div className="glass-card max-w-lg w-full mx-4 glow-indigo" style={{ borderColor: 'rgba(99,102,241,0.2)' }}>
+            <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: 'var(--color-obsidian-border)' }}>
+              <div className="flex items-center gap-2">
+                <Info size={18} style={{ color: 'var(--color-neon-indigo)' }} />
+                <h2 className="text-lg font-bold" style={{ color: 'var(--color-txt-primary)' }}>Endpoint Details</h2>
+              </div>
+              <button onClick={() => setSelectedEndpoint(null)} className="p-1 rounded-lg" style={{ color: 'var(--color-txt-muted)' }}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6">
+              <p className="text-sm font-medium mb-4 break-all" style={{ color: 'var(--color-neon-cyan)', fontFamily: 'var(--font-mono)' }}>
+                {selectedEndpoint}
+              </p>
+              {detailLoading ? (
+                <div className="text-sm py-8 text-center" style={{ color: 'var(--color-txt-muted)' }}>Loading...</div>
+              ) : endpointDetail ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { label: 'Overall', value: endpointDetail.overallScore.toFixed(1), color: endpointDetail.overallScore >= 80 ? 'var(--color-neon-green)' : endpointDetail.overallScore >= 60 ? 'var(--color-neon-amber)' : 'var(--color-neon-rose)' },
+                      { label: 'Cost', value: endpointDetail.costScore.toFixed(1), color: endpointDetail.costScore >= 80 ? 'var(--color-neon-green)' : endpointDetail.costScore >= 60 ? 'var(--color-neon-amber)' : 'var(--color-neon-rose)' },
+                      { label: 'Latency', value: endpointDetail.latencyScore.toFixed(1), color: endpointDetail.latencyScore >= 80 ? 'var(--color-neon-green)' : endpointDetail.latencyScore >= 60 ? 'var(--color-neon-amber)' : 'var(--color-neon-rose)' },
+                      { label: 'Reliability', value: endpointDetail.reliabilityScore.toFixed(1), color: endpointDetail.reliabilityScore >= 80 ? 'var(--color-neon-green)' : endpointDetail.reliabilityScore >= 60 ? 'var(--color-neon-amber)' : 'var(--color-neon-rose)' },
+                    ].map(({ label, value, color }) => (
+                      <div key={label} className="rounded-xl p-3 text-center" style={{ background: 'var(--color-obsidian-base)', border: '1px solid var(--color-obsidian-border)' }}>
+                        <div className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: 'var(--color-txt-muted)' }}>{label}</div>
+                        <div className="text-xl font-bold metric-value" style={{ color }}>{value}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {endpointDetail.evidence && (
+                    <div className="rounded-xl p-4" style={{ background: 'var(--color-obsidian-base)', border: '1px solid var(--color-obsidian-border)' }}>
+                      <div className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--color-txt-muted)' }}>Evidence</div>
+                      <div className="space-y-2">
+                        {[
+                          { label: 'Sample Size', value: endpointDetail.evidence.sampleSize.toLocaleString() },
+                          { label: 'Avg Cost', value: `$${(Number(endpointDetail.evidence.avgCostPerRequest) / 1_000_000).toFixed(4)}` },
+                          { label: 'Avg Latency', value: `${endpointDetail.evidence.avgLatencyMs.toFixed(0)}ms` },
+                          { label: 'Success Rate', value: `${(endpointDetail.evidence.successRate * 100).toFixed(1)}%` },
+                          { label: 'Period', value: endpointDetail.evidence.period },
+                        ].map(({ label, value }) => (
+                          <div key={label} className="flex justify-between text-xs">
+                            <span style={{ color: 'var(--color-txt-muted)' }}>{label}</span>
+                            <span className="metric-value font-medium" style={{ color: 'var(--color-txt-primary)' }}>{value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <div className="text-[11px] text-center" style={{ color: 'var(--color-txt-muted)' }}>
+                    Category: {endpointDetail.category} · Samples: {endpointDetail.sampleSize}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-sm py-8 text-center" style={{ color: 'var(--color-txt-muted)' }}>No details available</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

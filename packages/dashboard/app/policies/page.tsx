@@ -44,6 +44,7 @@ export default function PoliciesPage() {
   });
   const [formError, setFormError] = useState('');
   const [deleteError, setDeleteError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const { data: policies = [], isLoading, isError: policiesError, refetch: policiesRefetch } = useQuery({
     queryKey: ['policies'],
@@ -90,16 +91,39 @@ export default function PoliciesPage() {
     setIsModalOpen(true);
   };
 
-  const closeModal = () => { setIsModalOpen(false); setEditingPolicy(null); setFormError(''); };
+  const closeModal = () => { setIsModalOpen(false); setEditingPolicy(null); setFormError(''); setFieldErrors({}); };
+
+  const validateField = (id: string, value: string) => {
+    const num = parseFloat(value || '0');
+    if (value && num <= 0) {
+      setFieldErrors(prev => ({ ...prev, [id]: 'Must be > 0' }));
+    } else {
+      setFieldErrors(prev => { const next = { ...prev }; delete next[id]; return next; });
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
+
+    // Name validation
+    if (!formData.name.trim()) {
+      setFormError('Policy name is required.');
+      return;
+    }
+
+    // Amount validations
     const maxPerRequest = parseFloat(formData.maxPerRequest || '0');
     const dailyBudget = parseFloat(formData.dailyBudget || '0');
     const monthlyBudget = parseFloat(formData.monthlyBudget || '0');
+
+    if (maxPerRequest <= 0 || dailyBudget <= 0 || monthlyBudget <= 0) {
+      setFormError('All budget amounts must be greater than zero.');
+      return;
+    }
+
     if (maxPerRequest > dailyBudget || dailyBudget > monthlyBudget) {
-      setFormError('Budget constraints: Max Per Request <= Daily Budget <= Monthly Budget');
+      setFormError('Budget constraints: Max Per Request ≤ Daily Budget ≤ Monthly Budget');
       return;
     }
     const data: CreatePolicyData = {
@@ -301,13 +325,14 @@ export default function PoliciesPage() {
                         step="0.01"
                         min="0"
                         value={formData[id as keyof PolicyFormData]}
-                        onChange={e => setFormData({ ...formData, [id]: e.target.value })}
+                        onChange={e => { setFormData({ ...formData, [id]: e.target.value }); validateField(id, e.target.value); }}
                         className="w-full pl-7 pr-3 py-2.5"
                         style={inputStyle}
                         placeholder={placeholder}
                         required
                       />
                     </div>
+                    {fieldErrors[id] && <p className="mt-1 text-[11px]" style={{ color: 'var(--color-neon-rose)' }}>{fieldErrors[id]}</p>}
                   </div>
                 ))}
               </div>

@@ -1,6 +1,7 @@
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
+const REQUEST_TIMEOUT_MS = 15_000;
 
 // Hook for client components to get the API key from session
 export function useApiKey(): string {
@@ -19,12 +20,36 @@ export async function fetchApi<T>(path: string, options?: RequestInit & { apiKey
     ...(restOptions?.headers as Record<string, string>),
   };
 
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...restOptions,
-    headers,
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      ...restOptions,
+      headers,
+      signal: controller.signal,
+    });
+  } catch (err: unknown) {
+    clearTimeout(timeout);
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      throw new Error('Request timed out. Check that the proxy server is reachable.');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!res.ok) {
+    if (res.status === 401 || res.status === 403) {
+      if (typeof window !== 'undefined') {
+        signOut({ callbackUrl: '/login' });
+      }
+      throw new Error('Session expired. Redirecting to login...');
+    }
+    if (res.status === 429) {
+      throw new Error('Rate limited. Please wait a moment and try again.');
+    }
     const error = await res.json().catch(() => ({ error: { message: res.statusText } }));
     throw new Error(error.error?.message ?? `API error: ${res.status}`);
   }
@@ -236,5 +261,28 @@ export interface Category {
 
 export async function fetchCategories(apiKey?: string): Promise<Category[]> {
   const res = await fetchApi<{ data: Category[] }>('/api/curation/categories', { apiKey });
+  return res.data;
+}
+
+export async function fetchEndpointScore(endpoint: string, apiKey?: string): Promise<EndpointScore> {
+  const res = await fetchApi<{ data: EndpointScore }>(`/api/curation/score/${encodeURIComponent(endpoint)}`, { apiKey });
+  return res.data;
+}
+
+export interface RecommendedEndpoint extends EndpointScore {
+  rank: number;
+}
+
+export async function fetchRecommendations(params?: {
+  category?: string;
+  sortBy?: string;
+  limit?: number;
+  apiKey?: string;
+}): Promise<RecommendedEndpoint[]> {
+  const query = new URLSearchParams();
+  if (params?.category) query.set('category', params.category);
+  if (params?.sortBy) query.set('sortBy', params.sortBy);
+  if (params?.limit) query.set('limit', params.limit.toString());
+  const res = await fetchApi<{ data: RecommendedEndpoint[] }>(`/api/curation/recommend?${query}`, { apiKey: params?.apiKey });
   return res.data;
 }

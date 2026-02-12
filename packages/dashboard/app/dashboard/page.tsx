@@ -24,6 +24,15 @@ import {
 
 type Period = '1h' | '24h' | '7d' | '30d';
 
+function getGranularity(period: Period): string {
+  switch (period) {
+    case '1h': return 'minute';
+    case '24h': return 'hourly';
+    case '7d': return 'daily';
+    case '30d': return 'daily';
+  }
+}
+
 function formatUsdc(amount: string): string {
   return `$${(Number(amount) / 1_000_000).toFixed(2)}`;
 }
@@ -38,6 +47,8 @@ export default function DashboardPage() {
   const { data: session } = useSession();
   const apiKey = session?.apiKey;
   const [period, setPeriod] = useState<Period>('7d');
+  const [sortField, setSortField] = useState<string>('requestCount');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
   const { data: summary, isLoading: summaryLoading, isError: summaryError, refetch: summaryRefetch } = useQuery({
     queryKey: ['analytics', 'summary', period],
@@ -47,7 +58,7 @@ export default function DashboardPage() {
 
   const { data: costs, isLoading: costsLoading, isError: costsError } = useQuery({
     queryKey: ['analytics', 'costs', period],
-    queryFn: () => fetchAnalyticsCosts({ period, granularity: 'hourly', apiKey }),
+    queryFn: () => fetchAnalyticsCosts({ period, granularity: getGranularity(period), apiKey }),
     enabled: !!apiKey,
   });
 
@@ -72,15 +83,28 @@ export default function DashboardPage() {
 
   const chartData =
     costs?.map((point) => ({
-      timestamp: new Date(point.timestamp).toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
+      timestamp: period === '7d' || period === '30d'
+        ? new Date(point.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' })
+        : new Date(point.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       spent: Number(point.spent) / 1_000_000,
       saved: Number(point.saved) / 1_000_000,
     })) || [];
 
   const hasError = summaryError || costsError || endpointsError;
+
+  const sortedEndpoints = [...(endpoints || [])].sort((a, b) => {
+    const fieldMap: Record<string, keyof typeof a> = {
+      'Requests': 'requestCount',
+      'Cost': 'totalCost',
+      'Cache Hits': 'cacheHitCount',
+      'Avg Latency': 'avgLatencyMs',
+      'Success Rate': 'successRate',
+    };
+    const key = fieldMap[sortField] || 'requestCount';
+    let aVal = key === 'totalCost' ? Number(a[key]) : (a[key] as number);
+    let bVal = key === 'totalCost' ? Number(b[key]) : (b[key] as number);
+    return sortDir === 'desc' ? bVal - aVal : aVal - bVal;
+  });
 
   if (isLoading) {
     return <LoadingSkeleton />;
@@ -178,17 +202,17 @@ export default function DashboardPage() {
                 }}
               >{`# Check API rankings
 curl ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/curation/rankings \\
-  -H "X-Pag0-API-Key: ${apiKey}"
+  -H "X-Pag0-API-Key: ${apiKey ? apiKey.slice(0, 12) + '...' : 'YOUR_API_KEY'}"
 
 # Proxy a request through Pag0
 curl -X POST ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/proxy \\
-  -H "X-Pag0-API-Key: ${apiKey}" \\
+  -H "X-Pag0-API-Key: ${apiKey ? apiKey.slice(0, 12) + '...' : 'YOUR_API_KEY'}" \\
   -H "Content-Type: application/json" \\
   -d '{"targetUrl":"https://api.example.com/data","method":"GET"}'
 
 # Transparent relay (raw 402 pass-through for x402 SDK)
 curl -X POST ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/relay \\
-  -H "X-Pag0-API-Key: ${apiKey}" \\
+  -H "X-Pag0-API-Key: ${apiKey ? apiKey.slice(0, 12) + '...' : 'YOUR_API_KEY'}" \\
   -H "X-Pag0-Target-URL: https://x402-ai-starter-alpha.vercel.app/api/add" \\
   -H "Content-Type: application/json" \\
   -d '{"a":1,"b":2}'`}</pre>
@@ -359,20 +383,29 @@ curl -X POST ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/relay
           <table className="w-full">
             <thead>
               <tr style={{ background: 'var(--color-obsidian-base)' }}>
-                {['Endpoint', 'Requests', 'Cost', 'Cache Hits', 'Avg Latency', 'Success Rate'].map((h) => (
-                  <th
-                    key={h}
-                    className="px-6 py-3 text-left text-[10px] font-semibold uppercase tracking-widest"
-                    style={{ color: 'var(--color-txt-muted)' }}
-                  >
-                    {h}
-                  </th>
-                ))}
+                {['Endpoint', 'Requests', 'Cost', 'Cache Hits', 'Avg Latency', 'Success Rate'].map((h) => {
+                  const sortable = h !== 'Endpoint';
+                  return (
+                    <th
+                      key={h}
+                      className={`px-6 py-3 text-left text-[10px] font-semibold uppercase tracking-widest ${sortable ? 'cursor-pointer select-none hover:text-white transition-colors' : ''}`}
+                      style={{ color: sortField === h ? 'var(--color-neon-indigo-light)' : 'var(--color-txt-muted)' }}
+                      onClick={() => {
+                        if (!sortable) return;
+                        if (sortField === h) setSortDir(d => d === 'desc' ? 'asc' : 'desc');
+                        else { setSortField(h); setSortDir('desc'); }
+                      }}
+                    >
+                      {h}
+                      {sortField === h && <span className="ml-1">{sortDir === 'desc' ? '↓' : '↑'}</span>}
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
-              {endpoints && endpoints.length > 0 ? (
-                endpoints.map((ep, idx) => (
+              {sortedEndpoints && sortedEndpoints.length > 0 ? (
+                sortedEndpoints.map((ep, idx) => (
                   <tr
                     key={idx}
                     className="table-row-hover border-t"
