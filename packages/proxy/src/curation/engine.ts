@@ -148,8 +148,8 @@ export class CurationEngine {
     const onChainRep = await subgraphClient.getAgentReputation(endpoint).catch(() => null);
     const reputationScore = onChainRep?.avgScore ?? 50;
 
-    // If insufficient off-chain data, use on-chain score if available
-    if (!metrics || Number(metrics.request_count) < 10) {
+    // If no off-chain data, use on-chain score if available
+    if (!metrics || Number(metrics.request_count) < 1) {
       const defaultScore = onChainRep ? reputationScore : 50;
       return {
         endpoint,
@@ -216,14 +216,23 @@ export class CurationEngine {
    * Called fire-and-forget after each analytics record.
    */
   async refreshScore(endpoint: string): Promise<void> {
-    // Look up existing category from endpoint_scores
-    const [existing] = await sql<Array<{ category: string }>>`
-      SELECT category FROM endpoint_scores WHERE endpoint = ${endpoint}
+    // Look up existing category + evidence from endpoint_scores (seed or previous)
+    const [existing] = await sql<Array<{ category: string; evidence: { sampleSize: number; baseSampleSize?: number } }>>`
+      SELECT category, evidence FROM endpoint_scores WHERE endpoint = ${endpoint}
     `;
     const category = existing?.category || 'Uncategorized';
 
     const score = await this.calculateScore(endpoint, category);
     if (score.sampleSize < 1) return;
+
+    // Merge sampleSize: preserve seed base + add real request count
+    // baseSampleSize tracks the original seed value so we don't double-count
+    const baseSampleSize = existing?.evidence?.baseSampleSize ?? existing?.evidence?.sampleSize ?? 0;
+    const mergedEvidence = {
+      ...score.evidence,
+      sampleSize: baseSampleSize + (score.evidence?.sampleSize ?? score.sampleSize),
+      baseSampleSize,
+    };
 
     // Upsert into endpoint_scores
     await sql`
@@ -231,7 +240,7 @@ export class CurationEngine {
       VALUES (
         ${endpoint}, ${category},
         ${score.overallScore}, ${score.costScore}, ${score.latencyScore}, ${score.reliabilityScore},
-        ${JSON.stringify(score.weights)}, ${JSON.stringify(score.evidence)}
+        ${JSON.stringify(score.weights)}, ${JSON.stringify(mergedEvidence)}
       )
       ON CONFLICT (endpoint) DO UPDATE SET
         overall_score = EXCLUDED.overall_score,
@@ -325,7 +334,7 @@ export class CurationEngine {
    * Get recommendations by category
    */
   async getRecommendations(
-    category: string,
+    category?: string,
     limit: number = 5,
     sortBy: 'overall' | 'cost' | 'latency' | 'reliability' = 'overall',
   ): Promise<EndpointScore[]> {
@@ -338,40 +347,40 @@ export class CurationEngine {
             ? 'latency_score'
             : 'reliability_score';
 
-    const scores = await sql<
-      Array<{
-        endpoint: string;
-        category: string;
-        overall_score: string;
-        cost_score: string;
-        latency_score: string;
-        reliability_score: string;
-        weights: { cost: number; latency: number; reliability: number; reputation?: number };
-        evidence: {
-          sampleSize: number;
-          period: string;
-          avgCostPerRequest: string;
-          avgLatencyMs: number;
-          successRate: number;
-        };
-        updated_at: Date;
-      }>
-    >`
-      SELECT
-        endpoint,
-        category,
-        overall_score,
-        cost_score,
-        latency_score,
-        reliability_score,
-        weights,
-        evidence,
-        updated_at
-      FROM endpoint_scores
-      WHERE category = ${category}
-      ORDER BY ${sql(sortColumn)} DESC
-      LIMIT ${limit}
-    `;
+    type ScoreRow = {
+      endpoint: string;
+      category: string;
+      overall_score: string;
+      cost_score: string;
+      latency_score: string;
+      reliability_score: string;
+      weights: { cost: number; latency: number; reliability: number; reputation?: number };
+      evidence: {
+        sampleSize: number;
+        period: string;
+        avgCostPerRequest: string;
+        avgLatencyMs: number;
+        successRate: number;
+      };
+      updated_at: Date;
+    };
+
+    const scores = category
+      ? await sql<Array<ScoreRow>>`
+          SELECT endpoint, category, overall_score, cost_score, latency_score, reliability_score,
+            weights, evidence, updated_at
+          FROM endpoint_scores
+          WHERE category = ${category}
+          ORDER BY ${sql(sortColumn)} DESC
+          LIMIT ${limit}
+        `
+      : await sql<Array<ScoreRow>>`
+          SELECT endpoint, category, overall_score, cost_score, latency_score, reliability_score,
+            weights, evidence, updated_at
+          FROM endpoint_scores
+          ORDER BY ${sql(sortColumn)} DESC
+          LIMIT ${limit}
+        `;
 
     return scores.map((score) => ({
       endpoint: score.endpoint,
