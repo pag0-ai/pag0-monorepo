@@ -115,6 +115,19 @@ TASK-22 (Deployment)          ← TASK-11, TASK-12
 | [TASK-21](./TASK-21-erc8004-mcp-subgraph.md) | ~~ERC-8004 MCP Tools + The Graph Subgraph~~ | mcp, subgraph | 2~3시간 | ✅ 완료 |
 | [TASK-22](./TASK-22-deployment.md) | Deployment (Fly.io + Vercel) | proxy, dashboard | 2시간 | ⏳ 수동 승인 대기 |
 
+### Phase 8: 스토리보드 갭 수정 — 프론트엔드/백엔드 데이터 계약 정렬
+
+| ID | 태스크 | 패키지 | 우선순위 | 의존성 |
+|----|--------|--------|----------|--------|
+| [TASK-23](./TASK-23-api-response-unwrap.md) | API 응답 언래핑 (모든 fetch 함수) | dashboard | **HIGH** | TASK-13~15 |
+| [TASK-24](./TASK-24-policy-field-mismatch.md) | Policy 필드명 불일치 수정 | dashboard | **HIGH** | TASK-14 |
+| [TASK-25](./TASK-25-analytics-field-mismatch.md) | Analytics 필드명 불일치 수정 | dashboard | **HIGH** | TASK-13 |
+| [TASK-26](./TASK-26-curation-field-mismatch.md) | Curation 점수 필드명 불일치 수정 | dashboard | **HIGH** | TASK-15 |
+| [TASK-27](./TASK-27-budget-mock-to-real.md) | Dashboard 예산 Mock → 실제 데이터 | dashboard | **HIGH** | TASK-25 |
+| [TASK-28](./TASK-28-empty-state-ux.md) | 빈 대시보드 UX (CTA + 빈 차트) | dashboard | **MEDIUM** | TASK-27 |
+
+> **핵심 문제**: 백엔드는 `{ data: [...] }`, `{ policies: [...] }` 등 래퍼 객체로 응답하지만, 프론트엔드 fetch 함수들은 배열을 직접 기대함. TASK-23~26을 수정하면 대시보드가 실제 데이터를 표시할 수 있음.
+
 ## 병렬 실행 가능 그룹
 
 - **그룹 A** (독립): TASK-01
