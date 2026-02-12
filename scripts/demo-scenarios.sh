@@ -51,6 +51,14 @@ echo "║  AI Agent budget enforcement             ║"
 echo "╚══════════════════════════════════════════╝"
 echo -e "${NC}"
 
+echo -e "${YELLOW}1.0 Login and show JWT token${NC}"
+LOGIN_RESP=$(curl -s -X POST $BASE_URL/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"'"$DEMO_EMAIL"'","password":"Demo1234x"}')
+echo "$LOGIN_RESP" | python3 -m json.tool 2>/dev/null || echo "$LOGIN_RESP"
+echo -e "${GREEN}→ JWT token returned for authenticated API access${NC}"
+echo ""
+
 echo -e "${YELLOW}1.1 Check current budget status${NC}"
 run_demo "curl -s '$BASE_URL/api/analytics/summary?period=24h' -H 'X-Pag0-API-Key: $API_KEY' | python3 -m json.tool"
 
@@ -103,10 +111,24 @@ run_demo "curl -s '$BASE_URL/api/curation/recommend?category=AI&limit=3&sortBy=c
 echo -e "${YELLOW}3.3 Compare endpoints${NC}"
 run_demo "curl -s '$BASE_URL/api/curation/compare?endpoints=api.openai.com,api.anthropic.com' -H 'X-Pag0-API-Key: $API_KEY' | python3 -m json.tool"
 
-echo -e "${YELLOW}3.4 View Rankings Board${NC}"
+echo -e "${YELLOW}3.4 Score spread (differences)${NC}"
+run_demo "curl -s '$BASE_URL/api/curation/compare?endpoints=api.openai.com,api.anthropic.com' -H 'X-Pag0-API-Key: $API_KEY' | python3 -c \"
+import sys,json
+d = json.load(sys.stdin).get('data',{}).get('differences',{})
+for k,v in d.items():
+    label = k.replace('Range','')
+    print(f'  {label:15s}: {v[\"min\"]:.1f} - {v[\"max\"]:.1f}  (delta: {v[\"delta\"]:.1f})')
+\""
+
+echo -e "${YELLOW}3.5 Individual endpoint score${NC}"
+run_demo "curl -s '$BASE_URL/api/curation/score/api.openai.com' -H 'X-Pag0-API-Key: $API_KEY' | python3 -m json.tool"
+echo -e "${GREEN}→ Score includes weights and evidence for transparency${NC}"
+echo ""
+
+echo -e "${YELLOW}3.6 View Rankings Board${NC}"
 echo -e "${CYAN}→ Open http://localhost:3001/rankings${NC}"
 
-echo -e "${GREEN}→ Data-driven scoring: cost (40%) + latency (30%) + reliability (30%)${NC}"
+echo -e "${GREEN}→ 4-factor scoring: cost (30%) + latency (25%) + reliability (25%) + reputation (20%)${NC}"
 
 echo ""
 echo -e "${BLUE}"

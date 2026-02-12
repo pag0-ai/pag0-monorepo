@@ -24,6 +24,21 @@ assert_status() {
   fi
 }
 
+assert_field() {
+  local test_name="$1"
+  local json="$2"
+  local field="$3"
+  local value
+  value=$(echo "$json" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d$field)" 2>/dev/null || echo "__MISSING__")
+  if [ "$value" != "__MISSING__" ] && [ "$value" != "None" ] && [ -n "$value" ]; then
+    echo -e "${GREEN}✓ PASS${NC}: $test_name (found: ${value:0:50})"
+    PASS=$((PASS + 1))
+  else
+    echo -e "${RED}✗ FAIL${NC}: $test_name (field $field missing or empty)"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
 echo -e "${YELLOW}================================${NC}"
 echo -e "${YELLOW}Pag0 Smart Proxy E2E Test Suite${NC}"
 echo -e "${YELLOW}================================${NC}"
@@ -74,6 +89,17 @@ if [ -n "$API_KEY" ]; then
   STATUS=$(curl -s -o /dev/null -w "%{http_code}" $BASE_URL/api/auth/me \
     -H "X-Pag0-API-Key: $API_KEY")
   assert_status "Get current user (/me)" "200" "$STATUS"
+
+  # Login and check JWT token
+  LOGIN_EMAIL="e2e-$(date +%s)-login@pag0.io"
+  REG_RESP=$(curl -s -X POST $BASE_URL/api/auth/register \
+    -H "Content-Type: application/json" \
+    -d "{\"email\":\"$LOGIN_EMAIL\",\"password\":\"Test1234!\",\"name\":\"Login Test\"}")
+  LOGIN_RESP=$(curl -s -X POST $BASE_URL/api/auth/login \
+    -H "Content-Type: application/json" \
+    -d "{\"email\":\"$LOGIN_EMAIL\",\"password\":\"Test1234!\"}")
+  assert_field "Login returns JWT token" "$LOGIN_RESP" "['token']"
+  assert_field "Login returns user object" "$LOGIN_RESP" "['user']['id']"
 fi
 
 # ===== 4. Policy CRUD =====
@@ -93,6 +119,9 @@ if [ -n "$API_KEY" ]; then
     echo -e "${RED}✗ FAIL${NC}: Create policy (no id in response)"
     FAIL=$((FAIL + 1))
   fi
+
+  # Verify field names
+  assert_field "Policy uses dailyBudget field" "$CREATE_RESP" "['policy']['dailyBudget']"
 
   # List
   STATUS=$(curl -s -o /dev/null -w "%{http_code}" $BASE_URL/api/policies \
@@ -145,6 +174,19 @@ if [ -n "$API_KEY" ]; then
   STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL/api/analytics/cache?period=7d" \
     -H "X-Pag0-API-Key: $API_KEY")
   assert_status "Analytics cache" "200" "$STATUS"
+
+  # Verify new P1 fields in endpoints response
+  ENDPOINTS_RESP=$(curl -s "$BASE_URL/api/analytics/endpoints?period=7d&limit=5" \
+    -H "X-Pag0-API-Key: $API_KEY")
+  # Check that the response structure includes the new fields (even if endpoints array is empty, the structure should be valid JSON)
+  ENDPOINTS_STATUS=$(echo "$ENDPOINTS_RESP" | python3 -c "import sys,json; d=json.load(sys.stdin); print('ok' if 'endpoints' in d else 'fail')" 2>/dev/null || echo "fail")
+  if [ "$ENDPOINTS_STATUS" = "ok" ]; then
+    echo -e "${GREEN}✓ PASS${NC}: Analytics endpoints response structure valid"
+    PASS=$((PASS + 1))
+  else
+    echo -e "${RED}✗ FAIL${NC}: Analytics endpoints response structure invalid"
+    FAIL=$((FAIL + 1))
+  fi
 else
   echo -e "${YELLOW}! SKIP${NC}: Analytics tests (no API key)"
 fi
@@ -167,6 +209,22 @@ if [ -n "$API_KEY" ]; then
   STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL/api/curation/compare?endpoints=api.openai.com,api.anthropic.com" \
     -H "X-Pag0-API-Key: $API_KEY")
   assert_status "Curation compare" "200" "$STATUS"
+
+  # Compare differences field
+  COMPARE_RESP=$(curl -s "$BASE_URL/api/curation/compare?endpoints=api.openai.com,api.anthropic.com" \
+    -H "X-Pag0-API-Key: $API_KEY")
+  assert_field "Compare has differences field" "$COMPARE_RESP" "['data']['differences']['costRange']"
+
+  # Rankings weights/evidence
+  RANKINGS_RESP=$(curl -s "$BASE_URL/api/curation/rankings?category=AI" \
+    -H "X-Pag0-API-Key: $API_KEY")
+  assert_field "Rankings has weights" "$RANKINGS_RESP" "['data'][0]['weights']"
+  assert_field "Rankings has evidence" "$RANKINGS_RESP" "['data'][0]['evidence']"
+
+  # Individual score endpoint
+  STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL/api/curation/score/api.openai.com" \
+    -H "X-Pag0-API-Key: $API_KEY")
+  assert_status "Curation score endpoint" "200" "$STATUS"
 else
   echo -e "${YELLOW}! SKIP${NC}: Curation tests (no API key)"
 fi

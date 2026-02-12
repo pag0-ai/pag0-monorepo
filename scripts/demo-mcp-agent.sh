@@ -274,6 +274,14 @@ run_agent "4.7" "Accounting Check" \
 2. Use pag0_cache_stats to show cache performance.
 Summarize the total cost and any savings from caching."
 
+# ===== Step 4.8: Individual Endpoint Score =====
+run_agent "4.8" "Individual Endpoint Score" \
+  "Use the pag0_score tool to get the detailed score for api.openai.com. Show the overall score, individual dimension scores (cost, latency, reliability), weights, and evidence (sample size, period, success rate)."
+
+# ===== Step 4.9: Transaction History =====
+run_agent "4.9" "Transaction History" \
+  "Use pag0_tx_history with period '24h' to show recent transaction history. For each transaction, show the endpoint, cost, latency, and whether it was cached."
+
 # ===== Summary =====
 echo -e "${BLUE}"
 echo "╔══════════════════════════════════════════╗"
@@ -281,7 +289,7 @@ echo "║  MCP Agent Demo Complete!                ║"
 echo "╚══════════════════════════════════════════╝"
 echo -e "${NC}"
 
-echo -e "  ${GREEN}Passed: $PASS${NC}  ${RED}Failed: $FAIL${NC}  Total: $((PASS + FAIL)) / 7"
+echo -e "  ${GREEN}Passed: $PASS${NC}  ${RED}Failed: $FAIL${NC}  Total: $((PASS + FAIL)) / 9"
 echo ""
 echo -e "  Temp dir: ${CYAN}$DEMO_DIR${NC}"
 echo -e "  MCP config: ${CYAN}$DEMO_DIR/.mcp.json${NC}"

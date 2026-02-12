@@ -1,7 +1,7 @@
 # Pag0 MVP 구현 태스크 총괄
 
 > Day 0 준비 완료 상태에서 Day 1~3 구현 시작
-> **Last updated**: 2026-02-12 (Phase 11 R2 추가, gap-analysis-r2/requirements-r2 반영)
+> **Last updated**: 2026-02-12 (Phase 12 P1 enrichment + 스크립트 보강 태스크 추가)
 
 ## 현재 상태 요약
 
@@ -14,7 +14,7 @@
 | `subgraph/` | **배포 완료** (Goldsky) | 100% | Agent, FeedbackEvent 인덱싱 |
 | `prepare-hackathon/` | Day 0 검증 완성 | 100% | - |
 
-### 전체 진행률: 43/44 완료 (97.7%) + 1 수동 대기 (TASK-22 Deployment)
+### 전체 진행률: 44/47 완료 (93.6%) + 1 수동 대기 (TASK-22 Deployment) + 3 스크립트 보강 대기
 
 ## 의존성 그래프
 
@@ -170,6 +170,24 @@ TASK-22 (Deployment)          ← TASK-11, TASK-12
 | [TASK-43](./TASK-43-analytics-cache-enrichment-r2.md) | ~~Analytics Cache 응답 보강 (bypassCount, avgCacheAge, per-endpoint stats)~~ | proxy | **P0** | ✅ 완료 |
 | [TASK-44](./TASK-44-policy-route-validation-r2.md) | ~~Policy Route JSON 파싱 에러 핸들링~~ | proxy | **P1** | ✅ 완료 |
 
+### Phase 12: P1 API Enrichment + 테스트 스크립트 보강 (2026-02-12)
+
+> P1 잔여 이슈 해소 (JWT, analytics fields, curation differences/weights/evidence) 및 테스트 커버리지 확장.
+
+| ID | 태스크 | 패키지 | 우선순위 | 상태 |
+|----|--------|--------|----------|------|
+| P1-1 | Auth Login JWT 토큰 추가 | proxy | **P1** | ✅ 완료 |
+| P1-2 | Curation 응답 래핑 일관성 확인 | proxy | **P1** | ✅ 완료 (변경 없음) |
+| P1-3 | Compare differences 필드 추가 | proxy | **P1** | ✅ 완료 |
+| P1-4 | Analytics /endpoints 누락 필드 추가 (6개) | proxy | **P1** | ✅ 완료 |
+| P1-5 | EndpointScore weights/evidence 포함 | proxy | **P1** | ✅ 완료 |
+| P1-6 | MCP/Dashboard P1 응답 동기화 | mcp, dashboard | **P1** | ✅ 완료 |
+| [TASK-45](./TASK-45-e2e-test-p1-coverage.md) | E2E 테스트 P1 커버리지 확장 (22→30개) | scripts | **HIGH** | 대기 |
+| [TASK-46](./TASK-46-demo-scenarios-p1-enrich.md) | Demo 시나리오 P1 기능 반영 | scripts | **MEDIUM** | 대기 |
+| [TASK-47](./TASK-47-demo-mcp-reputation-step.md) | MCP Agent 데모 Reputation 스텝 추가 | scripts | **LOW** | 대기 |
+
+> 커밋: `a684cc3` — feat: P1 API enrichment (8 files, +235/-55)
+
 ### 미착수 / 보류
 
 | ID | 태스크 | 패키지 | 우선순위 | 상태 |
@@ -183,12 +201,12 @@ TASK-22 (Deployment)          ← TASK-11, TASK-12
 **R2-P1 (배포 후 개선)**:
 - **R2-P1-1**: `cacheBypass` param POST /proxy에 미연결 (R1 P0-9) — 데모에 영향 없음
 - **R2-P1-2**: `policyId` param POST /proxy에 미연결 (R1 P1-12) — 데모에 영향 없음
-- **R2-P1-3**: Curation compare `differences` 필드 누락 (R1 P1-13)
-- **R2-P1-4**: Endpoint metrics `p50`/`p99`/`errorCount` 필드 누락 (R1 P0-4 일부)
+- ~~**R2-P1-3**: Curation compare `differences` 필드 누락~~ → ✅ Phase 12 P1-3에서 해결
+- ~~**R2-P1-4**: Endpoint metrics `p50`/`p99`/`errorCount` 필드 누락~~ → ✅ Phase 12 P1-4에서 해결
 
 **R2-P2 (Post-MVP)**:
-- **R2-P2-1**: `budgetRemaining`가 spent 값을 반환 (remaining = limit - spent으로 수정 필요) — gap-analysis-r2 P0-3
-- **R2-P2-2**: Curation score에 `weights`/`evidence` 구조체 누락
+- ~~**R2-P2-1**: `budgetRemaining`가 spent 값을 반환~~ → ✅ Phase 11 R2 커밋 `520de2d`에서 해결
+- ~~**R2-P2-2**: Curation score에 `weights`/`evidence` 구조체 누락~~ → ✅ Phase 12 P1-5에서 해결
 - **R2-P2-3**: Beyond-spec 기능 문서화 (smart-request, reputation, 4-factor scoring)
 - **R2-P2-4**: Auth 응답 형식 문서 업데이트
 - **R2-P2-5**: x402 PaymentInfo 문서 업데이트
