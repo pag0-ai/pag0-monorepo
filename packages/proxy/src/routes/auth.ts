@@ -158,8 +158,9 @@ app.post('/register', async (c) => {
 
 // === POST /oauth-register ===
 // Called by Dashboard (NextAuth) after Google OAuth sign-in.
-// New users: creates user + project + policy + budget, returns API key.
-// Existing users: regenerates API key (hash updated), returns new key.
+// New users: creates user + project + policy + budget with api_key_hash=NULL.
+// Existing users without key: returns needsOnboarding=true.
+// Existing users with key: returns needsOnboarding=false.
 
 app.post('/oauth-register', async (c) => {
   try {
@@ -184,19 +185,13 @@ app.post('/oauth-register', async (c) => {
 
     // Check if user already exists
     const existingUsers = await sql`
-      SELECT id, email, subscription_tier, created_at
+      SELECT id, email, subscription_tier, created_at, api_key_hash
       FROM users WHERE email = ${email}
     `;
 
     if (existingUsers.length > 0) {
-      // Existing user — regenerate API key
       const user = existingUsers[0];
-      const apiKey = generateApiKey();
-      const apiKeyHash = hashApiKey(apiKey);
-
-      await sql`
-        UPDATE users SET api_key_hash = ${apiKeyHash} WHERE id = ${user.id}
-      `;
+      const needsOnboarding = !user.api_key_hash;
 
       // Get existing project
       const projects = await sql`
@@ -212,19 +207,18 @@ app.post('/oauth-register', async (c) => {
           createdAt: user.created_at,
         },
         project: { id: project.id, name: project.name },
-        apiKey,
+        apiKey: null,
+        needsOnboarding,
         isNewUser: false,
       });
     }
 
-    // New user — create user + project + policy + budget
-    const apiKey = generateApiKey();
-    const apiKeyHash = hashApiKey(apiKey);
+    // New user — create user + project + policy + budget (NO API key yet)
     const passwordHash = await hashPassword(randomBytes(32).toString('hex')); // random password for OAuth users
 
     const [user] = await sql`
       INSERT INTO users (email, password_hash, api_key_hash, subscription_tier)
-      VALUES (${email}, ${passwordHash}, ${apiKeyHash}, 'free')
+      VALUES (${email}, ${passwordHash}, ${null}, 'free')
       RETURNING id, email, created_at, subscription_tier
     `;
 
@@ -261,7 +255,8 @@ app.post('/oauth-register', async (c) => {
           createdAt: user.created_at,
         },
         project: { id: project.id, name: project.name },
-        apiKey,
+        apiKey: null,
+        needsOnboarding: true,
         isNewUser: true,
       },
       201,
@@ -270,6 +265,68 @@ app.post('/oauth-register', async (c) => {
     console.error('OAuth register error:', error);
     return c.json(
       { error: { code: 'INTERNAL_ERROR', message: 'Failed to process OAuth registration' } },
+      500,
+    );
+  }
+});
+
+// === POST /generate-api-key ===
+// Called from dashboard onboarding to explicitly generate an API key.
+// Only works for users with api_key_hash IS NULL (prevents double-generation).
+
+app.post('/generate-api-key', async (c) => {
+  try {
+    // Verify internal secret
+    const internalSecret = c.req.header('X-Pag0-Internal-Secret');
+    if (!internalSecret || internalSecret !== process.env.PAG0_INTERNAL_SECRET) {
+      return c.json(
+        { error: { code: 'UNAUTHORIZED', message: 'Invalid internal secret' } },
+        401,
+      );
+    }
+
+    const body = await c.req.json();
+    const { email } = body;
+
+    if (!email) {
+      return c.json(
+        { error: { code: 'VALIDATION_ERROR', message: 'Email is required' } },
+        400,
+      );
+    }
+
+    // Find user
+    const [user] = await sql`
+      SELECT id, api_key_hash FROM users WHERE email = ${email}
+    `;
+
+    if (!user) {
+      return c.json(
+        { error: { code: 'NOT_FOUND', message: 'User not found' } },
+        404,
+      );
+    }
+
+    if (user.api_key_hash) {
+      return c.json(
+        { error: { code: 'ALREADY_GENERATED', message: 'API key already exists for this user' } },
+        409,
+      );
+    }
+
+    // Generate and save API key
+    const apiKey = generateApiKey();
+    const apiKeyHash = hashApiKey(apiKey);
+
+    await sql`
+      UPDATE users SET api_key_hash = ${apiKeyHash} WHERE id = ${user.id}
+    `;
+
+    return c.json({ apiKey });
+  } catch (error) {
+    console.error('Generate API key error:', error);
+    return c.json(
+      { error: { code: 'INTERNAL_ERROR', message: 'Failed to generate API key' } },
       500,
     );
   }

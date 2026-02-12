@@ -5,7 +5,7 @@ import Google from 'next-auth/providers/google';
 declare module 'next-auth' {
   interface Session {
     apiKey?: string;
-    isNewUser?: boolean;
+    needsOnboarding?: boolean;
     pag0UserId?: string;
     projectId?: string;
   }
@@ -14,7 +14,7 @@ declare module 'next-auth' {
 declare module 'next-auth/jwt' {
   interface JWT {
     apiKey?: string;
-    isNewUser?: boolean;
+    needsOnboarding?: boolean;
     pag0UserId?: string;
     projectId?: string;
   }
@@ -33,7 +33,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     signIn: '/login',
   },
   callbacks: {
-    async jwt({ token, account, user }) {
+    async jwt({ token, account, user, trigger, session }) {
+      // On session.update() from client — merge apiKey and needsOnboarding
+      if (trigger === 'update' && session) {
+        if (session.apiKey !== undefined) token.apiKey = session.apiKey;
+        if (session.needsOnboarding !== undefined) token.needsOnboarding = session.needsOnboarding;
+        return token;
+      }
+
       // On initial sign-in (account is only present on first call)
       if (account && user?.email) {
         try {
@@ -51,8 +58,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
           if (res.ok) {
             const data = await res.json();
-            token.apiKey = data.apiKey as string;
-            token.isNewUser = data.isNewUser as boolean;
+            token.apiKey = data.apiKey ?? undefined;
+            token.needsOnboarding = data.needsOnboarding as boolean;
             token.pag0UserId = String(data.user.id);
             token.projectId = String(data.project.id);
           } else {
@@ -66,8 +73,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
 
     async session({ session, token }) {
-      session.apiKey = token.apiKey;
-      session.isNewUser = token.isNewUser;
+      session.apiKey = token.apiKey || undefined;
+      session.needsOnboarding = token.needsOnboarding;
       session.pag0UserId = token.pag0UserId;
       session.projectId = token.projectId;
       return session;
