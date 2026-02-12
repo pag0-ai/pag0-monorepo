@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2, X, Shield } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Shield, AlertCircle, RefreshCw } from 'lucide-react';
 import {
   fetchPolicies,
   createPolicy,
@@ -50,7 +50,9 @@ export default function PoliciesPage() {
   const [formError, setFormError] = useState('');
 
   // Fetch policies
-  const { data: policies = [], isLoading } = useQuery({
+  const [deleteError, setDeleteError] = useState('');
+
+  const { data: policies = [], isLoading, isError: policiesError, refetch: policiesRefetch } = useQuery({
     queryKey: ['policies'],
     queryFn: () => fetchPolicies(apiKey),
     enabled: !!apiKey,
@@ -90,6 +92,10 @@ export default function PoliciesPage() {
       queryClient.invalidateQueries({ queryKey: ['policies'] });
       queryClient.invalidateQueries({ queryKey: ['analytics'] });
       setDeleteConfirm(null);
+      setDeleteError('');
+    },
+    onError: (error: Error) => {
+      setDeleteError(error.message);
     },
   });
 
@@ -179,6 +185,20 @@ export default function PoliciesPage() {
           Create Policy
         </button>
       </div>
+
+      {/* Error State */}
+      {policiesError && (
+        <div className="bg-red-900/20 border border-red-800/50 rounded-lg p-6 mb-6 flex items-center gap-4">
+          <AlertCircle className="w-8 h-8 text-red-400 shrink-0" />
+          <div className="flex-1">
+            <h3 className="text-white font-medium">Failed to load policies</h3>
+            <p className="text-gray-400 text-sm">Check that the proxy server is running.</p>
+          </div>
+          <button onClick={() => policiesRefetch()} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm transition-colors flex items-center gap-2">
+            <RefreshCw size={14} /> Retry
+          </button>
+        </div>
+      )}
 
       {/* Loading State */}
       {isLoading && (
@@ -447,9 +467,14 @@ export default function PoliciesPage() {
         <div className="fixed inset-0 bg-gray-900/75 flex items-center justify-center z-50">
           <div className="bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
             <h3 className="text-xl font-bold text-white mb-4">Delete Policy</h3>
-            <p className="text-gray-300 mb-6">
+            <p className="text-gray-300 mb-4">
               Are you sure you want to delete this policy? This action cannot be undone.
             </p>
+            {deleteError && (
+              <div className="bg-red-900/20 border border-red-900 text-red-400 px-4 py-3 rounded mb-4 text-sm">
+                {deleteError}
+              </div>
+            )}
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setDeleteConfirm(null)}

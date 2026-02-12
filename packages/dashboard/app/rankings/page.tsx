@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchRankings, fetchCategories, fetchApi, type EndpointScore, type Category } from '../../lib/api';
-import { Award, Trophy, Medal } from 'lucide-react';
+import { Award, Trophy, Medal, Crown, AlertCircle, RefreshCw } from 'lucide-react';
 
 function ScoreBadge({ score }: { score: number }) {
   const color = score >= 80 ? 'text-green-400 bg-green-400/10'
@@ -38,8 +38,16 @@ interface ComparisonEndpoint {
   reliabilityScore: number;
 }
 
+interface ComparisonWinner {
+  overall: string;
+  cost: string;
+  latency: string;
+  reliability: string;
+}
+
 interface ComparisonData {
   endpoints: ComparisonEndpoint[];
+  winner?: ComparisonWinner;
 }
 
 export default function RankingsPage() {
@@ -49,7 +57,7 @@ export default function RankingsPage() {
   const [selectedEndpoints, setSelectedEndpoints] = useState<string[]>([]);
   const [showComparison, setShowComparison] = useState(false);
 
-  const { data: rankings, isLoading: rankingsLoading } = useQuery({
+  const { data: rankings, isLoading: rankingsLoading, isError: rankingsError, refetch: rankingsRefetch } = useQuery({
     queryKey: ['rankings', selectedCategory],
     queryFn: () => fetchRankings({
       category: selectedCategory === 'all' ? undefined : selectedCategory,
@@ -104,6 +112,20 @@ export default function RankingsPage() {
     <div>
       <h1 className="text-3xl font-bold text-white mb-2">API Rankings</h1>
       <p className="text-gray-400 mb-8">Discover and compare the best-performing API endpoints</p>
+
+      {/* Error State */}
+      {rankingsError && (
+        <div className="bg-red-900/20 border border-red-800/50 rounded-lg p-6 mb-6 flex items-center gap-4">
+          <AlertCircle className="w-8 h-8 text-red-400 shrink-0" />
+          <div className="flex-1">
+            <h3 className="text-white font-medium">Failed to load rankings</h3>
+            <p className="text-gray-400 text-sm">Check that the proxy server is running.</p>
+          </div>
+          <button onClick={() => rankingsRefetch()} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm transition-colors flex items-center gap-2">
+            <RefreshCw size={14} /> Retry
+          </button>
+        </div>
+      )}
 
       {/* Category Filter */}
       <div className="mb-6">
@@ -228,70 +250,57 @@ export default function RankingsPage() {
       {showComparison && comparison && (
         <div className="bg-gray-800 rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold text-white mb-4">Comparison Results</h2>
+          {comparison.winner && (
+            <div className="flex items-center gap-2 mb-4 p-3 bg-yellow-900/20 border border-yellow-700/40 rounded-lg">
+              <Crown size={20} className="text-yellow-400" />
+              <span className="text-yellow-200 font-medium">Overall Winner:</span>
+              <span className="text-white font-mono text-sm">{comparison.winner.overall}</span>
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {comparison.endpoints.map((ep) => (
-              <div key={ep.endpoint} className="bg-gray-900 rounded-lg p-4">
-                <h3 className="text-white font-medium mb-4 truncate">{ep.endpoint}</h3>
-                <div className="space-y-3">
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-400">Overall</span>
-                      <span className="text-white font-medium">{ep.overallScore.toFixed(1)}</span>
-                    </div>
-                    <div className="w-full bg-gray-700 rounded-full h-2">
-                      <div
-                        className={`h-2 rounded-full ${
-                          ep.overallScore >= 80 ? 'bg-green-400' : ep.overallScore >= 60 ? 'bg-yellow-400' : 'bg-red-400'
-                        }`}
-                        style={{ width: `${ep.overallScore}%` }}
-                      />
-                    </div>
+            {comparison.endpoints.map((ep) => {
+              const isOverallWinner = comparison.winner?.overall === ep.endpoint;
+              return (
+                <div key={ep.endpoint} className={`bg-gray-900 rounded-lg p-4 ${isOverallWinner ? 'ring-2 ring-yellow-500/60' : ''}`}>
+                  <div className="flex items-center gap-2 mb-4">
+                    {isOverallWinner && <Crown size={16} className="text-yellow-400 shrink-0" />}
+                    <h3 className="text-white font-medium truncate">{ep.endpoint}</h3>
                   </div>
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-400">Cost</span>
-                      <span className="text-white font-medium">{ep.costScore.toFixed(1)}</span>
-                    </div>
-                    <div className="w-full bg-gray-700 rounded-full h-2">
-                      <div
-                        className={`h-2 rounded-full ${
-                          ep.costScore >= 80 ? 'bg-green-400' : ep.costScore >= 60 ? 'bg-yellow-400' : 'bg-red-400'
-                        }`}
-                        style={{ width: `${ep.costScore}%` }}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-400">Latency</span>
-                      <span className="text-white font-medium">{ep.latencyScore.toFixed(1)}</span>
-                    </div>
-                    <div className="w-full bg-gray-700 rounded-full h-2">
-                      <div
-                        className={`h-2 rounded-full ${
-                          ep.latencyScore >= 80 ? 'bg-green-400' : ep.latencyScore >= 60 ? 'bg-yellow-400' : 'bg-red-400'
-                        }`}
-                        style={{ width: `${ep.latencyScore}%` }}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-400">Reliability</span>
-                      <span className="text-white font-medium">{ep.reliabilityScore.toFixed(1)}</span>
-                    </div>
-                    <div className="w-full bg-gray-700 rounded-full h-2">
-                      <div
-                        className={`h-2 rounded-full ${
-                          ep.reliabilityScore >= 80 ? 'bg-green-400' : ep.reliabilityScore >= 60 ? 'bg-yellow-400' : 'bg-red-400'
-                        }`}
-                        style={{ width: `${ep.reliabilityScore}%` }}
-                      />
-                    </div>
+                  <div className="space-y-3">
+                    {([
+                      ['Overall', 'overallScore', 'overall'] as const,
+                      ['Cost', 'costScore', 'cost'] as const,
+                      ['Latency', 'latencyScore', 'latency'] as const,
+                      ['Reliability', 'reliabilityScore', 'reliability'] as const,
+                    ]).map(([label, key, winnerKey]) => {
+                      const score = ep[key];
+                      const isDimWinner = comparison.winner?.[winnerKey] === ep.endpoint;
+                      return (
+                        <div key={key}>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-gray-400 flex items-center gap-1">
+                              {label}
+                              {isDimWinner && winnerKey !== 'overall' && (
+                                <span className="text-[10px] px-1.5 py-0.5 bg-yellow-500/20 text-yellow-400 rounded-full font-medium">BEST</span>
+                              )}
+                            </span>
+                            <span className="text-white font-medium">{score.toFixed(1)}</span>
+                          </div>
+                          <div className="w-full bg-gray-700 rounded-full h-2">
+                            <div
+                              className={`h-2 rounded-full ${
+                                score >= 80 ? 'bg-green-400' : score >= 60 ? 'bg-yellow-400' : 'bg-red-400'
+                              }`}
+                              style={{ width: `${score}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

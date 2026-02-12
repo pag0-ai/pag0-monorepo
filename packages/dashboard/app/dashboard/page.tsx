@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useQuery } from '@tanstack/react-query';
-import { Activity, Zap, Clock, DollarSign, Rocket } from 'lucide-react';
+import { Activity, Zap, Clock, DollarSign, Rocket, AlertCircle, RefreshCw } from 'lucide-react';
 import {
   LineChart,
   Line,
@@ -39,19 +39,19 @@ export default function DashboardPage() {
   const apiKey = session?.apiKey;
   const [period, setPeriod] = useState<Period>('7d');
 
-  const { data: summary, isLoading: summaryLoading } = useQuery({
+  const { data: summary, isLoading: summaryLoading, isError: summaryError, refetch: summaryRefetch } = useQuery({
     queryKey: ['analytics', 'summary', period],
     queryFn: () => fetchAnalyticsSummary(period, apiKey),
     enabled: !!apiKey,
   });
 
-  const { data: costs, isLoading: costsLoading } = useQuery({
+  const { data: costs, isLoading: costsLoading, isError: costsError } = useQuery({
     queryKey: ['analytics', 'costs', period],
     queryFn: () => fetchAnalyticsCosts({ period, granularity: 'hourly', apiKey }),
     enabled: !!apiKey,
   });
 
-  const { data: endpoints, isLoading: endpointsLoading } = useQuery({
+  const { data: endpoints, isLoading: endpointsLoading, isError: endpointsError } = useQuery({
     queryKey: ['analytics', 'endpoints', period],
     queryFn: () => fetchAnalyticsEndpoints({ period, limit: 10, apiKey }),
     enabled: !!apiKey,
@@ -81,6 +81,8 @@ export default function DashboardPage() {
       spent: Number(point.spent) / 1_000_000,
       saved: Number(point.saved) / 1_000_000,
     })) || [];
+
+  const hasError = summaryError || costsError || endpointsError;
 
   if (isLoading) {
     return <LoadingSkeleton />;
@@ -114,6 +116,20 @@ export default function DashboardPage() {
           ))}
         </div>
       </div>
+
+      {/* Error State */}
+      {hasError && (
+        <div className="bg-red-900/20 border border-red-800/50 rounded-lg p-6 mb-8 flex items-center gap-4">
+          <AlertCircle className="w-8 h-8 text-red-400 shrink-0" />
+          <div className="flex-1">
+            <h3 className="text-white font-medium">Failed to load dashboard data</h3>
+            <p className="text-gray-400 text-sm">Check that the proxy server is running.</p>
+          </div>
+          <button onClick={() => summaryRefetch()} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm transition-colors flex items-center gap-2">
+            <RefreshCw size={14} /> Retry
+          </button>
+        </div>
+      )}
 
       {/* Empty State CTA */}
       {isEmpty && (
