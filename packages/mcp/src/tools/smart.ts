@@ -1,41 +1,22 @@
 import { z } from "zod";
+import { writeFileSync } from "node:fs";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { Pag0Client } from "../client.js";
 import type { IWallet } from "../wallet.js";
-import {
-  createPaymentPayload,
-  type ProxyPaymentInfo,
-} from "../x402-payment.js";
+import { createPaymentPayload, type ProxyPaymentInfo } from "../x402-payment.js";
 
-// ── Response types from POST /api/smart-request ───────────────
+// ── Response text extraction per provider ─────────────────────
 
-interface SmartRequestSuccess {
-  data: {
-    selection: {
-      winner: string;
-      rationale: string;
-      comparison: unknown;
-    };
-    response: {
-      text: string;
-      raw: unknown;
-    };
-    metadata: {
-      status: number;
-      cost: string;
-      cached: boolean;
-      latency: number;
-      endpoint: string;
-      budgetRemaining: { daily: string; monthly: string };
-    };
-  };
-}
-
-interface SmartRequest402 {
-  status: 402;
-  body: { paymentRequest: ProxyPaymentInfo };
-  metadata: { endpoint: string; latency: number };
-  selection: { winner: string; rationale: string; comparison: unknown };
+function extractResponseText(winner: string, body: unknown): string {
+  if (winner === "api.openai.com") {
+    const b = body as { choices?: { message?: { content?: string } }[] };
+    return b?.choices?.[0]?.message?.content ?? JSON.stringify(body);
+  }
+  if (winner === "api.anthropic.com") {
+    const b = body as { content?: { type?: string; text?: string }[] };
+    return b?.content?.[0]?.text ?? JSON.stringify(body);
+  }
+  return typeof body === "string" ? body : JSON.stringify(body);
 }
 
 // ── Registration ───────────────────────────────────────────────
@@ -44,7 +25,6 @@ export function registerSmartTools(
   server: McpServer,
   client: Pag0Client,
   wallet: IWallet,
-  _credentials: Record<string, string> = {},
 ) {
   server.tool(
     "pag0_smart_request",
@@ -83,97 +63,113 @@ export function registerSmartTools(
         ),
     },
     async (args) => {
-      // ── 1. Call the proxy smart-request endpoint ──────────────
-      const res = await client.smartRequest({
-        category: args.category,
-        prompt: args.prompt,
-        maxTokens: args.max_tokens,
-        sortBy: args.sort_by,
-      });
+      try {
+        // ── 1. First attempt (no payment) ─────────────────────────
+        let response = await client.smartRequest({
+          category: args.category,
+          prompt: args.prompt,
+          maxTokens: args.max_tokens,
+          sortBy: args.sort_by,
+        });
 
-      // ── 2. Success on first try ──────────────────────────────
-      if (res.ok) {
-        const data = (await res.json()) as SmartRequestSuccess;
-        return {
-          content: [
-            { type: "text" as const, text: JSON.stringify(data.data, null, 2) },
-          ],
+        let data = await response.json().catch(() => ({})) as any;
+
+        // Debug logging to file
+        const debugInfo = {
+          timestamp: new Date().toISOString(),
+          responseStatus: response.status,
+          responseOk: response.ok,
+          dataKeys: Object.keys(data),
+          hasBody: !!data.body,
+          hasPaymentRequest: !!data.body?.paymentRequest,
+          fullData: data
         };
-      }
+        try {
+          writeFileSync("/tmp/mcp-smart-debug.json", JSON.stringify(debugInfo, null, 2));
+        } catch (e) {}
 
-      // ── 3. 402 Payment Required — sign and retry through proxy
-      if (res.status === 402) {
-        const paymentRes = (await res.json()) as SmartRequest402;
-        const paymentInfo = paymentRes.body.paymentRequest;
+        console.error("[smart] First response status:", response.status);
+        console.error("[smart] First response data keys:", Object.keys(data));
+        console.error("[smart] data.body exists?", !!data.body);
+        console.error("[smart] data.body?.paymentRequest exists?", !!data.body?.paymentRequest);
+        console.error("[smart] data sample:", JSON.stringify(data).slice(0, 300));
 
-        if (!paymentInfo?.payTo || !paymentInfo?.asset || !paymentInfo?.extra) {
+        // ── 2. Handle 402 payment required ────────────────────────
+        if (response.status === 402 && data.body?.paymentRequest) {
+          console.error("[smart] Signing payment for:", data.body.paymentRequest.resource);
+          const paymentInfo = data.body.paymentRequest as ProxyPaymentInfo;
+
+          // Sign payment using wallet
+          const signedPayment = await createPaymentPayload(wallet, paymentInfo);
+          console.error("[smart] Payment signed, retrying...");
+
+          // Retry with signed payment
+          response = await client.smartRequest({
+            category: args.category,
+            prompt: args.prompt,
+            maxTokens: args.max_tokens,
+            sortBy: args.sort_by,
+            signedPayment,
+          });
+
+          data = await response.json().catch(() => ({})) as any;
+          console.error("[smart] Second response status:", response.status, "OK?", response.ok);
+        }
+
+        // ── 3. Handle errors ──────────────────────────────────────
+        if (!response.ok) {
           return {
             content: [
               {
                 type: "text" as const,
-                text: `402 received but payment info incomplete. Selection: ${paymentRes.selection?.winner}. Info: ${JSON.stringify(paymentInfo)}`,
+                text: `Smart request error (${response.status})\nData keys: ${Object.keys(data).join(", ")}\nHas data.body? ${!!data.body}\nHas data.body.paymentRequest? ${!!data.body?.paymentRequest}\nCondition result: ${response.status === 402 && !!data.body?.paymentRequest}\n\nFull data: ${JSON.stringify(data, null, 2)}`,
               },
             ],
             isError: true,
           };
         }
 
-        // Create x402 PaymentPayload (EIP-3009 transferWithAuthorization)
-        const signedPayment = await createPaymentPayload(wallet, paymentInfo);
-
-        // Retry through proxy with signed payment
-        const retryRes = await client.smartRequest({
-          category: args.category,
-          prompt: args.prompt,
-          maxTokens: args.max_tokens,
-          sortBy: args.sort_by,
-          signedPayment,
-        });
-
-        if (retryRes.ok) {
-          const data = (await retryRes.json()) as SmartRequestSuccess;
+        // ── 4. Extract result ─────────────────────────────────────
+        const result = data.data;
+        if (!result) {
           return {
             content: [
               {
                 type: "text" as const,
-                text: JSON.stringify(
-                  {
-                    ...data.data,
-                    payment: { success: true, note: "paid via x402 through proxy" },
-                  },
-                  null,
-                  2,
-                ),
+                text: `Unexpected response format: ${JSON.stringify(data, null, 2)}`,
               },
             ],
+            isError: true,
           };
         }
 
-        const err = await retryRes.text().catch(() => retryRes.statusText);
         return {
           content: [
             {
               type: "text" as const,
-              text: `x402 payment retry failed (${retryRes.status}): ${err}`,
+              text: JSON.stringify(
+                {
+                  selection: result.selection,
+                  response: result.response,
+                  metadata: result.metadata,
+                },
+                null,
+                2,
+              ),
+            },
+          ],
+        };
+      } catch (err) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `Smart request failed: ${err instanceof Error ? err.message : String(err)}`,
             },
           ],
           isError: true,
         };
       }
-
-      // ── 4. Other errors ──────────────────────────────────────
-      const err = await res
-        .json()
-        .catch(() => ({ message: res.statusText }));
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: `Smart request error (${res.status}): ${JSON.stringify(err, null, 2)}`,
-          },
-        ],
-        isError: true,
-      };
     },
   );
 }

@@ -77,7 +77,7 @@ registerProxyTools(server, proxyFetch, API_CREDENTIALS);
 registerPolicyTools(server, client);
 registerCurationTools(server, client);
 registerAnalyticsTools(server, client);
-registerSmartTools(server, client, wallet, API_CREDENTIALS);
+registerSmartTools(server, client, wallet);
 registerAuditTools(server, client);
 
 // ── Connect ────────────────────────────────────────────────

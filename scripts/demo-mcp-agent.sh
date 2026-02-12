@@ -219,14 +219,14 @@ run_agent "4.4" "Compare Endpoints" \
 run_agent "4.5" "Naive Select and Call (x402 payment)" \
   "You are demonstrating Pag0's smart API selection the MANUAL way — using multiple tools. Do the following steps in order:
 
-1. Use pag0_recommend to get the top recommended APIs in the 'Developer Tools' category.
+1. Use pag0_recommend to get the top recommended APIs in the 'AI Agents' category.
 
 2. Pick the top 2 endpoints from step 1 and use pag0_compare to compare them. Show the comparison table.
 
 3. Identify the overall winner from step 2.
 
-4. Call the winning provider via pag0_request. The winner should be x402-ai-starter.vercel.app — call it with:
-   POST https://x402-ai-starter.vercel.app/api/add with body {\"a\": 5, \"b\": 3}
+4. Call the winning provider via pag0_request. The winner should be api-dev.intra-tls2.dctx.link — call it with:
+   POST https://api-dev.intra-tls2.dctx.link/x402/swarm/qrn:swarm:68f9dcfbc87f09b659144239 with body {\"prompt\": \"Say hello in one sentence\", \"max_tokens\": 50}
    If the server returns a 402 payment response, the wallet will sign the payment automatically.
 
 5. Show a summary: which provider was selected, why (score breakdown), and the API response with latency/cost/cache metadata."

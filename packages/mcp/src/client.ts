@@ -190,4 +190,29 @@ export class Pag0Client {
       body: JSON.stringify(params),
     });
   }
+
+  // ── Smart Request Select (curation only, no upstream call) ──
+
+  async smartRequestSelect(params: {
+    category: string;
+    prompt: string;
+    maxTokens?: number;
+    sortBy?: string;
+  }): Promise<SmartSelectResult> {
+    return this.post<SmartSelectResult>(
+      "/api/smart-request/select",
+      params,
+    );
+  }
+}
+
+export interface SmartSelectResult {
+  targetUrl: string;
+  method: string;
+  body: unknown;
+  selection: {
+    winner: string;
+    rationale: string;
+    comparison: unknown;
+  };
 }

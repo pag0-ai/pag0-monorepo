@@ -19,6 +19,8 @@ import { analyticsCollector } from '../analytics/collector';
 import { erc8004Audit } from '../audit/erc8004';
 import type { UsdcAmount } from '../types';
 
+const UPSTREAM_TIMEOUT_MS = 15_000; // 15s upstream timeout
+
 /** Headers to strip before forwarding to the upstream target */
 const STRIP_HEADERS = new Set([
   'x-pag0-target-url',
@@ -135,16 +137,20 @@ export async function handleRelay(c: Context): Promise<Response> {
       headers: upstreamHeaders,
       body: bodyBuf,
       redirect: 'manual',
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     });
   } catch (err) {
+    const isTimeout = err instanceof DOMException && err.name === 'TimeoutError';
     return c.json(
       {
         error: {
-          code: 'UPSTREAM_ERROR',
-          message: `Failed to reach ${targetUrl}: ${err instanceof Error ? err.message : 'Unknown'}`,
+          code: isTimeout ? 'UPSTREAM_TIMEOUT' : 'UPSTREAM_ERROR',
+          message: isTimeout
+            ? `Upstream timeout after ${UPSTREAM_TIMEOUT_MS}ms: ${targetUrl}`
+            : `Failed to reach ${targetUrl}: ${err instanceof Error ? err.message : 'Unknown'}`,
         },
       },
-      502,
+      isTimeout ? 504 : 502,
     );
   }
 

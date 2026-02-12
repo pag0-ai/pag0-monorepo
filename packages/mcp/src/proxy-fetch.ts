@@ -23,6 +23,8 @@ export interface ProxyMetadata {
   budgetRemaining?: { daily: string; monthly: string };
 }
 
+const RELAY_TIMEOUT_MS = 20_000; // 20s client-side timeout (> proxy's 15s upstream timeout)
+
 /**
  * Create a fetch function that routes through the Pag0 /relay endpoint
  * with automatic x402 payment handling.
@@ -34,22 +36,36 @@ export function createProxyFetch(
 ): typeof globalThis.fetch {
   const relayUrl = proxyBaseUrl.replace(/\/$/, "") + "/relay";
 
-  // Build a relay-aware fetch that rewrites URLs to the proxy
-  const relayFetch: typeof globalThis.fetch = (input, init?) => {
+  // Build a relay-aware fetch that rewrites URLs to the proxy.
+  // x402 SDK calls fetch(Request) with a Request object (no init),
+  // so we must extract method/headers/body from the Request when init is absent.
+  const relayFetch: typeof globalThis.fetch = async (input, init?) => {
+    const req = (typeof input !== "string" && !(input instanceof URL))
+      ? input as Request
+      : null;
+
     const targetUrl = typeof input === "string"
       ? input
       : input instanceof URL
         ? input.href
         : input.url;
 
-    const headers = new Headers(init?.headers);
+    const method = init?.method ?? req?.method ?? "GET";
+    const headers = new Headers(init?.headers ?? req?.headers);
     headers.set("x-pag0-target-url", targetUrl);
     headers.set("x-pag0-api-key", apiKey);
 
+    // Materialize body as ArrayBuffer to avoid ReadableStream/duplex issues
+    let body: BodyInit | null = init?.body ?? null;
+    if (!body && req?.body) {
+      body = await req.arrayBuffer();
+    }
+
     return globalThis.fetch(relayUrl, {
-      ...init,
-      method: init?.method ?? "GET",
+      method,
       headers,
+      body,
+      signal: init?.signal ?? AbortSignal.timeout(RELAY_TIMEOUT_MS),
     });
   };
 

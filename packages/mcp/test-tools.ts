@@ -31,8 +31,10 @@ const WALLET_MODE = process.env.WALLET_MODE ?? "local";
 const NETWORK = process.env.NETWORK ?? "base-sepolia";
 
 const API_CREDENTIALS: Record<string, string> = {};
-if (process.env.OPENAI_API_KEY) API_CREDENTIALS["api.openai.com"] = process.env.OPENAI_API_KEY;
-if (process.env.ANTHROPIC_API_KEY) API_CREDENTIALS["api.anthropic.com"] = process.env.ANTHROPIC_API_KEY;
+if (process.env.OPENAI_API_KEY)
+  API_CREDENTIALS["api.openai.com"] = process.env.OPENAI_API_KEY;
+if (process.env.ANTHROPIC_API_KEY)
+  API_CREDENTIALS["api.anthropic.com"] = process.env.ANTHROPIC_API_KEY;
 
 if (!PAG0_API_URL || !PAG0_API_KEY) {
   console.error("Missing PAG0_API_URL or PAG0_API_KEY in .env");
@@ -60,7 +62,9 @@ async function test(name: string, fn: () => Promise<void>) {
   } catch (err) {
     fail++;
     console.log(`${RED}FAIL${RESET}`);
-    console.log(`    ${RED}${err instanceof Error ? err.message : String(err)}${RESET}`);
+    console.log(
+      `    ${RED}${err instanceof Error ? err.message : String(err)}${RESET}`,
+    );
   }
 }
 
@@ -69,7 +73,11 @@ function assert(condition: boolean, msg: string) {
 }
 
 /** When proxy returns 500, verify by calling upstream directly to confirm it's not our proxy's fault. */
-async function verifyUpstream500(url: string, method: string, body?: string): Promise<void> {
+async function verifyUpstream500(
+  url: string,
+  method: string,
+  body?: string,
+): Promise<void> {
   console.log(`${DIM}   ${YELLOW}verifying upstream directly...${RESET}`);
   try {
     const directRes = await globalThis.fetch(url, {
@@ -81,14 +89,24 @@ async function verifyUpstream500(url: string, method: string, body?: string): Pr
     // 402 = upstream is alive but requires payment (expected for x402 endpoints)
     // 4xx/5xx = upstream is having issues
     if (directStatus === 402) {
-      console.log(`${DIM}   ${YELLOW}upstream returned 402 (payment required) — upstream is alive, proxy relay issue${RESET}`);
+      console.log(
+        `${DIM}   ${YELLOW}upstream returned 402 (payment required) — upstream is alive, proxy relay issue${RESET}`,
+      );
     } else if (directStatus >= 500) {
-      console.log(`${DIM}   ${GREEN}confirmed: upstream itself returns ${directStatus} — not our fault${RESET}`);
+      console.log(
+        `${DIM}   ${GREEN}confirmed: upstream itself returns ${directStatus} — not our fault${RESET}`,
+      );
     } else {
-      console.log(`${DIM}   ${YELLOW}upstream returned ${directStatus} directly — proxy may have an issue${RESET}`);
+      console.log(
+        `${DIM}   ${YELLOW}upstream returned ${directStatus} directly — proxy may have an issue${RESET}`,
+      );
     }
   } catch (err) {
-    console.log(`${DIM}   ${YELLOW}upstream unreachable: ${err instanceof Error ? err.message : String(err)}${RESET}`);
+    console.log(
+      `${DIM}   ${YELLOW}upstream unreachable: ${
+        err instanceof Error ? err.message : String(err)
+      }${RESET}`,
+    );
   }
 }
 
@@ -120,24 +138,30 @@ if (!smartOnly) {
   console.log(`${YELLOW}[Client Methods]${RESET}`);
 
   await test("getAnalyticsSummary", async () => {
-    const res = await client.getAnalyticsSummary("7d") as any;
+    const res = (await client.getAnalyticsSummary("7d")) as any;
     assert(res != null, "response should not be null");
   });
 
   await test("getPolicies", async () => {
-    const res = await client.getPolicies() as any;
+    const res = (await client.getPolicies()) as any;
     assert(res != null, "response should not be null");
   });
 
   await test("getRecommendations (AI Agents)", async () => {
-    const res = await client.getRecommendations({ category: "AI Agents", limit: 3 }) as any;
+    const res = (await client.getRecommendations({
+      category: "AI Agents",
+      limit: 3,
+    })) as any;
     assert(Array.isArray(res.data), "data should be an array");
     assert(res.data.length > 0, "should have at least 1 recommendation");
     console.log(`${DIM} (${res.data.length} results)${RESET}`);
   });
 
   await test("getRankings", async () => {
-    const res = await client.getRankings({ category: "AI Agents", limit: 5 }) as any;
+    const res = (await client.getRankings({
+      category: "AI Agents",
+      limit: 5,
+    })) as any;
     assert(res != null, "response should not be null");
   });
 
@@ -158,8 +182,13 @@ await test("smartRequestSelect (AI Agents)", async () => {
   assert(typeof res.method === "string", "method should be a string");
   assert(res.selection != null, "selection should exist");
   assert(typeof res.selection.winner === "string", "winner should be a string");
-  assert(typeof res.selection.rationale === "string", "rationale should be a string");
-  console.log(`${DIM} → winner=${res.selection.winner}, url=${res.targetUrl}${RESET}`);
+  assert(
+    typeof res.selection.rationale === "string",
+    "rationale should be a string",
+  );
+  console.log(
+    `${DIM} → winner=${res.selection.winner}, url=${res.targetUrl}${RESET}`,
+  );
 });
 
 await test("smartRequestSelect (Developer Tools)", async () => {
@@ -171,7 +200,9 @@ await test("smartRequestSelect (Developer Tools)", async () => {
   });
   assert(typeof res.targetUrl === "string", "targetUrl should be a string");
   assert(res.selection.winner.length > 0, "winner should not be empty");
-  console.log(`${DIM} → winner=${res.selection.winner}, method=${res.method}${RESET}`);
+  console.log(
+    `${DIM} → winner=${res.selection.winner}, method=${res.method}${RESET}`,
+  );
 });
 
 await test("smartRequestSelect (Content & Media)", async () => {
@@ -181,7 +212,9 @@ await test("smartRequestSelect (Content & Media)", async () => {
     maxTokens: 50,
   });
   assert(typeof res.targetUrl === "string", "targetUrl should be a string");
-  console.log(`${DIM} → winner=${res.selection.winner}, method=${res.method}${RESET}`);
+  console.log(
+    `${DIM} → winner=${res.selection.winner}, method=${res.method}${RESET}`,
+  );
 });
 
 console.log();
@@ -191,9 +224,13 @@ console.log();
 console.log(`${YELLOW}[ProxyFetch via /relay]${RESET}`);
 
 await test("proxyFetch x402-ai-starter (POST, x402 payment)", async () => {
-  const url = "https://x402-ai-starter.vercel.app/api/add";
+  const url = "https://x402-ai-starter-alpha.vercel.app/api/add";
   const reqBody = JSON.stringify({ a: 5, b: 3 });
-  const headers = injectAuthHeaders(url, { "content-type": "application/json" }, API_CREDENTIALS);
+  const headers = injectAuthHeaders(
+    url,
+    { "content-type": "application/json" },
+    API_CREDENTIALS,
+  );
   const response = await proxyFetch(url, {
     method: "POST",
     headers,
@@ -201,7 +238,9 @@ await test("proxyFetch x402-ai-starter (POST, x402 payment)", async () => {
   });
   const meta = extractProxyMetadata(response);
   const body = await response.json().catch(() => null);
-  console.log(`${DIM} → status=${response.status}, cost=${meta.cost}, cached=${meta.cached}${RESET}`);
+  console.log(
+    `${DIM} → status=${response.status}, cost=${meta.cost}, cached=${meta.cached}${RESET}`,
+  );
   if (response.ok) {
     console.log(`${DIM}   body=${JSON.stringify(body)}${RESET}`);
   }
@@ -209,8 +248,9 @@ await test("proxyFetch x402-ai-starter (POST, x402 payment)", async () => {
     await verifyUpstream500(url, "POST", reqBody);
   }
   assert(
-    response.status === 200 || response.status === 402 || response.status === 500,
-    `expected 200, 402, or 500, got ${response.status}`,
+    response.status === 200 ||
+      response.status === 500,
+    `expected 200 or 500, got ${response.status} (402 means x402 SDK payment flow failed)`,
   );
 });
 
@@ -227,7 +267,9 @@ await test("full smart flow (Developer Tools)", async () => {
     prompt: "add 2 and 3",
     maxTokens: 50,
   });
-  console.log(`${DIM} → selected: ${sel.selection.winner} (${sel.targetUrl})${RESET}`);
+  console.log(
+    `${DIM} → selected: ${sel.selection.winner} (${sel.targetUrl})${RESET}`,
+  );
 
   // 2. Inject auth
   const headers = injectAuthHeaders(
@@ -244,7 +286,9 @@ await test("full smart flow (Developer Tools)", async () => {
     body: reqBody,
   });
   const meta = extractProxyMetadata(response);
-  console.log(`${DIM} → status=${response.status}, cost=${meta.cost}, latency=${meta.latency}ms${RESET}`);
+  console.log(
+    `${DIM} → status=${response.status}, cost=${meta.cost}, latency=${meta.latency}ms${RESET}`,
+  );
 
   if (response.ok) {
     const body = await response.json().catch(() => null);
@@ -254,8 +298,9 @@ await test("full smart flow (Developer Tools)", async () => {
     await verifyUpstream500(sel.targetUrl, sel.method, reqBody);
   }
   assert(
-    response.status === 200 || response.status === 402 || response.status === 500,
-    `expected 200, 402, or 500, got ${response.status}`,
+    response.status === 200 ||
+      response.status === 500,
+    `expected 200 or 500, got ${response.status} (402 means x402 SDK payment flow failed)`,
   );
 });
 
@@ -275,15 +320,26 @@ await test("500s are recorded in analytics and lower success rate", async () => 
   const beforeAnalytics = (await client.getAnalyticsEndpoints({
     period: "1d",
     limit: 100,
-  })) as { endpoints: Array<{ endpoint: string; requestCount: number; successRate: number; errorCount: number }> };
+  })) as {
+    endpoints: Array<{
+      endpoint: string;
+      requestCount: number;
+      successRate: number;
+      errorCount: number;
+    }>;
+  };
 
-  const before = beforeAnalytics.endpoints.find((e) => e.endpoint === ENDPOINT_HOST);
+  const before = beforeAnalytics.endpoints.find(
+    (e) => e.endpoint === ENDPOINT_HOST,
+  );
   const beforeTotal = before?.requestCount ?? 0;
   const beforeErrors = before?.errorCount ?? 0;
   const beforeSuccessRate = before?.successRate ?? 1; // decimal 0-1
 
   console.log(
-    `${DIM}   before: total=${beforeTotal}, errors=${beforeErrors}, successRate=${(beforeSuccessRate * 100).toFixed(1)}%${RESET}`,
+    `${DIM}   before: total=${beforeTotal}, errors=${beforeErrors}, successRate=${(
+      beforeSuccessRate * 100
+    ).toFixed(1)}%${RESET}`,
   );
 
   // 2. Fire N relay calls to the 500-ing upstream
@@ -312,15 +368,26 @@ await test("500s are recorded in analytics and lower success rate", async () => 
   const afterAnalytics = (await client.getAnalyticsEndpoints({
     period: "1d",
     limit: 100,
-  })) as { endpoints: Array<{ endpoint: string; requestCount: number; successRate: number; errorCount: number }> };
+  })) as {
+    endpoints: Array<{
+      endpoint: string;
+      requestCount: number;
+      successRate: number;
+      errorCount: number;
+    }>;
+  };
 
-  const after = afterAnalytics.endpoints.find((e) => e.endpoint === ENDPOINT_HOST);
+  const after = afterAnalytics.endpoints.find(
+    (e) => e.endpoint === ENDPOINT_HOST,
+  );
   const afterTotal = after?.requestCount ?? 0;
   const afterErrors = after?.errorCount ?? 0;
   const afterSuccessRate = after?.successRate ?? 1;
 
   console.log(
-    `${DIM}   after:  total=${afterTotal}, errors=${afterErrors}, successRate=${(afterSuccessRate * 100).toFixed(1)}%${RESET}`,
+    `${DIM}   after:  total=${afterTotal}, errors=${afterErrors}, successRate=${(
+      afterSuccessRate * 100
+    ).toFixed(1)}%${RESET}`,
   );
 
   // 5. Assertions
@@ -342,7 +409,9 @@ await test("500s are recorded in analytics and lower success rate", async () => 
     `expected success rate to drop or stay same (before=${beforeSuccessRate}, after=${afterSuccessRate})`,
   );
 
-  console.log(`${DIM}   ${GREEN}feedback loop verified: 500s recorded, success rate reflects failures${RESET}`);
+  console.log(
+    `${DIM}   ${GREEN}feedback loop verified: 500s recorded, success rate reflects failures${RESET}`,
+  );
 });
 
 console.log();
@@ -351,7 +420,9 @@ console.log();
 
 const total = pass + fail;
 console.log(`${CYAN}=== Results ===${RESET}`);
-console.log(`  ${GREEN}Pass: ${pass}${RESET}  ${RED}Fail: ${fail}${RESET}  Total: ${total}`);
+console.log(
+  `  ${GREEN}Pass: ${pass}${RESET}  ${RED}Fail: ${fail}${RESET}  Total: ${total}`,
+);
 console.log();
 
 process.exit(fail > 0 ? 1 : 0);

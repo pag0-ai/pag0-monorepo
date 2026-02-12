@@ -93,7 +93,218 @@ const VALID_CATEGORIES = [
 ];
 const VALID_SORT_BY = ["overall", "cost", "latency", "reliability"];
 
+// ── Shared selection logic ────────────────────────────────────
+
+interface SelectInput {
+  category: string;
+  prompt: string;
+  maxTokens: number;
+  sortBy: "overall" | "cost" | "latency" | "reliability";
+}
+
+interface SelectResult {
+  targetUrl: string;
+  method: string;
+  body: unknown;
+  selection: {
+    winner: string;
+    rationale: string;
+    comparison: {
+      endpoints: EndpointScore[];
+      winner: Record<string, string>;
+    } | null;
+  };
+}
+
+async function selectEndpoint(input: SelectInput): Promise<SelectResult> {
+  // ── 1. Get recommendations ────────────────────────────────
+  const recommendations = await curationEngine.getRecommendations(
+    input.category,
+    5,
+    input.sortBy,
+  );
+
+  if (recommendations.length === 0) {
+    throw Object.assign(
+      new Error(`No endpoints found in category "${input.category}"`),
+      { code: "NOT_FOUND" },
+    );
+  }
+
+  // ── 2. Compare top 2 (skip if only 1) ─────────────────────
+  let winner = recommendations[0].endpoint;
+  let rationale = `Only one endpoint available in "${input.category}": ${winner}`;
+  let comparisonResult: {
+    endpoints: EndpointScore[];
+    winner: Record<string, string>;
+  } | null = null;
+
+  if (recommendations.length >= 2) {
+    const top2 = recommendations.slice(0, 2).map((r) => r.endpoint);
+    try {
+      const comparison = await curationEngine.compareEndpoints(top2);
+      comparisonResult = comparison;
+      winner = comparison.winner.overall;
+      const w = comparison.winner;
+      rationale = `Compared ${top2.join(
+        " vs ",
+      )}. Winner: ${winner} (overall: ${w.overall}, cost: ${
+        w.cost
+      }, latency: ${w.latency}, reliability: ${w.reliability})`;
+    } catch {
+      rationale = `Comparison failed; falling back to top recommendation: ${winner}`;
+    }
+  }
+
+  const selection = { winner, rationale, comparison: comparisonResult };
+
+  // ── 3. Determine request target ─────────────────────────────
+  const provider = PROVIDER_CONFIG[winner];
+
+  if (provider) {
+    return {
+      targetUrl: provider.chatUrl,
+      method: "POST",
+      body: provider.buildBody(input.prompt, input.maxTokens),
+      selection,
+    };
+  }
+
+  // x402 generic pass-through — look up a recent successful URL
+  const [recentReq] = await sql<
+    Array<{ full_url: string; method: string }>
+  >`
+    SELECT full_url, method FROM requests
+    WHERE endpoint = ${winner} AND status_code = 200
+    ORDER BY created_at DESC LIMIT 1
+  `;
+
+  if (!recentReq) {
+    throw Object.assign(
+      new Error(
+        `No known URL for x402 endpoint "${winner}". Use /proxy with a specific URL instead.`,
+      ),
+      { code: "NO_KNOWN_URL" },
+    );
+  }
+
+  return {
+    targetUrl: recentReq.full_url,
+    method: recentReq.method || "POST",
+    body:
+      recentReq.method === "GET"
+        ? undefined
+        : { prompt: input.prompt, max_tokens: input.maxTokens },
+    selection,
+  };
+}
+
+// ── Hono app ──────────────────────────────────────────────────
+
 const app = new Hono<{ Variables: Variables }>();
+
+// ── POST /select — curation only, no upstream call ────────────
+
+app.post("/select", async (c) => {
+  let body: {
+    category?: string;
+    prompt?: string;
+    maxTokens?: number;
+    sortBy?: string;
+  };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json(
+      { error: { code: "VALIDATION_ERROR", message: "Invalid JSON body" } },
+      400,
+    );
+  }
+
+  if (!body.category || typeof body.category !== "string") {
+    return c.json(
+      { error: { code: "VALIDATION_ERROR", message: "category is required" } },
+      400,
+    );
+  }
+  if (!VALID_CATEGORIES.includes(body.category)) {
+    return c.json(
+      {
+        error: {
+          code: "VALIDATION_ERROR",
+          message: `category must be one of: ${VALID_CATEGORIES.join(", ")}`,
+        },
+      },
+      400,
+    );
+  }
+  if (!body.prompt || typeof body.prompt !== "string") {
+    return c.json(
+      {
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "prompt is required and must be a string",
+        },
+      },
+      400,
+    );
+  }
+
+  const maxTokens = body.maxTokens ?? 100;
+  const sortBy = (body.sortBy ?? "overall") as
+    | "overall"
+    | "cost"
+    | "latency"
+    | "reliability";
+  if (!VALID_SORT_BY.includes(sortBy)) {
+    return c.json(
+      {
+        error: {
+          code: "VALIDATION_ERROR",
+          message: `sortBy must be one of: ${VALID_SORT_BY.join(", ")}`,
+        },
+      },
+      400,
+    );
+  }
+
+  try {
+    const result = await selectEndpoint({
+      category: body.category,
+      prompt: body.prompt,
+      maxTokens,
+      sortBy,
+    });
+    return c.json(result);
+  } catch (err) {
+    if (
+      err instanceof Error &&
+      (err.name === "PolicyViolationError" || err.name === "RateLimitError")
+    ) {
+      throw err;
+    }
+    const code = (err as { code?: string }).code;
+    if (code === "NOT_FOUND") {
+      return c.json({ error: { code, message: (err as Error).message } }, 404);
+    }
+    if (code === "NO_KNOWN_URL") {
+      return c.json({ error: { code, message: (err as Error).message } }, 400);
+    }
+    console.error("Error in /api/smart-request/select:", err);
+    return c.json(
+      {
+        error: {
+          code: "INTERNAL_ERROR",
+          message: "Selection failed",
+          details: err instanceof Error ? err.message : String(err),
+        },
+      },
+      500,
+    );
+  }
+});
+
+// ── POST / — full smart request (select + upstream call) ──────
 
 app.post("/", async (c) => {
   const projectId = c.get("projectId");
@@ -163,112 +374,26 @@ app.post("/", async (c) => {
   }
 
   try {
-    // ── 2. Get recommendations ────────────────────────────────
-    const recommendations = await curationEngine.getRecommendations(
-      body.category,
-      5,
+    const sel = await selectEndpoint({
+      category: body.category,
+      prompt: body.prompt,
+      maxTokens,
       sortBy,
-    );
+    });
 
-    if (recommendations.length === 0) {
-      return c.json(
-        {
-          error: {
-            code: "NOT_FOUND",
-            message: `No endpoints found in category "${body.category}"`,
-          },
-        },
-        404,
-      );
-    }
+    // ── 2. Inject auth headers + call via proxyCore ───────────
+    const headers = injectAuthHeaders(sel.targetUrl);
 
-    // ── 3. Compare top 2 (skip if only 1) ─────────────────────
-    let winner = recommendations[0].endpoint;
-    let rationale = `Only one endpoint available in "${body.category}": ${winner}`;
-    let comparisonResult: {
-      endpoints: EndpointScore[];
-      winner: Record<string, string>;
-    } | null = null;
-
-    if (recommendations.length >= 2) {
-      const top2 = recommendations.slice(0, 2).map((r) => r.endpoint);
-      try {
-        const comparison = await curationEngine.compareEndpoints(top2);
-        comparisonResult = comparison;
-        winner = comparison.winner.overall;
-        const w = comparison.winner;
-        rationale = `Compared ${top2.join(
-          " vs ",
-        )}. Winner: ${winner} (overall: ${w.overall}, cost: ${
-          w.cost
-        }, latency: ${w.latency}, reliability: ${w.reliability})`;
-      } catch {
-        rationale = `Comparison failed; falling back to top recommendation: ${winner}`;
-      }
-    }
-
-    const selection = {
-      winner,
-      rationale,
-      comparison: comparisonResult,
-    };
-
-    // ── 4. Determine request target ─────────────────────────────
-    const provider = PROVIDER_CONFIG[winner];
-    let targetUrl: string;
-    let requestBody: unknown;
-    let headers: Record<string, string>;
-    let extractText: (body: unknown) => string;
-
-    if (provider) {
-      // Known provider (OpenAI, Anthropic) — use specific config
-      targetUrl = provider.chatUrl;
-      requestBody = provider.buildBody(body.prompt, maxTokens);
-      headers = injectAuthHeaders(targetUrl);
-      extractText = provider.extractText;
-    } else {
-      // x402 generic pass-through — look up a recent successful URL
-      const [recentReq] = await sql<
-        Array<{ full_url: string; method: string }>
-      >`
-        SELECT full_url, method FROM requests
-        WHERE endpoint = ${winner} AND status_code = 200
-        ORDER BY created_at DESC LIMIT 1
-      `;
-
-      if (!recentReq) {
-        return c.json(
-          {
-            error: {
-              code: "NO_KNOWN_URL",
-              message: `No known URL for x402 endpoint "${winner}". Use /proxy with a specific URL instead.`,
-            },
-          },
-          400,
-        );
-      }
-
-      targetUrl = recentReq.full_url;
-      requestBody =
-        recentReq.method === "GET"
-          ? undefined
-          : { prompt: body.prompt, max_tokens: maxTokens };
-      headers = { "Content-Type": "application/json" };
-      extractText = (b: unknown) =>
-        typeof b === "string" ? b : JSON.stringify(b);
-    }
-
-    // ── 5. Call via proxyCore ──────────────────────────────────
     const result = await proxyCore.handleRequest({
-      targetUrl,
+      targetUrl: sel.targetUrl,
       method: "POST",
       headers,
-      body: requestBody,
+      body: sel.body,
       projectId,
       signedPayment: body.signedPayment,
     });
 
-    // ── 6. Handle 402 — return payment request with selection ──
+    // ── 3. Handle 402 — return payment request with selection ──
     if (result.status === 402) {
       const payment402 = result as {
         status: 402;
@@ -280,7 +405,7 @@ app.post("/", async (c) => {
           status: 402,
           body: { paymentRequest: payment402.paymentInfo },
           metadata: payment402.metadata,
-          selection,
+          selection: sel.selection,
         },
         402,
       );
@@ -289,7 +414,7 @@ app.post("/", async (c) => {
     // Narrow to ProxyCoreResponse after 402 is handled
     const res = result as ProxyCoreResponse;
 
-    // ── 7. Handle upstream errors ─────────────────────────────
+    // ── 4. Handle upstream errors ─────────────────────────────
     if (res.status >= 500) {
       return c.json(
         {
@@ -303,12 +428,16 @@ app.post("/", async (c) => {
       );
     }
 
-    // ── 8. Success — extract text and return ──────────────────
+    // ── 5. Success — extract text and return ──────────────────
+    const provider = PROVIDER_CONFIG[sel.selection.winner];
+    const extractText = provider
+      ? provider.extractText
+      : (b: unknown) => (typeof b === "string" ? b : JSON.stringify(b));
     const responseText = extractText(res.body);
 
     return c.json({
       data: {
-        selection,
+        selection: sel.selection,
         response: {
           text: responseText,
           raw: res.body,
@@ -330,6 +459,13 @@ app.post("/", async (c) => {
       (err.name === "PolicyViolationError" || err.name === "RateLimitError")
     ) {
       throw err;
+    }
+    const code = (err as { code?: string }).code;
+    if (code === "NOT_FOUND") {
+      return c.json({ error: { code, message: (err as Error).message } }, 404);
+    }
+    if (code === "NO_KNOWN_URL") {
+      return c.json({ error: { code, message: (err as Error).message } }, 400);
     }
     console.error("Error in /api/smart-request:", err);
     return c.json(

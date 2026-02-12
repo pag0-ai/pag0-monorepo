@@ -21,6 +21,8 @@ export interface PaymentInfo {
   extra?: any;
 }
 
+const UPSTREAM_TIMEOUT_MS = 15_000; // 15s upstream timeout
+
 export class X402Integration {
   /**
    * Forward request to target x402 server
@@ -31,11 +33,14 @@ export class X402Integration {
       const response = await fetch(url, {
         ...options,
         redirect: 'manual', // Don't auto-follow redirects
+        signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
       });
 
       return response;
     } catch (error) {
-      // Network errors, DNS failures, etc.
+      if (error instanceof DOMException && error.name === 'TimeoutError') {
+        throw new Error(`Upstream timeout after ${UPSTREAM_TIMEOUT_MS}ms: ${url}`);
+      }
       throw new Error(`Failed to forward request to ${url}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
