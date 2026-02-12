@@ -1,0 +1,11 @@
+{
+  "name": "@pag0/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "forge build",
+    "test": "forge test -vvv",
+    "deploy:skale": "source ../../.env && forge script script/Deploy.s.sol:Deploy --rpc-url $SKALE_RPC_URL --broadcast",
+    "clean": "forge clean"
+  }
+}
