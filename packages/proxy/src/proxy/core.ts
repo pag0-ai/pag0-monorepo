@@ -234,8 +234,9 @@ export class ProxyCore {
 
     const latency = Date.now() - startTime;
 
-    // Extract cost from response headers (x402 convention)
-    const actualCost = this.extractCostFromResponse(response);
+    // Prefer upstream-reported cost; fall back to payment header amount
+    const upstreamCost = this.extractCostFromResponse(response);
+    const actualCost = upstreamCost !== '0' ? upstreamCost : estimatedCost;
 
     // ─── Step 6: Cache Store ─────────────────────────────────
     const responseHeaders: Record<string, string> = {};

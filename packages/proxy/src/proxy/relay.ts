@@ -215,7 +215,9 @@ export async function handleRelay(c: Context): Promise<Response> {
   // ── 7. Success path — read body, cache, analytics ────────
   const upstreamBody = await upstreamRes.arrayBuffer();
   const latency = Date.now() - startTime;
-  const actualCost = extractCost(upstreamRes);
+  // Prefer upstream-reported cost; fall back to payment header amount
+  const upstreamCost = extractCost(upstreamRes);
+  const actualCost = upstreamCost !== '0' ? upstreamCost : estimatedCost;
 
   // Try to parse as JSON for caching
   let parsedBody: any = null;

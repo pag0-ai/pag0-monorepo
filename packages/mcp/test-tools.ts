@@ -254,6 +254,67 @@ await test("proxyFetch x402-ai-starter (POST, x402 payment)", async () => {
   );
 });
 
+await test("x402 cost reporting: proxy cost vs payment-response", async () => {
+  const url = "https://x402-ai-starter-alpha.vercel.app/api/add";
+  const reqBody = JSON.stringify({ a: 7, b: 2 });
+  const headers = injectAuthHeaders(
+    url,
+    { "content-type": "application/json" },
+    API_CREDENTIALS,
+  );
+  const response = await proxyFetch(url, {
+    method: "POST",
+    headers,
+    body: reqBody,
+  });
+
+  if (!response.ok) {
+    console.log(`${DIM}   skipped (status=${response.status})${RESET}`);
+    return;
+  }
+
+  // 1. Proxy-reported cost
+  const proxyCost = response.headers.get("x-pag0-cost") || "0";
+
+  // 2. All cost-related headers from upstream (forwarded through proxy)
+  const paymentResponse = response.headers.get("payment-response")
+    || response.headers.get("x-payment-response");
+  const xCost = response.headers.get("x-cost");
+  const xPaymentAmount = response.headers.get("x-payment-amount");
+
+  // 3. Decode payment-response if present
+  let settlementAmount: string | null = null;
+  if (paymentResponse) {
+    try {
+      const decoded = JSON.parse(Buffer.from(paymentResponse, "base64").toString());
+      console.log(`${DIM}   payment-response: ${JSON.stringify(decoded)}${RESET}`);
+      settlementAmount = decoded.amount || decoded.transaction?.amount || null;
+    } catch {
+      console.log(`${DIM}   payment-response: (decode failed)${RESET}`);
+    }
+  }
+
+  // 4. Dump all response headers for diagnosis
+  const allHeaders: Record<string, string> = {};
+  response.headers.forEach((v, k) => { allHeaders[k] = v; });
+  const costRelated = Object.entries(allHeaders)
+    .filter(([k]) => /cost|payment|pag0/i.test(k))
+    .map(([k, v]) => `${k}=${v.length > 80 ? v.slice(0, 80) + "…" : v}`);
+  console.log(`${DIM}   cost-related headers: ${costRelated.join(", ") || "(none)"}${RESET}`);
+
+  console.log(
+    `${DIM}   proxy-cost=${proxyCost}, x-cost=${xCost ?? "null"}, ` +
+    `x-payment-amount=${xPaymentAmount ?? "null"}, ` +
+    `settlement=${settlementAmount ?? "null"}${RESET}`,
+  );
+
+  // 5. Assert: cost should not be "0" after a paid x402 request
+  assert(
+    proxyCost !== "0" || xCost != null || xPaymentAmount != null || paymentResponse != null,
+    `No cost data found anywhere — proxy-cost=0 and no upstream cost headers`,
+  );
+});
+
 console.log();
 
 // ── Smart Select + ProxyFetch (full smart flow) ───────────────
