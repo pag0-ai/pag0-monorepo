@@ -28,5 +28,56 @@ services:
       timeout: 3s
       retries: 5
 
+  # ─── Subgraph (The Graph) ───
+  graph-node:
+    image: graphprotocol/graph-node:v0.35.1
+    container_name: pag0-graph-node
+    depends_on:
+      graph-postgres:
+        condition: service_healthy
+      ipfs:
+        condition: service_started
+    ports:
+      - "8000:8000"   # GraphQL HTTP
+      - "8001:8001"   # GraphQL WS
+      - "8020:8020"   # JSON-RPC (admin)
+      - "8030:8030"   # Index node status
+    environment:
+      postgres_host: graph-postgres
+      postgres_port: 5432
+      postgres_user: graph
+      postgres_pass: graphsecret
+      postgres_db: graph-node
+      ipfs: "ipfs:5001"
+      ethereum: "skale:https://base-sepolia-testnet.skalenodes.com/v1/bite-v2-sandbox"
+      GRAPH_ETHEREUM_GENESIS_BLOCK_NUMBER: "0"
+      ETHEREUM_REORG_THRESHOLD: "1"
+      ETHEREUM_ANCESTOR_COUNT: "1"
+
+  graph-postgres:
+    image: postgres:16-alpine
+    container_name: pag0-graph-postgres
+    environment:
+      POSTGRES_USER: graph
+      POSTGRES_PASSWORD: graphsecret
+      POSTGRES_DB: graph-node
+    ports:
+      - "5434:5432"
+    volumes:
+      - graph-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U graph"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  ipfs:
+    image: ipfs/kubo:v0.28.0
+    container_name: pag0-ipfs
+    ports:
+      - "5001:5001"   # API
+      - "8080:8080"   # Gateway
+
 volumes:
   pgdata:
+  graph-pgdata:
