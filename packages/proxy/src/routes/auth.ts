@@ -31,7 +31,20 @@ async function verifyPassword(password: string, hash: string): Promise<boolean> 
 
 app.post('/register', async (c) => {
   try {
-    const body = await c.req.json();
+    let body: any;
+    try {
+      body = await c.req.json();
+    } catch {
+      return c.json(
+        {
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid JSON in request body',
+          },
+        },
+        400,
+      );
+    }
     const { email, password, name, projectName } = body;
 
     // Validation
@@ -173,7 +186,15 @@ app.post('/oauth-register', async (c) => {
       );
     }
 
-    const body = await c.req.json();
+    let body: any;
+    try {
+      body = await c.req.json();
+    } catch {
+      return c.json(
+        { error: { code: 'VALIDATION_ERROR', message: 'Invalid JSON in request body' } },
+        400,
+      );
+    }
     const { email, name } = body;
 
     if (!email) {
@@ -285,7 +306,15 @@ app.post('/generate-api-key', async (c) => {
       );
     }
 
-    const body = await c.req.json();
+    let body: any;
+    try {
+      body = await c.req.json();
+    } catch {
+      return c.json(
+        { error: { code: 'VALIDATION_ERROR', message: 'Invalid JSON in request body' } },
+        400,
+      );
+    }
     const { email } = body;
 
     if (!email) {
@@ -336,7 +365,20 @@ app.post('/generate-api-key', async (c) => {
 
 app.post('/login', async (c) => {
   try {
-    const body = await c.req.json();
+    let body: any;
+    try {
+      body = await c.req.json();
+    } catch {
+      return c.json(
+        {
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid JSON in request body',
+          },
+        },
+        400,
+      );
+    }
     const { email, password } = body;
 
     if (!email || !password) {

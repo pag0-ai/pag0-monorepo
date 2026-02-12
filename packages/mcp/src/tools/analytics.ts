@@ -22,6 +22,11 @@ export function registerAnalyticsTools(
         cacheSavings: string;
         successRate: number;
         avgLatency: number;
+        topEndpoints: Array<{
+          endpoint: string;
+          requestCount: number;
+          cost: string;
+        }>;
       };
 
       return {
@@ -36,6 +41,7 @@ export function registerAnalyticsTools(
                 cacheHitRate: data.cacheHitRate,
                 successRate: data.successRate,
                 avgLatency: data.avgLatency,
+                topEndpoints: data.topEndpoints,
               },
               null,
               2,
@@ -60,8 +66,7 @@ export function registerAnalyticsTools(
         totalSavings: string;
         topCachedEndpoints: Array<{
           endpoint: string;
-          hitRate: number;
-          savings: string;
+          cacheHits: number;
         }>;
       };
 
@@ -103,9 +108,10 @@ export function registerAnalyticsTools(
         endpoints: Array<{
           endpoint: string;
           requestCount: number;
-          totalSpent: string;
-          cacheHitRate: number;
+          totalCost: string;
+          cacheHitCount: number;
           avgLatencyMs: number;
+          p95LatencyMs: number;
         }>;
       };
 

@@ -26,6 +26,7 @@ interface SummaryResponse {
   topEndpoints: Array<{
     endpoint: string;
     requestCount: number;
+    cost: string;
   }>;
   budgetUsage: {
     daily: {
@@ -139,7 +140,7 @@ analyticsRoutes.get('/summary', async (c) => {
 
     // 2. Get top 5 endpoints by request count
     const topEndpoints = await sql`
-      SELECT endpoint, COUNT(*) as request_count
+      SELECT endpoint, COUNT(*) as request_count, COALESCE(SUM(cost), 0) as total_cost
       FROM requests
       WHERE project_id = ${projectId}::uuid
         AND created_at >= NOW() - ${interval}::interval
@@ -178,6 +179,7 @@ analyticsRoutes.get('/summary', async (c) => {
       topEndpoints: topEndpoints.map((e) => ({
         endpoint: e.endpoint as string,
         requestCount: Number(e.request_count),
+        cost: String(e.total_cost),
       })),
       budgetUsage: {
         daily: {
@@ -257,7 +259,7 @@ analyticsRoutes.get('/endpoints', async (c) => {
       totalCost: String(r.total_cost),
     }));
 
-    return c.json({ endpoints: metrics });
+    return c.json({ endpoints: metrics, total: metrics.length });
   } catch (error) {
     console.error('[Analytics] Error in /endpoints:', error);
     return c.json(
@@ -307,7 +309,19 @@ analyticsRoutes.get('/costs', async (c) => {
       requestCount: Number(r.request_count),
     }));
 
-    return c.json({ timeseries });
+    // Calculate totals
+    const totalSpent = timeseries.reduce((sum, p) => sum + BigInt(p.spent), BigInt(0));
+    const totalSaved = timeseries.reduce((sum, p) => sum + BigInt(p.saved), BigInt(0));
+    const totalRequests = timeseries.reduce((sum, p) => sum + p.requestCount, 0);
+
+    return c.json({
+      timeseries,
+      total: {
+        spent: String(totalSpent),
+        saved: String(totalSaved),
+        requests: totalRequests,
+      },
+    });
   } catch (error) {
     console.error('[Analytics] Error in /costs:', error);
     return c.json(

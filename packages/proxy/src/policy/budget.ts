@@ -4,9 +4,9 @@ import type { UsdcAmount } from '../types';
 
 export interface BudgetStatus {
   dailySpent: UsdcAmount;
-  dailyLimit: UsdcAmount;
+  dailyBudget: UsdcAmount;
   monthlySpent: UsdcAmount;
-  monthlyLimit: UsdcAmount;
+  monthlyBudget: UsdcAmount;
 }
 
 export class BudgetTracker {
@@ -29,8 +29,8 @@ export class BudgetTracker {
       SELECT
         b.daily_spent as "dailySpent",
         b.monthly_spent as "monthlySpent",
-        p.daily_budget as "dailyLimit",
-        p.monthly_budget as "monthlyLimit"
+        p.daily_budget as "dailyBudget",
+        p.monthly_budget as "monthlyBudget"
       FROM budgets b
       LEFT JOIN policies p ON p.project_id = b.project_id AND p.is_active = true
       WHERE b.project_id = ${projectId}
@@ -41,17 +41,17 @@ export class BudgetTracker {
     if (!budgetRecord) {
       return {
         dailySpent: dailySpent || '0',
-        dailyLimit: '999999999999999', // unlimited if not configured
+        dailyBudget: '999999999999999', // unlimited if not configured
         monthlySpent: monthlySpent || '0',
-        monthlyLimit: '999999999999999',
+        monthlyBudget: '999999999999999',
       };
     }
 
     return {
       dailySpent: dailySpent || budgetRecord.dailySpent || '0',
-      dailyLimit: budgetRecord.dailyLimit || '999999999999999',
+      dailyBudget: budgetRecord.dailyBudget || '999999999999999',
       monthlySpent: monthlySpent || budgetRecord.monthlySpent || '0',
-      monthlyLimit: budgetRecord.monthlyLimit || '999999999999999',
+      monthlyBudget: budgetRecord.monthlyBudget || '999999999999999',
     };
   }
 

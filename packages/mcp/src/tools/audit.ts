@@ -38,25 +38,42 @@ export function registerAuditTools(
         }
       }
 
-      // Fallback: query via Pag0 proxy API
-      const data = await client.getAuditTrail({
-        endpoint: args.endpoint,
-        period: args.period,
-      }) as {
-        events: Array<{
-          endpoint: string;
-          txHash: string;
-          qualityScore: number;
-          feedbackURI: string;
-          timestamp: string;
-        }>;
-      };
+      // Fallback: query via Pag0 proxy reputation API
+      if (args.endpoint) {
+        const data = await client.getReputationFeedbacks({
+          agentId: args.endpoint,
+          first: 50,
+        }) as {
+          data: {
+            feedbacks: Array<{
+              id: string;
+              agentId: string;
+              qualityScore: number;
+              feedbackURI: string;
+              timestamp: string;
+              txHash: string;
+            }>;
+          };
+        };
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify(data.data?.feedbacks ?? data, null, 2),
+            },
+          ],
+        };
+      }
 
+      // No endpoint filter — return leaderboard as overview
+      const data = await client.getReputationLeaderboard(50) as {
+        data: { agents: unknown[] };
+      };
       return {
         content: [
           {
             type: "text" as const,
-            text: JSON.stringify(data.events ?? data, null, 2),
+            text: JSON.stringify(data.data?.agents ?? data, null, 2),
           },
         ],
       };
@@ -88,19 +105,44 @@ export function registerAuditTools(
         }
       }
 
-      const data = await client.getReputation(args.endpoint) as {
-        endpoint: string;
-        avgScore: number;
-        totalFeedbacks: number;
-        tag: string;
-        recentTrend: string;
+      // Fallback: query via Pag0 proxy reputation API
+      const data = await client.getReputationAgent(args.endpoint) as {
+        data: {
+          agentId: string;
+          avgScore: number;
+          feedbackCount: number;
+          firstSeen: string;
+          lastSeen: string;
+        } | null;
       };
+
+      if (!data.data) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({
+                endpoint: args.endpoint,
+                avgScore: 0,
+                totalFeedbacks: 0,
+                recentTrend: "no-data",
+              }, null, 2),
+            },
+          ],
+        };
+      }
 
       return {
         content: [
           {
             type: "text" as const,
-            text: JSON.stringify(data, null, 2),
+            text: JSON.stringify({
+              endpoint: data.data.agentId,
+              avgScore: data.data.avgScore,
+              totalFeedbacks: data.data.feedbackCount,
+              firstSeen: data.data.firstSeen,
+              lastSeen: data.data.lastSeen,
+            }, null, 2),
           },
         ],
       };

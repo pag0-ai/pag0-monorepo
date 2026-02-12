@@ -25,8 +25,8 @@ const makePolicy = (overrides: Partial<Policy> = {}): Policy => ({
   projectId: 'project-1',
   name: 'Test Policy',
   maxPerRequest: '5000000',    // 5 USDC
-  dailyLimit: '50000000',      // 50 USDC
-  monthlyLimit: '500000000',   // 500 USDC
+  dailyBudget: '50000000',      // 50 USDC
+  monthlyBudget: '500000000',   // 500 USDC
   allowedEndpoints: [],
   blockedEndpoints: [],
   isActive: true,
@@ -61,8 +61,8 @@ describe('PolicyEngine', () => {
         return Promise.resolve([{
           dailySpent: '0',
           monthlySpent: '0',
-          dailyLimit: policy?.dailyLimit || '999999999999999',
-          monthlyLimit: policy?.monthlyLimit || '999999999999999',
+          dailyBudget: policy?.dailyBudget || '999999999999999',
+          monthlyBudget: policy?.monthlyBudget || '999999999999999',
         }]);
       }
       // policies query
@@ -168,8 +168,8 @@ describe('PolicyEngine', () => {
     test('handles large BigInt amounts correctly', async () => {
       mockPolicyQuery(makePolicy({
         maxPerRequest: '999999999999999',
-        dailyLimit: '999999999999999',
-        monthlyLimit: '999999999999999',
+        dailyBudget: '999999999999999',
+        monthlyBudget: '999999999999999',
       }));
       const result = await engine.evaluate(makeRequest(), '999999999999998');
       expect(result.allowed).toBe(true);
@@ -178,7 +178,7 @@ describe('PolicyEngine', () => {
 
   describe('evaluate — daily budget (BigInt)', () => {
     test('blocks when daily budget would be exceeded', async () => {
-      const policy = makePolicy({ dailyLimit: '10000000' }); // 10 USDC
+      const policy = makePolicy({ dailyBudget: '10000000' }); // 10 USDC
       mockPolicyQuery(policy);
       // Simulate 9 USDC already spent
       mockRedis.get.mockImplementation((key: string) => {
@@ -193,7 +193,7 @@ describe('PolicyEngine', () => {
     });
 
     test('allows when daily budget has room', async () => {
-      const policy = makePolicy({ dailyLimit: '10000000' });
+      const policy = makePolicy({ dailyBudget: '10000000' });
       mockPolicyQuery(policy);
       mockRedis.get.mockImplementation((key: string) => {
         if (key.includes(':daily')) return Promise.resolve('5000000');
@@ -209,8 +209,8 @@ describe('PolicyEngine', () => {
   describe('evaluate — monthly budget (BigInt)', () => {
     test('blocks when monthly budget would be exceeded', async () => {
       const policy = makePolicy({
-        dailyLimit: '999999999999999', // large daily limit
-        monthlyLimit: '20000000', // 20 USDC monthly
+        dailyBudget: '999999999999999', // large daily limit
+        monthlyBudget: '20000000', // 20 USDC monthly
       });
       mockPolicyQuery(policy);
       mockRedis.get.mockImplementation((key: string) => {

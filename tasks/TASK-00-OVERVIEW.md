@@ -1,15 +1,20 @@
 # Pag0 MVP 구현 태스크 총괄
 
 > Day 0 준비 완료 상태에서 Day 1~3 구현 시작
+> **Last updated**: 2026-02-12 (Phase 10 추가, gap/requirements analysis 반영)
 
 ## 현재 상태 요약
 
-| 패키지 | 상태 | 완성도 |
-|--------|------|--------|
-| `packages/proxy` | **완성** (통합 + E2E 테스트) | 100% |
-| `packages/dashboard` | **완성** (메트릭+정책+랭킹) | 100% |
-| `packages/mcp` | **완성** (12개 MCP 도구, CDP Wallet 통합) | 100% |
-| `prepare-hackathon/` | Day 0 검증 + 비즈니스 로직 테스트 패턴 완성 | 100% |
+| 패키지 | 상태 | 완성도 | 비고 |
+|--------|------|--------|------|
+| `packages/proxy` | **완성** (Phase 10 정렬 완료) | 100% | TASK-38, 39 반영 |
+| `packages/dashboard` | **완성** (메트릭+정책+랭킹) | 100% | TASK-40 반영 |
+| `packages/mcp` | **완성** (13개 MCP 도구, CDP Wallet 통합) | 100% | TASK-41 반영 |
+| `packages/contracts` | **배포 완료** (SKALE bite-v2-sandbox) | 100% | ReputationRegistry + ValidationRegistry |
+| `subgraph/` | **배포 완료** (Goldsky) | 100% | Agent, FeedbackEvent 인덱싱 |
+| `prepare-hackathon/` | Day 0 검증 완성 | 100% | - |
+
+### 전체 진행률: 40/41 완료 (97.6%) + 1 수동 대기 (TASK-22 Deployment)
 
 ## 의존성 그래프
 
@@ -143,6 +148,43 @@ TASK-22 (Deployment)          ← TASK-11, TASK-12
 | [TASK-35](./TASK-35-env-example-dashboard.md) | ~~.env.example에 Dashboard 환경변수 추가~~ | 전체 | **P2** | ✅ 완료 |
 | [TASK-36](./TASK-36-nextconfig-rewrite-env.md) | ~~next.config rewrite 환경변수 분기~~ | dashboard | **P2** | ✅ 완료 |
 
+### Phase 10: API 계약 정렬 — docs vs codebase gap 해소 (2026-02-12)
+
+> Gap Analysis (.omc/gap-analysis.md) 및 Requirements Analysis (.omc/requirements.md) 기반으로 식별된 데이터 계약 불일치 수정.
+
+| ID | 태스크 | 패키지 | 우선순위 | 상태 |
+|----|--------|--------|----------|------|
+| [TASK-38](./TASK-38-analytics-response-enrichment.md) | Analytics 응답 보강 (topEndpoints cost, endpoints total, costs summary) | proxy | **P1** | ✅ 완료 |
+| [TASK-39](./TASK-39-policy-response-field-rename.md) | Policy 응답 필드명 통일 (dailyLimit → dailyBudget) | proxy, mcp | **P0** | ✅ 완료 |
+| [TASK-40](./TASK-40-dashboard-204-nullable-fix.md) | Dashboard fetchApi 204 처리 + Category nullable 필드 | dashboard | **P1** | ✅ 완료 |
+| [TASK-41](./TASK-41-mcp-route-field-alignment.md) | MCP client/tools 라우트 및 필드명 정렬 | mcp | **P1** | ✅ 완료 |
+
+### 미착수 / 보류
+
+| ID | 태스크 | 패키지 | 우선순위 | 상태 |
+|----|--------|--------|----------|------|
+| [TASK-22](./TASK-22-deployment.md) | Deployment (Fly.io + Vercel) | proxy, dashboard | - | ⏳ 수동 승인 대기 |
+
+### Gap Analysis 발견 사항 (구현 불필요 — 문서 업데이트 또는 Post-MVP)
+
+아래 항목들은 gap-analysis에서 발견되었으나 코드 수정이 아닌 문서 업데이트 대상이거나 MVP 범위 제외 항목:
+
+- **P2-1**: Approval workflow — MVP 제외 (CLAUDE.md에 명시)
+- **P2-2**: Anomaly detection — MVP 제외
+- **P2-3**: Background aggregation jobs — MVP에서는 실시간 쿼리로 대체
+- **P2-6**: SDK package (`@pag0/sdk`) — Post-hackathon
+- **P2-7**: Webhook support — Post-hackathon
+- **P2-8**: Score history tracking — Post-hackathon
+
+### Beyond-Spec 기능 (문서에 없지만 구현 완료된 보너스 기능)
+
+- `/api/smart-request` — AI 프로바이더 자동 선택 + 프록시
+- `/api/reputation/*` — 온체인 평판 프로필/피드백/리더보드
+- `onChainReputation` 필드 — 프록시 응답 메타데이터에 온체인 평판 포함
+- 4-factor 스코어링 — 기존 3차원(cost/latency/reliability) + reputation
+- CDP Wallet (Coinbase Server Wallet) — MCP에서 dual wallet mode
+- OAuth registration — 추가 인증 플로우
+
 ## 병렬 실행 가능 그룹
 
 - **그룹 A** (독립): TASK-01
@@ -155,6 +197,7 @@ TASK-22 (Deployment)          ← TASK-11, TASK-12
 - **그룹 H** (확장, TASK-16 이후): TASK-19, TASK-22 (병렬)
 - **그룹 I** (TASK-19 완료 후): TASK-20
 - **그룹 J** (TASK-20 완료 후): TASK-21
+- **그룹 K** (Phase 10, 병렬): TASK-38, TASK-39, TASK-40, TASK-41
 
 ## 참고 자료
 
@@ -162,6 +205,8 @@ TASK-22 (Deployment)          ← TASK-11, TASK-12
 - `docs/04-API-SPEC.md` — API 엔드포인트 정의
 - `docs/05-DB-SCHEMA.md` — DB 스키마 + Redis 키 패턴
 - `docs/06-DEV-TASKS.md` — 원본 개발 태스크
+- `.omc/gap-analysis.md` — docs vs codebase 갭 분석 결과
+- `.omc/requirements.md` — 갭 기반 요구사항 분석
 - `prepare-hackathon/test-business-logic-day1.ts` — Day 1 테스트 패턴
 - `prepare-hackathon/test-business-logic-day2.ts` — Day 2 테스트 패턴
 - `prepare-hackathon/test-business-logic-day3.ts` — Day 3 테스트 패턴

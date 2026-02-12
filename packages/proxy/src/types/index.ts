@@ -27,8 +27,8 @@ export interface Policy {
   projectId: string;
   name: string;
   maxPerRequest: UsdcAmount;
-  dailyLimit: UsdcAmount;
-  monthlyLimit: UsdcAmount;
+  dailyBudget: UsdcAmount;
+  monthlyBudget: UsdcAmount;
   allowedEndpoints: string[];
   blockedEndpoints: string[];
   isActive: boolean;

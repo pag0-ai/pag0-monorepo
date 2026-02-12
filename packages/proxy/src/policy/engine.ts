@@ -40,8 +40,8 @@ export class PolicyEngine {
         project_id as "projectId",
         name,
         max_per_request as "maxPerRequest",
-        daily_budget as "dailyLimit",
-        monthly_budget as "monthlyLimit",
+        daily_budget as "dailyBudget",
+        monthly_budget as "monthlyBudget",
         allowed_endpoints as "allowedEndpoints",
         blocked_endpoints as "blockedEndpoints",
         is_active as "isActive",
@@ -62,8 +62,8 @@ export class PolicyEngine {
         projectId: request.projectId,
         name: 'Default (No Restrictions)',
         maxPerRequest: '999999999999999', // effectively unlimited
-        dailyLimit: '999999999999999',
-        monthlyLimit: '999999999999999',
+        dailyBudget: '999999999999999',
+        monthlyBudget: '999999999999999',
         allowedEndpoints: [],
         blockedEndpoints: [],
         isActive: true,
@@ -126,24 +126,24 @@ export class PolicyEngine {
     const budgetStatus = await this.budgetTracker.checkBudget(request.projectId);
 
     const dailySpentBigInt = BigInt(budgetStatus.dailySpent);
-    const dailyLimitBigInt = BigInt(policy.dailyLimit);
+    const dailyLimitBigInt = BigInt(policy.dailyBudget);
     if (dailySpentBigInt + costBigInt > dailyLimitBigInt) {
       return {
         allowed: false,
         policy,
         reason: 'DAILY_BUDGET_EXCEEDED',
-        details: `Daily budget exceeded: ${budgetStatus.dailySpent}/${policy.dailyLimit} (requesting ${estimatedCost})`,
+        details: `Daily budget exceeded: ${budgetStatus.dailySpent}/${policy.dailyBudget} (requesting ${estimatedCost})`,
       };
     }
 
     const monthlySpentBigInt = BigInt(budgetStatus.monthlySpent);
-    const monthlyLimitBigInt = BigInt(policy.monthlyLimit);
+    const monthlyLimitBigInt = BigInt(policy.monthlyBudget);
     if (monthlySpentBigInt + costBigInt > monthlyLimitBigInt) {
       return {
         allowed: false,
         policy,
         reason: 'MONTHLY_BUDGET_EXCEEDED',
-        details: `Monthly budget exceeded: ${budgetStatus.monthlySpent}/${policy.monthlyLimit} (requesting ${estimatedCost})`,
+        details: `Monthly budget exceeded: ${budgetStatus.monthlySpent}/${policy.monthlyBudget} (requesting ${estimatedCost})`,
       };
     }
 

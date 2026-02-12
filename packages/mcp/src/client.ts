@@ -157,19 +157,27 @@ export class Pag0Client {
     );
   }
 
-  // ── ERC-8004 Audit ─────────────────────────────────────────
+  // ── ERC-8004 Reputation (on-chain) ──────────────────────────
 
-  async getAuditTrail(params?: { endpoint?: string; period?: string }) {
-    const qs = new URLSearchParams();
-    if (params?.endpoint) qs.set("endpoint", params.endpoint);
-    if (params?.period) qs.set("period", params.period);
-    return this.get(`/api/audit/trail?${qs}`);
+  async getReputationAgent(endpoint: string) {
+    const qs = new URLSearchParams({ id: endpoint });
+    return this.get(`/api/reputation/agent?${qs}`);
   }
 
-  async getReputation(endpoint: string) {
-    return this.get(
-      `/api/audit/reputation/${encodeURIComponent(endpoint)}`,
-    );
+  async getReputationFeedbacks(params: {
+    agentId: string;
+    first?: number;
+    skip?: number;
+  }) {
+    const qs = new URLSearchParams({ agentId: params.agentId });
+    if (params.first) qs.set("first", String(params.first));
+    if (params.skip) qs.set("skip", String(params.skip));
+    return this.get(`/api/reputation/feedbacks?${qs}`);
+  }
+
+  async getReputationLeaderboard(first = 20) {
+    const qs = new URLSearchParams({ first: String(first) });
+    return this.get(`/api/reputation/leaderboard?${qs}`);
   }
 
   // ── Smart Request ──────────────────────────────────────────

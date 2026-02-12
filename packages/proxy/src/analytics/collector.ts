@@ -90,7 +90,7 @@ export class AnalyticsCollector {
         .hincrby(key, 'count', 1)
         .hincrby(key, 'cache_hits', event.cached ? 1 : 0)
         .hincrby(key, 'cache_misses', event.cached ? 0 : 1)
-        .hincrbyfloat(key, 'cost', parseFloat(event.cost))
+        .hincrby(key, 'cost', Number(BigInt(event.cost)))
         .hincrby(key, 'latency_sum', event.latencyMs)
         .hincrby(key, 'response_size_sum', event.responseSize)
         .expire(key, 7200) // 2 hours TTL

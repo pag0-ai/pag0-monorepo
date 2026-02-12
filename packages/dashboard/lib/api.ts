@@ -29,6 +29,11 @@ export async function fetchApi<T>(path: string, options?: RequestInit & { apiKey
     throw new Error(error.error?.message ?? `API error: ${res.status}`);
   }
 
+  // Handle 204 No Content (e.g. DELETE responses)
+  if (res.status === 204) {
+    return undefined as T;
+  }
+
   return res.json();
 }
 
@@ -203,9 +208,9 @@ export async function fetchRankings(params?: {
 
 export interface Category {
   name: string;
-  description: string;
+  description: string | null;
   endpointCount: number;
-  avgScore: number;
+  avgScore: number | null;
 }
 
 export async function fetchCategories(apiKey?: string): Promise<Category[]> {
