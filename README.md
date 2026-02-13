@@ -9,7 +9,39 @@
 - [Node.js](https://nodejs.org/) >= 20
 - [Bun](https://bun.sh/) (proxy runtime)
 - [pnpm](https://pnpm.io/) >= 9
-- [Docker](https://www.docker.com/) (local PostgreSQL + Redis)
+
+## Guides
+
+- [MCP Agent Demo Script 실행 가이드](guides/1-RUN-MCP-AGENT-SCRIPT.md)
+
+## Tech Stack
+
+| Layer | Tech |
+|-------|------|
+| Runtime | Bun |
+| Backend | Hono |
+| Database | PostgreSQL (Supabase) |
+| ERC-8004 Layer | SKALE (Zero Gas) |
+| x402 Payment Layer | @x402/fetch SDK |
+| Cache | Redis (Upstash, ioredis TCP) |
+| Frontend | Next.js + Tailwind + Recharts |
+
+## Structure
+
+```
+pag0-monorepo/
+├── packages/
+│   ├── proxy/         # @pag0/proxy — Hono + Bun backend
+│   │   └── src/
+│   │       ├── db/    # schema.sql, seed.sql, migrate.ts, seed.ts
+│   │       └── ...    # proxy, policy, curation, cache, analytics
+│   ├── dashboard/     # @pag0/dashboard — Next.js + Tailwind frontend
+│   └── mcp/           # @pag0/mcp — MCP Server for Claude Code demo
+├── docs/              # Product & technical documentation
+├── docker-compose.yml # Local Postgres + Redis
+├── .env.local         # Environment variables (gitignored)
+└── package.json       # Monorepo scripts
+```
 
 ## Quick Start
 
@@ -81,6 +113,7 @@ Non-standard ports (5433/6380) are used to avoid conflicts with system-level ins
 The schema includes 10 tables: `users`, `projects`, `policies`, `budgets`, `requests`, `endpoint_metrics_hourly`, `endpoint_metrics_daily`, `endpoint_metrics_monthly`, `endpoint_scores`, `categories`.
 
 Seed data includes:
+
 - 8 API categories (AI, Data, Blockchain, IoT, Finance, Social, Communication, Storage)
 - Demo user (`demo@pag0.dev`, tier: pro)
 - Demo project with default policy (5 USDC/request, 50 USDC/day, 500 USDC/month)
@@ -98,35 +131,6 @@ curl http://localhost:3000/health
 # Test with demo API key
 curl -H "X-Pag0-API-Key: pag0_test_local_dev_key_here" http://localhost:3000/api/policies
 ```
-
-## Structure
-
-```
-pag0-monorepo/
-├── packages/
-│   ├── proxy/         # @pag0/proxy — Hono + Bun backend
-│   │   └── src/
-│   │       ├── db/    # schema.sql, seed.sql, migrate.ts, seed.ts
-│   │       └── ...    # proxy, policy, curation, cache, analytics
-│   ├── dashboard/     # @pag0/dashboard — Next.js + Tailwind frontend
-│   └── mcp/           # @pag0/mcp — MCP Server for Claude Code demo
-├── docs/              # Product & technical documentation
-├── docker-compose.yml # Local Postgres + Redis
-├── .env.local         # Environment variables (gitignored)
-└── package.json       # Monorepo scripts
-```
-
-## Tech Stack
-
-| Layer | Tech |
-|-------|------|
-| Runtime | Bun |
-| Backend | Hono |
-| Database | PostgreSQL (Supabase) |
-| Cache | Redis (Upstash, ioredis TCP) |
-| Blockchain | SKALE (Zero Gas) |
-| Frontend | Next.js + Tailwind + Recharts |
-| x402 | @x402/fetch SDK |
 
 ## License
 
