@@ -9,7 +9,6 @@
 
 set -euo pipefail
 
-BASE_URL="http://localhost:3000"
 MONOREPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 GREEN='\033[0;32m'
@@ -38,29 +37,6 @@ SMART_PROMPT="Tell me a ${STYLES[$S1]} joke about ${TOPICS[$S3]} featuring ${SUB
 # Create temp working directory
 DEMO_DIR="/tmp/pag0-mcp-demo-$(date +%s)"
 mkdir -p "$DEMO_DIR"
-
-echo -e "${BLUE}"
-echo "╔══════════════════════════════════════════╗"
-echo "║  Scenario 4: MCP Agent Demo              ║"
-echo "║  AI Agent with Pag0 MCP Tools + CDP      ║"
-echo "╚══════════════════════════════════════════╝"
-echo -e "${NC}"
-
-# ---- Preflight checks ----
-echo -e "${YELLOW}Preflight checks...${NC}"
-
-if ! command -v claude &>/dev/null; then
-  echo -e "${RED}✗ claude CLI not found. Install: https://docs.anthropic.com/en/docs/claude-code${NC}"
-  exit 1
-fi
-echo -e "${GREEN}✓ claude CLI found${NC}"
-
-if ! curl -sf "$BASE_URL/health" &>/dev/null; then
-  echo -e "${RED}✗ Proxy not running at $BASE_URL${NC}"
-  echo "  Start with: pnpm dev:proxy"
-  exit 1
-fi
-echo -e "${GREEN}✓ Proxy running at $BASE_URL${NC}"
 
 # Ensure MCP package is built
 MCP_DIR="$MONOREPO_ROOT/packages/mcp"
@@ -91,8 +67,43 @@ for _envfile in "$MCP_DIR/.env" "$MONOREPO_ROOT/.env" "$MONOREPO_ROOT/.env.local
       _key=$(grep -E '^PAG0_API_KEY=' "$_envfile" 2>/dev/null | head -1 | cut -d'=' -f2- | sed 's/^["'\'']*//;s/["'\'']*$//' || true)
       [ -n "$_key" ] && PAG0_API_KEY="$_key"
     fi
+    if [ -z "${PAG0_API_URL:-}" ]; then
+      _key=$(grep -E '^PAG0_API_URL=' "$_envfile" 2>/dev/null | head -1 | cut -d'=' -f2- | sed 's/^["'\'']*//;s/["'\'']*$//' || true)
+      [ -n "$_key" ] && PAG0_API_URL="$_key"
+    fi
   fi
 done
+
+BASE_URL="${PAG0_API_URL:-http://localhost:3000}"
+
+
+
+echo -e "${BLUE}"
+echo "╔══════════════════════════════════════════╗"
+echo "║  Scenario 4: MCP Agent Demo              ║"
+echo "║  AI Agent with Pag0 MCP Tools + CDP      ║"
+echo "╚══════════════════════════════════════════╝"
+echo -e "${NC}"
+
+# ---- Preflight checks ----
+echo -e "${YELLOW}Preflight checks...${NC}"
+
+if ! command -v claude &>/dev/null; then
+  echo -e "${RED}✗ claude CLI not found. Install: https://docs.anthropic.com/en/docs/claude-code${NC}"
+  exit 1
+fi
+echo -e "${GREEN}✓ claude CLI found${NC}"
+
+if ! curl -sf "$BASE_URL/health" &>/dev/null; then
+  echo -e "${RED}✗ Proxy not running at $BASE_URL${NC}"
+  echo "  Start with: pnpm dev:proxy"
+  exit 1
+fi
+echo -e "${GREEN}✓ Proxy running at $BASE_URL${NC}"
+
+
+
+
 
 # Determine wallet mode: CDP if all 3 credentials are present
 WALLET_MODE="local"
