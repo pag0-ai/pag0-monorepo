@@ -222,33 +222,27 @@ Summarize the results."
 
 # ===== Step 4.3: Get AI Agent Recommendations =====
 run_agent "4.3" "Get AI Agent Recommendations" \
-  "Use the pag0_recommend tool to get top 3 recommended APIs in the 'AI Agents' category. Show each endpoint's name and score."
+  "Use the pag0_recommend tool to get top 3 recommended APIs in the 'AI Agents' category. For each endpoint, show: name, overall score, number of available resources, and the top 2-3 resource paths with their HTTP method and cost (e.g. POST /x402/swarm/... — 0.01 USDC). This shows agents can discover exactly which APIs to call."
 
 # ===== Step 4.4: Compare Endpoints =====
 run_agent "4.4" "Compare Endpoints" \
-  "Use the pag0_compare tool to compare api-dev.intra-tls2.dctx.link and api-staging.intra-tls2.dctx.link. Show which one wins overall and in each dimension (cost, latency, reliability)."
+  "Use the pag0_compare tool to compare api-dev.intra-tls2.dctx.link and api-staging.intra-tls2.dctx.link. Show which one wins overall and in each dimension (cost, latency, reliability). Also compare the number of available API resources each endpoint offers."
 
-# ===== Step 4.5: Naive Select & Call (multi-tool orchestration) =====
-run_agent "4.5" "Naive Select and Call (x402 payment)" \
-  "You are demonstrating Pag0's smart API selection the MANUAL way — using multiple tools. Do the following steps in order:
+# ===== Step 4.5: x402 Payment Demo (reliable endpoint) =====
+run_agent "4.5" "x402 Payment (Math API)" \
+  "Demonstrate the full resource discovery → payment flow:
+1. First, use pag0_score to look up x402-ai-starter-alpha.vercel.app and find its available API resources.
+2. Pick the first resource. Note the HTTP method and path from the resource data.
+3. Use pag0_request to call the full URL (https://x402-ai-starter-alpha.vercel.app + resource path) with the method from the resource. This is a math API — send a JSON body with two numbers to add.
+Show: the discovered resource (method, path, cost), then the payment result (status, response body, cost in USDC, latency, remaining budget)."
 
-1. Use pag0_recommend to get the top recommended APIs in the 'AI Agents' category.
-
-2. Pick the top 2 endpoints from step 1 and use pag0_compare to compare them. Show the comparison table.
-
-3. Identify the overall winner from step 2.
-
-4. Call the winning provider via pag0_request. The winner should be api-dev.intra-tls2.dctx.link — call it with:
-   POST https://api-dev.intra-tls2.dctx.link/x402/swarm/qrn:swarm:68f9dcfbc87f09b659144239 with body {\"prompt\": \"${SWARM_PROMPT}\", \"max_tokens\": 50}
-   If the server returns a 402 payment response, the wallet will sign the payment automatically.
-
-5. Show a summary: which provider was selected, why (score breakdown), and the API response with latency/cost/cache metadata."
-
-# ===== Step 4.6: Smart Select & Call (single tool) =====
-run_agent "4.6" "Smart Select and Call (x402 payment)" \
-  "Use the pag0_smart_request tool with category 'Content & Media' and prompt '${SMART_PROMPT}'
-
-This should automatically pick the best endpoint, call it via x402 payment, and return the result."
+# ===== Step 4.6: Second x402 Payment (different provider) =====
+run_agent "4.6" "x402 Payment (Motivate API)" \
+  "Demonstrate resource discovery with a different provider:
+1. Use pag0_score to look up x402-motivate-api.vercel.app and find its available resources.
+2. Note the resource's HTTP method, path, cost, and description.
+3. Use pag0_request to call the endpoint using the method and path from the resource data.
+Show: the discovered resource info, then the response (status, body, cost in USDC, latency, remaining budget). Compare cost vs the math API call."
 
 # ===== Step 4.7: Accounting Check =====
 run_agent "4.7" "Accounting Check" \
@@ -259,7 +253,7 @@ Summarize the total cost and any savings from caching."
 
 # ===== Step 4.8: Individual Endpoint Score =====
 run_agent "4.8" "Individual Endpoint Score" \
-  "Use the pag0_score tool to get the detailed score for api-dev.intra-tls2.dctx.link. Show the overall score, individual dimension scores (cost, latency, reliability), weights, and evidence (sample size, period, success rate)."
+  "Use the pag0_score tool to get the detailed score for api.grapevine.markets. Show the overall score, individual dimension scores (cost, latency, reliability), weights, and evidence (sample size, period, success rate). Also show the available API resources — list the first 5 resource paths with their HTTP method and cost. This endpoint has multiple data feed resources with varying prices."
 
 # ===== Step 4.9: Transaction History =====
 run_agent "4.9" "Transaction History" \
