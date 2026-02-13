@@ -4,13 +4,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun run --env-file ../../.env.local --watch src/index.ts",
+    "dev": "bun run --env-file .env.local --watch src/index.ts",
+    "dev:prod": "bun run --env-file .env.production --watch src/index.ts",
     "build": "bun build src/index.ts --outdir dist --target bun",
     "start": "bun run dist/index.js",
     "test": "bun test",
     "lint": "tsc --noEmit",
-    "db:migrate": "bun run --env-file ../../.env.local src/db/migrate.ts",
-    "db:seed": "bun run --env-file ../../.env.local src/db/seed.ts"
+    "db:migrate": "bun run --env-file .env.local src/db/migrate.ts",
+    "db:migrate:prod": "bun run --env-file .env.production src/db/migrate.ts",
+    "db:seed": "bun run --env-file .env.local src/db/seed.ts",
+    "db:seed:prod": "bun run --env-file .env.production src/db/seed.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.0",
