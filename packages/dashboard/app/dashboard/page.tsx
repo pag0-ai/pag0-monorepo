@@ -202,17 +202,17 @@ export default function DashboardPage() {
                 }}
               >{`# Check API rankings
 curl ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/curation/rankings \\
-  -H "X-Pag0-API-Key: ${apiKey ? apiKey.slice(0, 12) + '...' : 'YOUR_API_KEY'}"
+  -H "X-Pag0-API-Key: ${apiKey || 'YOUR_API_KEY'}"
 
 # Proxy a request through Pag0
 curl -X POST ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/proxy \\
-  -H "X-Pag0-API-Key: ${apiKey ? apiKey.slice(0, 12) + '...' : 'YOUR_API_KEY'}" \\
+  -H "X-Pag0-API-Key: ${apiKey || 'YOUR_API_KEY'}" \\
   -H "Content-Type: application/json" \\
   -d '{"targetUrl":"https://api.example.com/data","method":"GET"}'
 
 # Transparent relay (raw 402 pass-through for x402 SDK)
 curl -X POST ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/relay \\
-  -H "X-Pag0-API-Key: ${apiKey ? apiKey.slice(0, 12) + '...' : 'YOUR_API_KEY'}" \\
+  -H "X-Pag0-API-Key: ${apiKey || 'YOUR_API_KEY'}" \\
   -H "X-Pag0-Target-URL: https://x402-ai-starter-alpha.vercel.app/api/add" \\
   -H "Content-Type: application/json" \\
   -d '{"a":1,"b":2}'`}</pre>
