@@ -227,7 +227,11 @@ export class CurationEngine {
 
     // Merge sampleSize: preserve seed base + add real request count
     // baseSampleSize tracks the original seed value so we don't double-count
-    const baseSampleSize = existing?.evidence?.baseSampleSize ?? existing?.evidence?.sampleSize ?? 0;
+    // Note: postgres+bun returns JSONB as string, so parse if needed
+    const existingEvidence = typeof existing?.evidence === 'string'
+      ? JSON.parse(existing.evidence)
+      : existing?.evidence;
+    const baseSampleSize = existingEvidence?.baseSampleSize ?? existingEvidence?.sampleSize ?? 0;
     const mergedEvidence = {
       ...score.evidence,
       sampleSize: baseSampleSize + (score.evidence?.sampleSize ?? score.sampleSize),
