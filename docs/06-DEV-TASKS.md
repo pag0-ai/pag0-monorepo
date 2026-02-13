@@ -1,74 +1,74 @@
-# Pag0 Smart Proxy - 개발 태스크 (3일 해커톤)
+# Pag0 Smart Proxy - Development Tasks (3-Day Hackathon)
 
-> **TL;DR**: 3일 해커톤 기간 동안 Pag0 MVP를 완성하는 상세 개발 계획입니다. Day 0(사전 준비 2시간) + Day 1(Proxy Core + Policy Engine 8시간) + Day 2(Curation + Cache + Analytics 9시간) + Day 3(Dashboard + Demo + Pitch 8시간)으로 구성되며, 각 단계별 태스크, 코드 스니펫, 완료 기준, 리스크 대응 방안을 포함합니다.
+> **TL;DR**: Detailed development plan to complete Pag0 MVP during a 3-day hackathon. Consists of Day 0 (Pre-setup 2 hours) + Day 1 (Proxy Core + Policy Engine 8 hours) + Day 2 (Curation + Cache + Analytics 9 hours) + Day 3 (Dashboard + Demo + Pitch 8 hours), including step-by-step tasks, code snippets, completion criteria, and risk mitigation strategies.
 
-## 관련 문서
+## Related Documentation
 
-| 문서 | 관련성 |
+| Document | Relevance |
 |------|--------|
-| [03-TECH-SPEC.md](03-TECH-SPEC.md) | 아키텍처 및 컴포넌트 상세 |
-| [04-API-SPEC.md](04-API-SPEC.md) | API 엔드포인트 정의 |
-| [05-DB-SCHEMA.md](05-DB-SCHEMA.md) | 데이터베이스 스키마 |
-| [11-DEPLOYMENT-GUIDE.md](11-DEPLOYMENT-GUIDE.md) | 배포 가이드 |
-| [00-GLOSSARY.md](00-GLOSSARY.md) | 용어집 |
+| [03-TECH-SPEC.md](03-TECH-SPEC.md) | Architecture and component details |
+| [04-API-SPEC.md](04-API-SPEC.md) | API endpoint definitions |
+| [05-DB-SCHEMA.md](05-DB-SCHEMA.md) | Database schema |
+| [11-DEPLOYMENT-GUIDE.md](11-DEPLOYMENT-GUIDE.md) | Deployment guide |
+| [00-GLOSSARY.md](00-GLOSSARY.md) | Glossary |
 
-## 목표
+## Goals
 
-3일 동안 **working MVP**를 완성하여 해커톤에서 시연 가능한 상태로 만듭니다.
+Complete a **working MVP** in 3 days that can be demoed at the hackathon.
 
-**성공 기준**:
+**Success Criteria**:
 
-- ✅ 모든 핵심 기능 동작 (Proxy, Policy, Curation, Cache, Analytics)
-- ✅ 3개 시나리오 데모 가능 (Policy enforcement, API curation, Cache savings)
-- ✅ 배포된 프로덕션 엔드포인트
-- ✅ Pitch deck 완성
+- ✅ All core features working (Proxy, Policy, Curation, Cache, Analytics)
+- ✅ 3 demo scenarios ready (Policy enforcement, API curation, Cache savings)
+- ✅ Deployed production endpoints
+- ✅ Pitch deck complete
 
 ```yaml
-# 개발 타임라인 요약
+# Development Timeline Summary
 timeline:
   total_days: 3
   total_hours: 27
   breakdown:
     day_0:
-      이름: "사전 준비"
-      시간: "~2시간"
-      핵심: "환경 설정, 외부 서비스 계정, x402 SDK 테스트"
+      name: "Pre-setup"
+      time: "~2 hours"
+      core: "Environment setup, external service accounts, x402 SDK testing"
     day_1:
-      이름: "Proxy Core + Policy Engine"
-      시간: "8시간"
-      오전: "Proxy Core (x402 통합, 프록시 엔드포인트, Payment Relay)"
-      오후: "Policy Engine (DB 스키마, CRUD API, Budget Check, Whitelist)"
+      name: "Proxy Core + Policy Engine"
+      time: "8 hours"
+      morning: "Proxy Core (x402 integration, proxy endpoint, Payment Relay)"
+      afternoon: "Policy Engine (DB schema, CRUD API, Budget Check, Whitelist)"
     day_2:
-      이름: "Curation + Cache + Analytics"
-      시간: "9시간"
-      오전: "Curation Engine (Scoring, Recommendation API) + Cache Layer (Redis 연결, 키 생성, TTL 관리)"
-      오후: "Analytics (메트릭 수집, Analytics API)"
-      저녁: "통합 테스트 및 최적화"
+      name: "Curation + Cache + Analytics"
+      time: "9 hours"
+      morning: "Curation Engine (Scoring, Recommendation API) + Cache Layer (Redis connection, key generation, TTL management)"
+      afternoon: "Analytics (metrics collection, Analytics API)"
+      evening: "Integration testing and optimization"
     day_3:
-      이름: "Dashboard + Demo + Pitch"
-      시간: "8시간"
-      오전: "Dashboard UI (Next.js, 시각화, 정책 관리, 랭킹)"
-      오후: "Demo 스크립트, Pitch Deck, 배포"
+      name: "Dashboard + Demo + Pitch"
+      time: "8 hours"
+      morning: "Dashboard UI (Next.js, visualization, policy management, rankings)"
+      afternoon: "Demo scripts, Pitch Deck, deployment"
 ```
 
 ---
 
-## Day 0: 사전 준비 (~2시간)
+## Day 0: Pre-setup (~2 hours)
 
-### 환경 설정
+### Environment Setup
 
-- [ ] **Bun 설치 및 검증**
+- [ ] **Install and verify Bun**
   - `curl -fsSL https://bun.sh/install | bash`
-  - `bun --version` 확인
-  - 시간: 10분
+  - Verify `bun --version`
+  - Time: 10 minutes
 
-- [ ] **프로젝트 초기화**
+- [ ] **Initialize project**
   - `mkdir pag0-proxy && cd pag0-proxy`
-  - `bun init` 실행
-  - `package.json` 설정
-  - 시간: 15분
+  - Run `bun init`
+  - Configure `package.json`
+  - Time: 15 minutes
 
-- [ ] **Dependencies 설치**
+- [ ] **Install dependencies**
 
   ```bash
   bun add hono @hono/node-server
@@ -79,16 +79,16 @@ timeline:
   bun add -d @types/node typescript
   ```
 
-  - 시간: 20분
+  - Time: 20 minutes
 
-- [ ] **외부 서비스 계정 생성**
-  - [ ] Upstash Redis 계정 생성 (<https://upstash.com>)
-  - [ ] Supabase 계정 생성 (<https://supabase.com>)
-  - [ ] SKALE testnet 설정 (<https://skale.space>)
-  - [ ] Fly.io 계정 생성 (<https://fly.io>)
-  - 시간: 40분
+- [ ] **Create external service accounts**
+  - [ ] Create Upstash Redis account (<https://upstash.com>)
+  - [ ] Create Supabase account (<https://supabase.com>)
+  - [ ] Setup SKALE testnet (<https://skale.space>)
+  - [ ] Create Fly.io account (<https://fly.io>)
+  - Time: 40 minutes
 
-- [ ] **환경 변수 설정**
+- [ ] **Configure environment variables**
 
   ```bash
   # .env
@@ -100,28 +100,28 @@ timeline:
   PORT=3000
   ```
 
-  - 시간: 15분
+  - Time: 15 minutes
 
-- [ ] **x402 SDK 테스트**
-  - 간단한 x402 요청 테스트 스크립트 작성
-  - Facilitator 연결 확인
-  - 시간: 20분
+- [ ] **Test x402 SDK**
+  - Write simple x402 request test script
+  - Verify Facilitator connection
+  - Time: 20 minutes
 
-**Day 0 완료 기준**:
+**Day 0 Completion Criteria**:
 
-- ✅ 개발 환경 완전히 설정됨
-- ✅ 모든 외부 서비스 접근 가능
-- ✅ x402 SDK 동작 확인
+- ✅ Development environment fully configured
+- ✅ All external services accessible
+- ✅ x402 SDK verified working
 
 ---
 
-## Day 1: Proxy Core + Policy Engine (8시간)
+## Day 1: Proxy Core + Policy Engine (8 hours)
 
-### Day 1 Morning (4시간): Proxy Core
+### Day 1 Morning (4 hours): Proxy Core
 
-#### Task 1.1: 프로젝트 구조 생성 (30분)
+#### Task 1.1: Create Project Structure (30 minutes)
 
-- [ ] **디렉토리 구조 생성**
+- [ ] **Create directory structure**
 
   ```
   src/
@@ -144,7 +144,7 @@ timeline:
         └── index.ts       # TypeScript interfaces
   ```
 
-- [ ] **기본 Hono 서버 설정**
+- [ ] **Basic Hono Server Setup**
 
   ```typescript
   // src/index.ts
@@ -157,11 +157,11 @@ timeline:
   export default app;
   ```
 
-  - 시간: 30분
+  - Time: 30 minutes
 
-#### Task 1.2: x402 SDK Integration (1시간)
+#### Task 1.2: x402 SDK Integration (1 hour)
 
-- [ ] **x402 클라이언트 래퍼 작성**
+- [ ] **Write x402 client wrapper**
 
   ```typescript
   // src/proxy/x402.ts
@@ -185,18 +185,18 @@ timeline:
   }
   ```
 
-- [ ] **402 응답 파싱 로직**
-  - Payment Request 추출
-  - Agent에게 relay할 형식 변환
+- [ ] **402 response parsing logic**
+  - Extract Payment Request
+  - Transform format for relaying to Agent
 
-- [ ] **테스트**
-  - 실제 x402 서버에 요청
-  - 402 응답 파싱 확인
-  - 시간: 1시간
+- [ ] **Test**
+  - Request to actual x402 server
+  - Verify 402 response parsing
+  - Time: 1 hour
 
-#### Task 1.3: Proxy Endpoint 구현 (1.5시간)
+#### Task 1.3: Implement Proxy Endpoint (1.5 hours)
 
-- [ ] **POST /proxy 엔드포인트 생성**
+- [ ] **Create POST /proxy endpoint**
 
   ```typescript
   // src/index.ts
@@ -209,7 +209,7 @@ timeline:
   });
   ```
 
-- [ ] **ProxyCore 클래스 구현**
+- [ ] **Implement ProxyCore class**
 
   ```typescript
   // src/proxy/core.ts
@@ -230,19 +230,19 @@ timeline:
   }
   ```
 
-- [ ] **에러 처리**
+- [ ] **Error handling**
   - Network errors
   - x402 server timeout
   - Invalid response
 
-- [ ] **테스트**
-  - Postman/curl로 프록시 요청
-  - 402 응답 확인
-  - 시간: 1.5시간
+- [ ] **Test**
+  - Proxy request with Postman/curl
+  - Verify 402 response
+  - Time: 1.5 hours
 
-#### Task 1.4: Payment Relay 로직 (1시간)
+#### Task 1.4: Payment Relay Logic (1 hour)
 
-- [ ] **Signed Payment 처리**
+- [ ] **Handle Signed Payment**
 
   ```typescript
   if (req.signedPayment) {
@@ -260,42 +260,42 @@ timeline:
   }
   ```
 
-- [ ] **Facilitator 클라이언트**
-  - Verify endpoint 호출
-  - Settle endpoint 호출 (optional)
+- [ ] **Facilitator client**
+  - Call Verify endpoint
+  - Call Settle endpoint (optional)
 
-- [ ] **테스트**
-  - Mock Agent 시뮬레이션
-  - Payment flow 전체 검증
-  - 시간: 1시간
+- [ ] **Test**
+  - Simulate Mock Agent
+  - Verify entire Payment flow
+  - Time: 1 hour
 
-**Day 1 Morning 완료 기준**:
+**Day 1 Morning Completion Criteria**:
 
-- ✅ Proxy endpoint 동작
-- ✅ x402 요청 중계 성공
-- ✅ 402 응답 파싱 및 relay
-- ✅ Payment flow 전체 동작
+- ✅ Proxy endpoint working
+- ✅ x402 request relay successful
+- ✅ 402 response parsing and relay
+- ✅ Complete Payment flow working
 
 ---
 
-### Day 1 Afternoon (4시간): Policy Engine
+### Day 1 Afternoon (4 hours): Policy Engine
 
-#### Task 1.5: Database Schema 생성 (1시간)
+#### Task 1.5: Create Database Schema (1 hour)
 
-- [ ] **Supabase 프로젝트 생성**
-  - SQL Editor에서 스키마 실행
+- [ ] **Create Supabase project**
+  - Execute schema in SQL Editor
 
-- [ ] **핵심 테이블 생성**
+- [ ] **Create core tables**
 
   ```sql
-  -- 05-DB-SCHEMA.md 참조
+  -- See 05-DB-SCHEMA.md
   CREATE TABLE users (...);
   CREATE TABLE projects (...);
   CREATE TABLE policies (...);
   CREATE TABLE budgets (...);
   ```
 
-- [ ] **PostgreSQL 클라이언트 설정**
+- [ ] **Setup PostgreSQL client**
 
   ```typescript
   // src/db/postgres.ts
@@ -305,15 +305,15 @@ timeline:
   export default sql;
   ```
 
-- [ ] **초기 데이터 삽입**
-  - 테스트 사용자
-  - 테스트 프로젝트
-  - 기본 정책
-  - 시간: 1시간
+- [ ] **Insert initial data**
+  - Test user
+  - Test project
+  - Default policy
+  - Time: 1 hour
 
-#### Task 1.6: Policy CRUD API (1시간)
+#### Task 1.6: Policy CRUD API (1 hour)
 
-- [ ] **Policy 인터페이스 정의**
+- [ ] **Define Policy interface**
 
   ```typescript
   // src/types/index.ts
@@ -331,14 +331,14 @@ timeline:
   }
   ```
 
-- [ ] **API 엔드포인트 구현**
-  - `GET /api/policies` - 목록 조회
-  - `POST /api/policies` - 생성
-  - `GET /api/policies/:id` - 상세 조회
-  - `PUT /api/policies/:id` - 수정
-  - `DELETE /api/policies/:id` - 삭제
+- [ ] **Implement API endpoints**
+  - `GET /api/policies` - List policies
+  - `POST /api/policies` - Create
+  - `GET /api/policies/:id` - Get details
+  - `PUT /api/policies/:id` - Update
+  - `DELETE /api/policies/:id` - Delete
 
-- [ ] **Database 쿼리 함수**
+- [ ] **Database query functions**
 
   ```typescript
   // src/db/policies.ts
@@ -351,19 +351,19 @@ timeline:
   }
   ```
 
-- [ ] **테스트**
-  - CRUD 모든 동작 확인
-  - 시간: 1시간
+- [ ] **Test**
+  - Verify all CRUD operations
+  - Time: 1 hour
 
-#### Task 1.7: Budget Check 로직 (1시간)
+#### Task 1.7: Budget Check Logic (1 hour)
 
-- [ ] **Budget Tracker 클래스**
+- [ ] **Budget Tracker class**
 
   ```typescript
   // src/policy/budget.ts
   export class BudgetTracker {
     async getDailySpent(projectId: string): Promise<string> {
-      // PostgreSQL budgets 테이블 조회
+      // Query PostgreSQL budgets table
       const result = await sql`
         SELECT daily_spent FROM budgets
         WHERE project_id = ${projectId}
@@ -383,16 +383,16 @@ timeline:
   ```
 
 - [ ] **Redis fallback (optional)**
-  - 성능 최적화를 위한 Redis 카운터
+  - Redis counter for performance optimization
 
-- [ ] **테스트**
-  - 예산 차감 동작 확인
-  - 초과 시 에러 확인
-  - 시간: 1시간
+- [ ] **Test**
+  - Verify budget deduction
+  - Verify error on exceeded budget
+  - Time: 1 hour
 
-#### Task 1.8: Whitelist Matching (1시간)
+#### Task 1.8: Whitelist Matching (1 hour)
 
-- [ ] **PolicyEngine 클래스**
+- [ ] **PolicyEngine Class**
 
   ```typescript
   // src/policy/engine.ts
@@ -440,7 +440,7 @@ timeline:
   }
   ```
 
-- [ ] **ProxyCore에 Policy 통합**
+- [ ] **Integrate Policy into ProxyCore**
 
   ```typescript
   async handleRequest(req: ProxyRequest): Promise<ProxyResponse> {
@@ -454,28 +454,28 @@ timeline:
   }
   ```
 
-- [ ] **테스트**
-  - Whitelist 매칭
-  - Blocklist 차단
-  - 예산 초과 차단
-  - 시간: 1시간
+- [ ] **Test**
+  - Whitelist matching
+  - Blocklist blocking
+  - Budget exceeded blocking
+  - Time: 1 hour
 
-**Day 1 Afternoon 완료 기준**:
+**Day 1 Afternoon Completion Criteria**:
 
-- ✅ Policy CRUD API 동작
-- ✅ Budget tracking 동작
-- ✅ Whitelist/Blacklist 필터링 동작
-- ✅ Proxy에서 Policy enforcement 동작
+- ✅ Policy CRUD API working
+- ✅ Budget tracking working
+- ✅ Whitelist/Blacklist filtering working
+- ✅ Policy enforcement in Proxy working
 
 ---
 
-## Day 2: Curation + Cache + Analytics (9시간)
+## Day 2: Curation + Cache + Analytics (9 hours)
 
-### Day 2 Morning (4시간): Curation Engine + Cache Layer
+### Day 2 Morning (4 hours): Curation Engine + Cache Layer
 
-#### Task 2.1: Redis 연결 (30분)
+#### Task 2.1: Redis Connection (30 minutes)
 
-- [ ] **Redis 클라이언트 설정**
+- [ ] **Setup Redis client**
 
   ```typescript
   // src/cache/redis.ts
@@ -485,13 +485,13 @@ timeline:
   export default redis;
   ```
 
-- [ ] **연결 테스트**
-  - `redis.ping()` 확인
-  - 시간: 30분
+- [ ] **Test connection**
+  - Verify `redis.ping()`
+  - Time: 30 minutes
 
-#### Task 2.2: Cache Key 생성 (30분)
+#### Task 2.2: Cache Key Generation (30 minutes)
 
-- [ ] **캐시 키 생성 로직**
+- [ ] **Cache key generation logic**
 
   ```typescript
   // src/cache/layer.ts
@@ -506,14 +506,14 @@ timeline:
   }
   ```
 
-- [ ] **테스트**
-  - 동일 요청 → 동일 키
-  - 다른 요청 → 다른 키
-  - 시간: 30분
+- [ ] **Test**
+  - Same request → same key
+  - Different request → different key
+  - Time: 30 minutes
 
-#### Task 2.3: Cache Store/Retrieve (1시간)
+#### Task 2.3: Cache Store/Retrieve (1 hour)
 
-- [ ] **Cache 저장**
+- [ ] **Cache store**
 
   ```typescript
   async set(key: string, value: any, ttl: number = 300): Promise<void> {
@@ -528,7 +528,7 @@ timeline:
   }
   ```
 
-- [ ] **Cache 조회**
+- [ ] **Cache retrieve**
 
   ```typescript
   async get(key: string): Promise<any | null> {
@@ -539,7 +539,7 @@ timeline:
   }
   ```
 
-- [ ] **ProxyCore에 통합**
+- [ ] **Integrate into ProxyCore**
 
   ```typescript
   async handleRequest(req: ProxyRequest): Promise<ProxyResponse> {
@@ -565,14 +565,14 @@ timeline:
   }
   ```
 
-- [ ] **테스트**
-  - 첫 요청 → cache miss
-  - 두 번째 요청 → cache hit
-  - 시간: 1시간
+- [ ] **Test**
+  - First request → cache miss
+  - Second request → cache hit
+  - Time: 1 hour
 
-#### Task 2.4: TTL Management (1시간)
+#### Task 2.4: TTL Management (1 hour)
 
-- [ ] **Pattern-based TTL 규칙**
+- [ ] **Pattern-based TTL rules**
 
   ```typescript
   interface CacheConfig {
@@ -593,7 +593,7 @@ timeline:
   }
   ```
 
-- [ ] **Cache 무효화**
+- [ ] **Cache invalidation**
 
   ```typescript
   async invalidate(pattern: string): Promise<number> {
@@ -603,40 +603,40 @@ timeline:
   }
   ```
 
-- [ ] **API 엔드포인트**
-  - `DELETE /api/cache/:pattern` - 캐시 무효화
+- [ ] **API endpoint**
+  - `DELETE /api/cache/:pattern` - Invalidate cache
 
-- [ ] **테스트**
-  - 패턴별 TTL 적용
-  - 무효화 동작
-  - 시간: 1시간
+- [ ] **Test**
+  - Apply TTL by pattern
+  - Test invalidation
+  - Time: 1 hour
 
-#### Task 2.5: Cache Bypass (30분)
+#### Task 2.5: Cache Bypass (30 minutes)
 
-- [ ] **cacheBypass 파라미터 처리**
-  - `POST /proxy` body에 `cacheBypass: true` 옵션
+- [ ] **Handle cacheBypass parameter**
+  - `cacheBypass: true` option in `POST /proxy` body
 
-- [ ] **테스트**
-  - `cacheBypass: true` → 항상 fresh request
-  - 시간: 30분
+- [ ] **Test**
+  - `cacheBypass: true` → always fresh request
+  - Time: 30 minutes
 
-**Day 2 Morning 완료 기준**:
+**Day 2 Morning Completion Criteria**:
 
-- ✅ Redis 캐싱 동작
-- ✅ Cache hit/miss 정상 작동
-- ✅ TTL 관리 동작
-- ✅ Cache bypass 옵션 동작
+- ✅ Redis caching working
+- ✅ Cache hit/miss working properly
+- ✅ TTL management working
+- ✅ Cache bypass option working
 
 ---
 
-### Day 2 Afternoon (3시간): Analytics
+### Day 2 Afternoon (3 hours): Analytics
 
-#### Task 2.6: Metrics Collection (1시간)
+#### Task 2.6: Metrics Collection (1 hour)
 
-- [ ] **RequestLog 테이블 생성**
+- [ ] **Create RequestLog table**
 
   ```sql
-  -- 05-DB-SCHEMA.md 참조
+  -- See 05-DB-SCHEMA.md
   CREATE TABLE requests (...);
   ```
 
@@ -676,7 +676,7 @@ timeline:
   }
   ```
 
-- [ ] **ProxyCore에 통합**
+- [ ] **Integrate into ProxyCore**
 
   ```typescript
   // After successful request
@@ -692,12 +692,12 @@ timeline:
   });
   ```
 
-- [ ] **테스트**
-  - 요청 후 DB에 로그 저장 확인
-  - Redis 카운터 증가 확인
-  - 시간: 1시간
+- [ ] **Test**
+  - Verify logs saved to DB after request
+  - Verify Redis counter increment
+  - Time: 1 hour
 
-#### Task 2.7: Analytics API (1.5시간)
+#### Task 2.7: Analytics API (1.5 hours)
 
 - [ ] **GET /api/analytics/summary**
 
@@ -747,41 +747,41 @@ timeline:
   ```
 
 - [ ] **GET /api/analytics/costs**
-  - 시계열 데이터 (daily granularity)
+  - Time series data (daily granularity)
 
 - [ ] **GET /api/analytics/cache**
-  - 캐시 성능 분석
+  - Cache performance analysis
 
-- [ ] **테스트**
-  - 각 엔드포인트 응답 확인
-  - 시간: 1.5시간
+- [ ] **Test**
+  - Verify each endpoint response
+  - Time: 1.5 hours
 
-#### Task 2.8: Aggregation (30분)
+#### Task 2.8: Aggregation (30 minutes)
 
-- [ ] **Background job 설정 (optional)**
+- [ ] **Setup background job (optional)**
   - Hourly/Daily aggregation
-  - `endpoint_metrics_*` 테이블 업데이트
+  - Update `endpoint_metrics_*` tables
 
-- [ ] **또는 실시간 집계**
-  - 쿼리 시점에 집계 (MVP는 이 방식 권장)
+- [ ] **Or real-time aggregation**
+  - Aggregate at query time (recommended for MVP)
 
-- [ ] **테스트**
-  - Aggregation 결과 확인
-  - 시간: 30분
+- [ ] **Test**
+  - Verify aggregation results
+  - Time: 30 minutes
 
-**Day 2 Afternoon 완료 기준**:
+**Day 2 Afternoon Completion Criteria**:
 
-- ✅ Metrics 수집 동작
-- ✅ PostgreSQL에 로그 저장
-- ✅ Analytics API 응답 정상
+- ✅ Metrics collection working
+- ✅ Logs saved to PostgreSQL
+- ✅ Analytics API responding properly
 
 ---
 
-### Day 2 Evening (2시간): Curation Engine
+### Day 2 Evening (2 hours): Curation Engine
 
-#### Task 2.9: Scoring Algorithm (1시간)
+#### Task 2.9: Scoring Algorithm (1 hour)
 
-- [ ] **EndpointScore 테이블 생성**
+- [ ] **Create EndpointScore table**
 
   ```sql
   CREATE TABLE endpoint_scores (...);
@@ -851,11 +851,11 @@ timeline:
   }
   ```
 
-- [ ] **테스트**
-  - 점수 계산 로직 확인
-  - 시간: 1시간
+- [ ] **Test**
+  - Verify score calculation logic
+  - Time: 1 hour
 
-#### Task 2.10: Recommendation API (1시간)
+#### Task 2.10: Recommendation API (1 hour)
 
 - [ ] **GET /api/curation/recommend**
 
@@ -894,31 +894,31 @@ timeline:
   ```
 
 - [ ] **GET /api/curation/rankings**
-  - 카테고리별 전체 랭킹
+  - Full rankings by category
 
 - [ ] **GET /api/curation/categories**
-  - 카테고리 목록
+  - List categories
 
-- [ ] **테스트**
-  - Recommendation 응답 확인
-  - Compare 동작 확인
-  - 시간: 1시간
+- [ ] **Test**
+  - Verify Recommendation response
+  - Verify Compare functionality
+  - Time: 1 hour
 
-**Day 2 Evening 완료 기준**:
+**Day 2 Evening Completion Criteria**:
 
-- ✅ Scoring algorithm 동작
-- ✅ Recommend API 응답 정상
-- ✅ Compare API 응답 정상
+- ✅ Scoring algorithm working
+- ✅ Recommend API responding properly
+- ✅ Compare API responding properly
 
 ---
 
-## Day 3: Dashboard + Demo + Pitch (8시간)
+## Day 3: Dashboard + Demo + Pitch (8 hours)
 
-### Day 3 Morning (4시간): Dashboard UI
+### Day 3 Morning (4 hours): Dashboard UI
 
-#### Task 3.1: Next.js 프로젝트 생성 (30분)
+#### Task 3.1: Create Next.js Project (30 minutes)
 
-- [ ] **Dashboard 프로젝트 초기화**
+- [ ] **Initialize Dashboard project**
 
   ```bash
   cd ..
@@ -926,7 +926,7 @@ timeline:
   cd pag0-dashboard
   ```
 
-- [ ] **Dependencies 설치**
+- [ ] **Install dependencies**
 
   ```bash
   bun add recharts          # Charts
@@ -934,7 +934,7 @@ timeline:
   bun add lucide-react      # Icons
   ```
 
-- [ ] **API 클라이언트 설정**
+- [ ] **Setup API client**
 
   ```typescript
   // lib/api.ts
@@ -948,9 +948,9 @@ timeline:
   }
   ```
 
-- [ ] 시간: 30분
+- [ ] Time: 30 minutes
 
-#### Task 3.2: Metrics Visualization (1.5시간)
+#### Task 3.2: Metrics Visualization (1.5 hours)
 
 - [ ] **Dashboard Layout**
 
@@ -993,9 +993,9 @@ timeline:
   - Top endpoints by cost
   - Request count, latency, cache hit rate
 
-- [ ] 시간: 1.5시간
+- [ ] Time: 1.5 hours
 
-#### Task 3.3: Policy Management UI (1시간)
+#### Task 3.3: Policy Management UI (1 hour)
 
 - [ ] **Policy List**
 
@@ -1039,9 +1039,9 @@ timeline:
   - Budget inputs (USDC)
   - Whitelist/Blacklist inputs
 
-- [ ] 시간: 1시간
+- [ ] Time: 1 hour
 
-#### Task 3.4: API Ranking Board (1시간)
+#### Task 3.4: API Ranking Board (1 hour)
 
 - [ ] **Rankings Page**
 
@@ -1094,22 +1094,22 @@ timeline:
 - [ ] **Score Badges**
   - Color-coded scores (green >80, yellow 60-80, red <60)
 
-- [ ] 시간: 1시간
+- [ ] Time: 1 hour
 
-**Day 3 Morning 완료 기준**:
+**Day 3 Morning Completion Criteria**:
 
-- ✅ Dashboard UI 동작
-- ✅ Metrics 시각화
-- ✅ Policy 관리 UI
-- ✅ API Ranking Board 표시
+- ✅ Dashboard UI working
+- ✅ Metrics visualization
+- ✅ Policy management UI
+- ✅ API Ranking Board display
 
 ---
 
-### Day 3 Afternoon (4시간): Demo + Pitch
+### Day 3 Afternoon (4 hours): Demo + Pitch
 
-#### Task 3.5: Agent Demo Script (1.5시간)
+#### Task 3.5: Agent Demo Script (1.5 hours)
 
-- [ ] **Demo 시나리오 3가지 작성**
+- [ ] **Write 3 demo scenarios**
 
 **Scenario 1: Policy Enforcement**
 
@@ -1231,27 +1231,27 @@ rankings.forEach((api, i) => {
 });
 ```
 
-- [ ] **Demo 비디오 녹화** (optional)
-  - 각 시나리오 실행 화면
-  - Dashboard UI 조작
+- [ ] **Record demo video** (optional)
+  - Each scenario execution screen
+  - Dashboard UI operations
 
-- [ ] 시간: 1.5시간
+- [ ] Time: 1.5 hours
 
-#### Task 3.6: Pitch Deck 작성 (1.5시간)
+#### Task 3.6: Create Pitch Deck (1.5 hours)
 
-- [ ] **슬라이드 구성** (10-12 슬라이드)
+- [ ] **Slide structure** (10-12 slides)
 
 **1. Cover Slide**
 
-- Pag0 로고
+- Pag0 Logo
 - Tagline: "The Smart Proxy Layer for x402 Ecosystem"
 - Team name
 
 **2. Problem (3 Pains)**
 
-- 비용 제어 부재 (예산 초과 위험)
-- 반복 요청 비효율 (중복 결제)
-- API 선택 정보 부족 (주관적 리뷰만 존재)
+- No cost control (budget overrun risk)
+- Inefficient repeated requests (duplicate payments)
+- Lack of API selection information (only subjective reviews exist)
 
 **3. Solution (3-in-1 Value)**
 
@@ -1267,15 +1267,15 @@ rankings.forEach((api, i) => {
 
 **5. Market Opportunity**
 
-- x402 생태계 성장 (Coinbase backing)
-- AI Agent 시장 확대
-- TAM/SAM/SOM 추정
+- x402 ecosystem growth (Coinbase backing)
+- AI Agent market expansion
+- TAM/SAM/SOM estimation
 
 **6. Unique Positioning**
 
-- Layer map (Pag0의 유일한 Proxy layer)
-- vs SlinkyLayer (주관 vs 객관 데이터)
-- vs x402 SDK (프로토콜 vs 제어)
+- Layer map (Pag0 is the only Proxy layer)
+- vs SlinkyLayer (subjective vs objective data)
+- vs x402 SDK (protocol vs control)
 
 **7. Technology Stack**
 
@@ -1311,15 +1311,15 @@ rankings.forEach((api, i) => {
 - Contact info
 - Live demo link
 
-- [ ] **디자인 도구**
+- [ ] **Design tools**
   - Canva / Figma / Google Slides
-  - Pag0 브랜딩 (color scheme, logo)
+  - Pag0 branding (color scheme, logo)
 
-- [ ] 시간: 1.5시간
+- [ ] Time: 1.5 hours
 
-#### Task 3.7: 배포 (1시간)
+#### Task 3.7: Deployment (1 hour)
 
-- [ ] **Fly.io 배포 (Backend)**
+- [ ] **Deploy to Fly.io (Backend)**
 
   ```bash
   cd pag0-proxy
@@ -1328,177 +1328,177 @@ rankings.forEach((api, i) => {
   fly secrets set UPSTASH_REDIS_URL=... SUPABASE_URL=...
   ```
 
-- [ ] **Vercel 배포 (Dashboard)**
+- [ ] **Deploy to Vercel (Dashboard)**
 
   ```bash
   cd pag0-dashboard
   vercel --prod
   ```
 
-- [ ] **DNS 설정** (optional)
+- [ ] **DNS setup** (optional)
   - api.pag0.dev → Fly.io
   - app.pag0.dev → Vercel
 
 - [ ] **Health check**
   - `curl https://api.pag0.dev/health`
-  - Dashboard 접속 확인
+  - Verify Dashboard access
 
-- [ ] 시간: 1시간
+- [ ] Time: 1 hour
 
-**Day 3 Afternoon 완료 기준**:
+**Day 3 Afternoon Completion Criteria**:
 
-- ✅ 3개 시나리오 데모 스크립트
-- ✅ Pitch Deck 완성
-- ✅ 프로덕션 배포 완료
-- ✅ Live demo 준비 완료
+- ✅ 3 demo scenario scripts
+- ✅ Pitch Deck complete
+- ✅ Production deployment complete
+- ✅ Live demo ready
 
 ---
 
-## 리스크 대응 전략
+## Risk Mitigation Strategy
 
 ```yaml
-# 리스크 매트릭스
+# Risk Matrix
 risks:
   day_1:
-    - risk: "x402 SDK 통합 실패"
-      severity: "높음"
-      mitigation: "Day 0에 미리 테스트"
-      fallback: "Mock x402 server 사용 (402 응답 시뮬레이션)"
-    - risk: "Policy Engine 복잡도"
-      severity: "중간"
-      mitigation: "MVP는 기본 기능만 (whitelist, budget)"
+    - risk: "x402 SDK integration failure"
+      severity: "high"
+      mitigation: "Test in advance on Day 0"
+      fallback: "Use Mock x402 server (402 response simulation)"
+    - risk: "Policy Engine complexity"
+      severity: "medium"
+      mitigation: "MVP has basic features only (whitelist, budget)"
       defer: "Approval workflow, Anomaly detection (Post-hackathon)"
   day_2:
-    - risk: "Redis 캐싱 이슈"
-      severity: "중간"
-      mitigation: "Upstash 대신 로컬 Redis (Docker)"
+    - risk: "Redis caching issues"
+      severity: "medium"
+      mitigation: "Local Redis (Docker) instead of Upstash"
       fallback: "In-memory cache (Map)"
-    - risk: "Analytics aggregation 성능"
-      severity: "낮음"
-      mitigation: "Hourly aggregation은 나중에, 실시간 쿼리만 사용"
+    - risk: "Analytics aggregation performance"
+      severity: "low"
+      mitigation: "Hourly aggregation later, use real-time queries only"
       defer: "Background jobs (Post-hackathon)"
-    - risk: "Curation 데이터 부족"
-      severity: "중간"
-      mitigation: "Seed data 생성 (synthetic metrics)"
+    - risk: "Curation data shortage"
+      severity: "medium"
+      mitigation: "Generate seed data (synthetic metrics)"
       fallback: "Mock scores"
   day_3:
-    - risk: "Dashboard UI 개발 시간 부족"
-      severity: "중간"
-      mitigation: "기본 table만 사용 (Tailwind CSS)"
-      defer: "고급 charts, animations (Post-hackathon)"
-    - risk: "배포 실패"
-      severity: "높음"
-      mitigation: "Day 2 저녁에 미리 배포 테스트"
-      fallback: "localhost demo (녹화 영상)"
-    - risk: "데모 시나리오 동작 안함"
-      severity: "높음"
-      mitigation: "사전 리허설 (Day 3 아침)"
-      fallback: "녹화된 데모 비디오"
+    - risk: "Dashboard UI development time shortage"
+      severity: "medium"
+      mitigation: "Use basic tables only (Tailwind CSS)"
+      defer: "Advanced charts, animations (Post-hackathon)"
+    - risk: "Deployment failure"
+      severity: "high"
+      mitigation: "Test deployment in Day 2 evening"
+      fallback: "localhost demo (recorded video)"
+    - risk: "Demo scenario not working"
+      severity: "high"
+      mitigation: "Pre-rehearsal (Day 3 morning)"
+      fallback: "Recorded demo video"
 ```
 
-### Day 1 리스크
+### Day 1 Risks
 
-**리스크**: x402 SDK 통합 실패
+**Risk**: x402 SDK integration failure
 
-- **대응**: Day 0에 미리 테스트
-- **대안**: Mock x402 server 사용 (402 응답 시뮬레이션)
+- **Response**: Test in advance on Day 0
+- **Alternative**: Use Mock x402 server (402 response simulation)
 
-**리스크**: Policy Engine 복잡도
+**Risk**: Policy Engine complexity
 
-- **대응**: MVP는 기본 기능만 (whitelist, budget)
-- **후순위**: Approval workflow, Anomaly detection (Post-hackathon)
+- **Response**: MVP has basic features only (whitelist, budget)
+- **Deferred**: Approval workflow, Anomaly detection (Post-hackathon)
 
-### Day 2 리스크
+### Day 2 Risks
 
-**리스크**: Redis 캐싱 이슈
+**Risk**: Redis caching issues
 
-- **대응**: Upstash 대신 로컬 Redis (Docker)
-- **대안**: In-memory cache (Map)
+- **Response**: Local Redis (Docker) instead of Upstash
+- **Alternative**: In-memory cache (Map)
 
-**리스크**: Analytics aggregation 성능
+**Risk**: Analytics aggregation performance
 
-- **대응**: Hourly aggregation은 나중에, 실시간 쿼리만 사용
-- **후순위**: Background jobs (Post-hackathon)
+- **Response**: Hourly aggregation later, use real-time queries only
+- **Deferred**: Background jobs (Post-hackathon)
 
-**리스크**: Curation 데이터 부족
+**Risk**: Curation data shortage
 
-- **대응**: Seed data 생성 (synthetic metrics)
-- **대안**: Mock scores
+- **Response**: Generate seed data (synthetic metrics)
+- **Alternative**: Mock scores
 
-### Day 3 리스크
+### Day 3 Risks
 
-**리스크**: Dashboard UI 개발 시간 부족
+**Risk**: Dashboard UI development time shortage
 
-- **대응**: 기본 table만 사용 (Tailwind CSS)
-- **후순위**: 고급 charts, animations (Post-hackathon)
+- **Response**: Use basic tables only (Tailwind CSS)
+- **Deferred**: Advanced charts, animations (Post-hackathon)
 
-**리스크**: 배포 실패
+**Risk**: Deployment failure
 
-- **대응**: Day 2 저녁에 미리 배포 테스트
-- **대안**: localhost demo (녹화 영상)
+- **Response**: Test deployment in Day 2 evening
+- **Alternative**: localhost demo (recorded video)
 
-**리스크**: 데모 시나리오 동작 안함
+**Risk**: Demo scenario not working
 
-- **대응**: 사전 리허설 (Day 3 아침)
-- **대안**: 녹화된 데모 비디오
-
----
-
-## 일일 체크리스트
-
-### Day 1 종료 시
-
-- [ ] Proxy endpoint 동작 (Postman 테스트)
-- [ ] 402 응답 relay 확인
-- [ ] Policy enforcement 동작 (budget, whitelist)
-- [ ] PostgreSQL에 정책 저장됨
-- [ ] Git commit + push
-
-### Day 2 종료 시
-
-- [ ] Cache hit/miss 동작
-- [ ] Redis에 캐시 저장됨
-- [ ] Analytics API 응답 정상
-- [ ] Curation API 추천 동작
-- [ ] Git commit + push
-- [ ] 배포 테스트 (optional)
-
-### Day 3 종료 시
-
-- [ ] Dashboard UI 동작
-- [ ] 3개 데모 시나리오 스크립트
-- [ ] Pitch Deck 완성
-- [ ] 프로덕션 배포 성공
-- [ ] Live demo 준비 완료
-- [ ] Git commit + push
+- **Response**: Pre-rehearsal (Day 3 morning)
+- **Alternative**: Recorded demo video
 
 ---
 
-## 최종 산출물
+## Daily Checklist
 
-### 코드
+### End of Day 1
+
+- [ ] Proxy endpoint working (Postman test)
+- [ ] 402 response relay verified
+- [ ] Policy enforcement working (budget, whitelist)
+- [ ] Policies saved to PostgreSQL
+- [ ] Git commit + push
+
+### End of Day 2
+
+- [ ] Cache hit/miss working
+- [ ] Cache saved to Redis
+- [ ] Analytics API responding properly
+- [ ] Curation API recommendation working
+- [ ] Git commit + push
+- [ ] Deployment test (optional)
+
+### End of Day 3
+
+- [ ] Dashboard UI working
+- [ ] 3 demo scenario scripts
+- [ ] Pitch Deck complete
+- [ ] Production deployment successful
+- [ ] Live demo ready
+- [ ] Git commit + push
+
+---
+
+## Final Deliverables
+
+### Code
 
 - [ ] Backend (Bun + Hono) - GitHub repo
 - [ ] Dashboard (Next.js) - GitHub repo
-- [ ] Demo scripts - `/demo` 폴더
+- [ ] Demo scripts - `/demo` folder
 
-### 문서
+### Documentation
 
 - [ ] README.md (Getting Started)
-- [ ] API 문서 (04-API-SPEC.md)
-- [ ] 배포 가이드
+- [ ] API documentation (04-API-SPEC.md)
+- [ ] Deployment guide
 
-### 데모
+### Demo
 
 - [ ] Live demo URL (api.pag0.dev)
 - [ ] Dashboard URL (app.pag0.dev)
-- [ ] Demo 비디오 (optional)
+- [ ] Demo video (optional)
 
-### 발표
+### Presentation
 
 - [ ] Pitch Deck (PDF + Google Slides)
-- [ ] 3-minute pitch 스크립트
-- [ ] Q&A 준비 (FAQ)
+- [ ] 3-minute pitch script
+- [ ] Q&A preparation (FAQ)
 
 ---
 

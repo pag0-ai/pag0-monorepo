@@ -1,45 +1,45 @@
-# TASK-45: E2E 테스트 P1 기능 커버리지 확장
+# TASK-45: E2E Test P1 Feature Coverage Expansion
 
-> **우선순위**: HIGH
-> **패키지**: scripts/
-> **상태**: 대기
+> **Priority**: HIGH
+> **Package**: scripts/
+> **Status**: Pending
 
-## 목표
+## Goal
 
-`scripts/e2e-test.sh`에 P1/R2에서 추가된 기능에 대한 응답 필드 레벨 검증 추가.
-현재 22개 → 30개로 확장.
+Add response field-level validation for features added in P1/R2 to `scripts/e2e-test.sh`.
+Expand from current 22 tests to 30 tests.
 
-## 현재 문제
+## Current Issue
 
-기존 E2E 테스트는 HTTP 상태 코드(200/401/404/429)만 검증.
-P1에서 추가된 JWT 토큰, analytics 새 필드, curation differences/weights/evidence 등의
-**응답 본문**은 전혀 검증하지 않음.
+Existing E2E tests only validate HTTP status codes (200/401/404/429).
+**Response body** fields added in P1 such as JWT tokens, new analytics fields, curation differences/weights/evidence
+are not validated at all.
 
-## 추가할 테스트 (8개)
+## Tests to Add (8 tests)
 
-### Auth 섹션 (+2)
-1. **Login JWT token**: register → login → 응답에 `token` 필드 존재 확인
-2. **Login → /me flow**: login에서 받은 JWT로 /me 호출 가능 확인 (향후 JWT 인증 시)
+### Auth Section (+2)
+1. **Login JWT token**: register → login → verify `token` field exists in response
+2. **Login → /me flow**: Verify /me endpoint can be called with JWT received from login (for future JWT auth)
 
-### Policy 섹션 (+1)
-3. **Policy field names**: Create 응답에 `dailyBudget` (not `dailyLimit`) 필드 확인
+### Policy Section (+1)
+3. **Policy field names**: Verify Create response contains `dailyBudget` field (not `dailyLimit`)
 
-### Analytics 섹션 (+2)
-4. **Endpoints new fields**: /endpoints 응답에 `cacheHitRate`, `successRate` 필드 존재 확인
-5. **Summary budgetRemaining**: /summary 응답의 budgetUsage에 `remaining` 값이 음수가 아닌지 확인
+### Analytics Section (+2)
+4. **Endpoints new fields**: Verify /endpoints response contains `cacheHitRate`, `successRate` fields
+5. **Summary budgetRemaining**: Verify `remaining` value in budgetUsage of /summary response is not negative
 
-### Curation 섹션 (+3)
-6. **Compare differences**: /compare 응답에 `differences` 객체 존재 확인
-7. **Rankings weights/evidence**: /rankings 응답 첫 항목에 `weights`, `evidence` 존재 확인
-8. **Score endpoint**: `/api/curation/score/{endpoint}` 개별 점수 조회 (현재 미테스트)
+### Curation Section (+3)
+6. **Compare differences**: Verify /compare response contains `differences` object
+7. **Rankings weights/evidence**: Verify first item in /rankings response has `weights`, `evidence`
+8. **Score endpoint**: Test individual score lookup `/api/curation/score/{endpoint}` (currently untested)
 
-## 구현 노트
+## Implementation Notes
 
-- `jq` 또는 `python3 -c` 로 JSON 필드 존재 여부 검증
-- 기존 `assert_status` 외에 `assert_field` 헬퍼 추가
-- 기존 22개 테스트는 변경 없이 유지
+- Use `jq` or `python3 -c` to validate JSON field existence
+- Add `assert_field` helper in addition to existing `assert_status`
+- Keep existing 22 tests unchanged
 
-## 의존성
+## Dependencies
 
-- P1 커밋 `a684cc3` 완료 (JWT, analytics fields, curation weights/differences)
-- R2 커밋 `520de2d` 완료 (budgetRemaining fix)
+- P1 commit `a684cc3` completed (JWT, analytics fields, curation weights/differences)
+- R2 commit `520de2d` completed (budgetRemaining fix)

@@ -40,3 +40,5 @@ fly.toml
 
 
 prepare-hackathon
+
+.claude/settings.json

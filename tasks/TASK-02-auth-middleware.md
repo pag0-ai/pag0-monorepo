@@ -1,33 +1,33 @@
-# TASK-02: Auth 미들웨어 + Rate Limiter
+# TASK-02: Auth Middleware + Rate Limiter
 
-| 항목 | 내용 |
+| Item | Content |
 |------|------|
-| **패키지** | `packages/proxy` |
-| **예상 시간** | 1시간 |
-| **의존성** | [TASK-01](./TASK-01-db-redis-client.md) |
-| **차단 대상** | [TASK-11](./TASK-11-integration.md) |
+| **Package** | `packages/proxy` |
+| **Estimated Time** | 1 hour |
+| **Dependencies** | [TASK-01](./TASK-01-db-redis-client.md) |
+| **Blocks** | [TASK-11](./TASK-11-integration.md) |
 
-## 목표
+## Objective
 
-Hono 미들웨어로 API Key 인증과 Rate Limiting을 구현한다. 모든 `/proxy`, `/api/*` 엔드포인트에 적용.
+Implement API Key authentication and Rate Limiting as Hono middleware. Apply to all `/proxy`, `/api/*` endpoints.
 
-## 구현 파일
+## Implementation Files
 
-### 1. Auth 미들웨어: `packages/proxy/src/middleware/auth.ts`
+### 1. Auth Middleware: `packages/proxy/src/middleware/auth.ts`
 
-**기능**:
-- `X-Pag0-API-Key` 헤더에서 API Key 추출
-- SHA-256 해시 후 `users` 테이블에서 조회
-- `c.set('user', user)`, `c.set('project', project)` 로 컨텍스트 저장
-- 인증 실패 시 `UnauthorizedError` (401)
+**Features**:
+- Extract API Key from `X-Pag0-API-Key` header
+- Hash with SHA-256 and query `users` table
+- Store in context as `c.set('user', user)`, `c.set('project', project)`
+- Throw `UnauthorizedError` (401) on authentication failure
 
-**API Key 해싱**:
+**API Key Hashing**:
 ```typescript
 import { createHash } from 'crypto';
 const hash = createHash('sha256').update(apiKey).digest('hex');
 ```
 
-**DB 조회**:
+**DB Query**:
 ```sql
 SELECT u.id, u.email, u.subscription_tier, p.id as project_id
 FROM users u
@@ -38,54 +38,54 @@ LIMIT 1
 
 ### 2. Rate Limiter: `packages/proxy/src/middleware/rate-limit.ts`
 
-**기능**:
-- Redis INCR + TTL (1분 윈도우)
-- 키 패턴: `rate:{projectId}:{minute_window}`
+**Features**:
+- Redis INCR + TTL (1-minute window)
+- Key pattern: `rate:{projectId}:{minute_window}`
 - Free tier: 60 req/min, Pro tier: 1000 req/min
-- 초과 시 `RateLimitError` (429) + `X-RateLimit-*` 헤더
+- Throw `RateLimitError` (429) + `X-RateLimit-*` headers on limit exceeded
 
-**응답 헤더** (모든 응답):
+**Response Headers** (all responses):
 ```
 X-RateLimit-Limit: 60
 X-RateLimit-Remaining: 42
 X-RateLimit-Reset: 1707580800
 ```
 
-## 테스트 패턴
+## Test Patterns
 
-`prepare-hackathon/test-business-logic-day1.ts` 참조:
-- **테스트 5 (Rate Limiter)**: Redis INCR 패턴, TTL 설정, 60회 초과 시 차단
-- **테스트 7 (API Key Auth)**: SHA-256 해싱, DB 조회, 잘못된 키 거부
+Refer to `prepare-hackathon/test-business-logic-day1.ts`:
+- **Test 5 (Rate Limiter)**: Redis INCR pattern, TTL setting, block after 60 requests
+- **Test 7 (API Key Auth)**: SHA-256 hashing, DB query, reject invalid keys
 
-## 테스트 방법
+## Test Method
 
 ```bash
-# 서버 실행 후
+# After starting the server
 curl -H "X-Pag0-API-Key: pag0_live_xxx" http://localhost:3000/health
-# → 200 OK (인증 불필요 엔드포인트)
+# → 200 OK (endpoint doesn't require auth)
 
 curl http://localhost:3000/api/policies
 # → 401 Unauthorized
 
-curl -H "X-Pag0-API-Key: {seed된 demo key}" http://localhost:3000/api/policies
+curl -H "X-Pag0-API-Key: {seeded demo key}" http://localhost:3000/api/policies
 # → 200 OK
 ```
 
-## 주의사항
+## Important Notes
 
-- `/health` 엔드포인트는 인증 제외
-- `/api/auth/register`, `/api/auth/login`은 인증 제외 (공개 엔드포인트)
-- API Key 원문은 절대 로깅/저장하지 않음 (해시만)
-- Rate limit 키의 TTL: 60초 (고정)
+- `/health` endpoint is exempt from authentication
+- `/api/auth/register`, `/api/auth/login` are exempt from authentication (public endpoints)
+- Never log/store API Key plaintext (hash only)
+- Rate limit key TTL: 60 seconds (fixed)
 
-## 완료 기준
+## Completion Criteria
 
-- [x] Auth 미들웨어 구현 (SHA-256 API Key 인증)
-- [x] Rate Limiter 구현 (Redis, tier별 차등)
-- [x] `X-RateLimit-*` 응답 헤더 추가
-- [x] 인증 제외 경로 처리 (`/health`, `/api/auth/register`, `/api/auth/login`)
-- [x] 로컬에서 curl로 인증 성공/실패 테스트
+- [x] Auth middleware implementation (SHA-256 API Key authentication)
+- [x] Rate Limiter implementation (Redis, tier-based limits)
+- [x] Add `X-RateLimit-*` response headers
+- [x] Handle auth-exempt paths (`/health`, `/api/auth/register`, `/api/auth/login`)
+- [x] Test authentication success/failure locally with curl
 
-## 버그 수정 이력
+## Bug Fix History
 
-- **auth.ts SQL alias 수정**: `p.id as project_id` → `p.id as "projectId"`. `postgres` 라이브러리는 snake_case → camelCase 자동 변환을 하지 않아, `user.projectId`가 `undefined`로 설정되는 버그 수정. 이로 인해 하위 라우트(policies, analytics)에서 `project_id = null` 에러 발생했음.
+- **auth.ts SQL alias fix**: `p.id as project_id` → `p.id as "projectId"`. The `postgres` library does not automatically convert snake_case → camelCase, causing `user.projectId` to be set as `undefined`. This caused `project_id = null` errors in downstream routes (policies, analytics).

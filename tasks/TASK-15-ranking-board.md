@@ -1,21 +1,21 @@
 # TASK-15: API Ranking Board
 
-| 항목 | 내용 |
+| Item | Content |
 |------|------|
-| **패키지** | `packages/dashboard` |
-| **예상 시간** | 1시간 |
-| **의존성** | [TASK-12](./TASK-12-dashboard-layout.md), [TASK-09](./TASK-09-curation-routes.md) |
-| **차단 대상** | 없음 |
+| **Package** | `packages/dashboard` |
+| **Estimated Time** | 1 hour |
+| **Dependencies** | [TASK-12](./TASK-12-dashboard-layout.md), [TASK-09](./TASK-09-curation-routes.md) |
+| **Blocks** | None |
 
-## 목표
+## Goal
 
-카테고리별 API 엔드포인트 랭킹, 점수 비교, 추천을 시각화한다.
+Visualize API endpoint rankings by category, score comparison, and recommendations.
 
-## 구현 파일
+## Implementation Files
 
 ### `app/rankings/page.tsx`
 
-**레이아웃**:
+**Layout**:
 ```
 ┌─────────────────────────────────────────────────┐
 │  API Rankings    [AI ▾] [Data ▾] [Blockchain ▾]  │
@@ -33,15 +33,15 @@
 └──────────────────────┴──────────────────────────┘
 ```
 
-### 기능
+### Features
 
-1. **카테고리 필터** — 드롭다운 (AI, Data, Blockchain, IoT, Finance, Social, Communication, Storage)
-2. **랭킹 테이블** — 순위, 엔드포인트, Overall/Cost/Latency/Reliability 점수
-3. **점수 뱃지** — 색상 코딩 (>80 초록, 60-80 노랑, <60 빨강)
-4. **엔드포인트 비교** — 2~5개 선택 후 비교 (side-by-side)
-5. **카테고리 개요** — 카테고리별 엔드포인트 수, 평균 점수
+1. **Category Filter** — Dropdown (AI, Data, Blockchain, IoT, Finance, Social, Communication, Storage)
+2. **Ranking Table** — Rank, endpoint, Overall/Cost/Latency/Reliability scores
+3. **Score Badges** — Color coding (>80 green, 60-80 yellow, <60 red)
+4. **Endpoint Comparison** — Select 2~5 endpoints and compare (side-by-side)
+5. **Category Overview** — Number of endpoints per category, average score
 
-### 데이터 소스
+### Data Source
 
 ```typescript
 const { data: rankings } = useQuery({
@@ -54,14 +54,14 @@ const { data: categories } = useQuery({
   queryFn: fetchCategories,
 });
 
-// 비교 (on-demand)
+// Comparison (on-demand)
 const compareMutation = useMutation({
   mutationFn: (endpoints: string[]) =>
     fetchApi(`/api/curation/compare?endpoints=${endpoints.join(',')}`),
 });
 ```
 
-### 점수 뱃지 컴포넌트
+### Score Badge Component
 
 ```typescript
 function ScoreBadge({ score }: { score: number }) {
@@ -70,23 +70,23 @@ function ScoreBadge({ score }: { score: number }) {
 }
 ```
 
-## 테스트 방법
+## Testing Instructions
 
 ```bash
 pnpm dev
 
-# http://localhost:3001/rankings 접속
-# → seed 데이터 기반 랭킹 테이블 표시 (5개 endpoint_scores)
-# → 카테고리 변경 시 필터링
-# → 점수 뱃지 색상 확인
-# → 비교 기능 동작 (2개 선택 → Compare)
+# Access http://localhost:3001/rankings
+# → Ranking table displayed based on seed data (5 endpoint_scores)
+# → Filtering when category changes
+# → Check score badge colors
+# → Comparison feature works (select 2 → Compare)
 ```
 
-## 완료 기준
+## Completion Criteria
 
-- [x] 카테고리 필터 드롭다운
-- [x] 랭킹 테이블 (순위 + 4개 점수)
-- [x] 점수 뱃지 색상 코딩
-- [x] 엔드포인트 비교 기능
-- [x] 카테고리 개요
-- [x] 로컬에서 seed 데이터 기반 렌더링 확인
+- [x] Category filter dropdown
+- [x] Ranking table (rank + 4 scores)
+- [x] Score badge color coding
+- [x] Endpoint comparison feature
+- [x] Category overview
+- [x] Verify rendering based on seed data locally

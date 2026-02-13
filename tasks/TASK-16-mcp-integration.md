@@ -1,79 +1,79 @@
-# TASK-16: MCP Server 통합 테스트
+# TASK-16: MCP Server Integration Test
 
-| 항목 | 내용 |
+| Item | Details |
 |------|------|
-| **패키지** | `packages/mcp` |
-| **예상 시간** | 1시간 |
-| **의존성** | [TASK-11](./TASK-11-integration.md) (백엔드 완성 필수) |
-| **차단 대상** | [TASK-18](./TASK-18-demo-scenarios.md) |
+| **Package** | `packages/mcp` |
+| **Estimated Time** | 1 hour |
+| **Dependencies** | [TASK-11](./TASK-11-integration.md) (backend completion required) |
+| **Blocks** | [TASK-18](./TASK-18-demo-scenarios.md) |
 
-## 목표
+## Objective
 
-MCP Server가 실제 Proxy 백엔드와 정상적으로 통신하는지 통합 테스트를 수행한다.
+Perform integration testing to verify that the MCP Server communicates properly with the actual Proxy backend.
 
-## 현재 상태
+## Current State
 
-- `packages/mcp/` — 12개 MCP Tool 구현 완료
+- `packages/mcp/` — 12 MCP Tools implemented
   - `tools/wallet.ts` — `pag0_wallet_status`
   - `tools/proxy.ts` — `pag0_request` (402→sign→retry)
   - `tools/policy.ts` — `pag0_check_budget`, `pag0_check_policy`, `pag0_list_policies`
   - `tools/curation.ts` — `pag0_recommend`, `pag0_compare`, `pag0_rankings`, `pag0_score`
   - `tools/analytics.ts` — `pag0_spending`, `pag0_cache_stats`, `pag0_tx_history`
-- `client.ts` — Pag0 Proxy API HTTP 클라이언트
-- `wallet.ts` — ethers.Wallet 래퍼
+- `client.ts` — Pag0 Proxy API HTTP client
+- `wallet.ts` — ethers.Wallet wrapper
 
-## 테스트 항목
+## Test Items
 
-### 1. MCP → Proxy 연결 확인
+### 1. MCP → Proxy Connection Verification
 
 ```bash
-# Backend 실행 상태에서
+# With backend running
 cd packages/mcp
 echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | npx ts-node src/index.ts
-# → 11개 tool 목록 반환
+# → Returns list of 11 tools
 ```
 
-### 2. Policy Tools 테스트
+### 2. Policy Tools Test
 
 ```bash
 # pag0_list_policies
 echo '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"pag0_list_policies","arguments":{}}}' | npx ts-node src/index.ts
-# → policies 배열 반환
+# → Returns policies array
 
 # pag0_check_budget
 echo '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"pag0_check_budget","arguments":{}}}' | npx ts-node src/index.ts
-# → daily_remaining, monthly_remaining 포함
+# → Includes daily_remaining, monthly_remaining
 ```
 
-### 3. Curation Tools 테스트
+### 3. Curation Tools Test
 
 ```bash
-# pag0_rankings (AI 카테고리)
+# pag0_rankings (AI category)
 echo '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"pag0_rankings","arguments":{"category":"AI"}}}' | npx ts-node src/index.ts
-# → endpoint_scores 기반 랭킹
+# → Rankings based on endpoint_scores
 
 # pag0_recommend
 echo '{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"pag0_recommend","arguments":{"category":"AI","limit":3}}}' | npx ts-node src/index.ts
-# → 추천 엔드포인트 목록
+# → Recommended endpoints list
 ```
 
-### 4. Analytics Tools 테스트
+### 4. Analytics Tools Test
 
 ```bash
 # pag0_spending
 echo '{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"pag0_spending","arguments":{"period":"24h"}}}' | npx ts-node src/index.ts
-# → spending summary
+# → Spending summary
 
 # pag0_cache_stats
 echo '{"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"pag0_cache_stats","arguments":{}}}' | npx ts-node src/index.ts
-# → cache hit/miss 통계
+# → Cache hit/miss statistics
 ```
 
-### 5. client.ts 엔드포인트 매핑 검증
+### 5. client.ts Endpoint Mapping Verification
 
-MCP `client.ts`의 API 경로가 Proxy 라우트와 일치하는지 확인:
+Verify that API paths in MCP `client.ts` match Proxy routes:
 
-| MCP client 메서드 | Proxy 라우트 |
+| MCP client Method | Proxy Route |
 |-------------------|-------------|
 | `listPolicies()` | `GET /api/policies` |
 | `checkBudget()` | `GET /api/analytics/summary` |
@@ -83,7 +83,7 @@ MCP `client.ts`의 API 경로가 Proxy 라우트와 일치하는지 확인:
 | `getSpending(period)` | `GET /api/analytics/costs?period=` |
 | `getCacheStats()` | `GET /api/analytics/cache` |
 
-## 환경변수 확인
+## Environment Variables Check
 
 `packages/mcp/.env`:
 ```
@@ -93,30 +93,30 @@ WALLET_PRIVATE_KEY={test_wallet_key}
 NETWORK=skale-testnet
 ```
 
-## 테스트 방법
+## Test Method
 
 ```bash
-# 1. Backend + DB 실행
+# 1. Run Backend + DB
 pnpm docker:up
 pnpm db:migrate && pnpm db:seed
 pnpm dev:proxy
 
-# 2. MCP Tool 목록 확인
+# 2. Verify MCP Tool list
 cd packages/mcp
 echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | bun run src/index.ts
 
-# 3. 각 tool 호출 테스트 (위 항목 참조)
+# 3. Test each tool call (refer to items above)
 
-# 4. 에러 케이스 확인
-# → 잘못된 API Key로 호출 시 적절한 에러 메시지
-# → 존재하지 않는 카테고리 조회 시 빈 결과
+# 4. Verify error cases
+# → Appropriate error message when calling with invalid API Key
+# → Empty result when querying non-existent category
 ```
 
-## 완료 기준
+## Completion Criteria
 
-- [x] MCP Server 기동 + tool 목록 반환
-- [x] Policy tools (list, check_budget, check_policy) 정상 동작
-- [x] Curation tools (rankings, recommend, compare, score) 정상 동작
-- [x] Analytics tools (spending, cache_stats, tx_history) 정상 동작
-- [x] client.ts API 경로와 Proxy 라우트 매핑 일치 확인
-- [x] 에러 케이스 핸들링 확인
+- [x] MCP Server startup + tool list returned
+- [x] Policy tools (list, check_budget, check_policy) working properly
+- [x] Curation tools (rankings, recommend, compare, score) working properly
+- [x] Analytics tools (spending, cache_stats, tx_history) working properly
+- [x] Verified client.ts API paths match Proxy routes
+- [x] Error case handling verified

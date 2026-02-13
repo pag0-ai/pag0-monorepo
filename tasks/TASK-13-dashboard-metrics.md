@@ -1,21 +1,21 @@
-# TASK-13: Dashboard 메트릭 시각화
+# TASK-13: Dashboard Metrics Visualization
 
-| 항목 | 내용 |
+| Item | Content |
 |------|------|
-| **패키지** | `packages/dashboard` |
-| **예상 시간** | 1.5시간 |
-| **의존성** | [TASK-12](./TASK-12-dashboard-layout.md), [TASK-08](./TASK-08-analytics-routes.md) |
-| **차단 대상** | 없음 |
+| **Package** | `packages/dashboard` |
+| **Estimated Time** | 1.5 hours |
+| **Dependencies** | [TASK-12](./TASK-12-dashboard-layout.md), [TASK-08](./TASK-08-analytics-routes.md) |
+| **Blocks** | None |
 
-## 목표
+## Goal
 
-Dashboard 메인 페이지에 핵심 메트릭 카드, 비용 차트, 엔드포인트 테이블을 구현한다.
+Implement core metric cards, cost charts, and endpoint tables on the Dashboard main page.
 
-## 구현 파일
+## Implementation Files
 
 ### `app/dashboard/page.tsx`
 
-**레이아웃 구조**:
+**Layout Structure**:
 ```
 ┌──────────┬──────────┬──────────┬──────────┐
 │ Total    │ Cache    │ Avg      │ Cache    │
@@ -35,7 +35,7 @@ Dashboard 메인 페이지에 핵심 메트릭 카드, 비용 차트, 엔드포�
 └──────────────────┴─────────────────────────┘
 ```
 
-### 데이터 소스 (React Query)
+### Data Sources (React Query)
 
 ```typescript
 const { data: summary } = useQuery({
@@ -54,15 +54,15 @@ const { data: endpoints } = useQuery({
 });
 ```
 
-### 컴포넌트
+### Components
 
-1. **MetricCard** (4개) — Total Requests, Cache Hit Rate (%), Avg Latency (ms), Cache Savings ($)
-2. **CostChart** — `recharts` LineChart (spent vs saved, 시계열)
-3. **EndpointTable** — 상위 엔드포인트 테이블 (정렬 가능)
-4. **BudgetProgress** — Daily/Monthly 예산 사용량 프로그레스 바
-5. **PeriodSelector** — `1h | 24h | 7d | 30d` 기간 선택
+1. **MetricCard** (4 cards) — Total Requests, Cache Hit Rate (%), Avg Latency (ms), Cache Savings ($)
+2. **CostChart** — `recharts` LineChart (spent vs saved, time series)
+3. **EndpointTable** — Top endpoints table (sortable)
+4. **BudgetProgress** — Daily/Monthly budget usage progress bar
+5. **PeriodSelector** — `1h | 24h | 7d | 30d` period selector
 
-### CostChart 컴포넌트
+### CostChart Component
 
 ```typescript
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
@@ -78,7 +78,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 </ResponsiveContainer>
 ```
 
-### USDC 표시 변환
+### USDC Display Conversion
 
 ```typescript
 function formatUsdc(amount: string): string {
@@ -86,26 +86,26 @@ function formatUsdc(amount: string): string {
 }
 ```
 
-## 테스트 방법
+## Testing Method
 
 ```bash
-# Backend + Dashboard 동시 실행
+# Run Backend + Dashboard simultaneously
 pnpm dev
 
-# http://localhost:3001/dashboard 접속
-# → 메트릭 카드 4개 표시
-# → 비용 차트 렌더링
-# → 엔드포인트 테이블 표시
-# → 기간 변경 시 데이터 갱신
+# Navigate to http://localhost:3001/dashboard
+# → 4 metric cards displayed
+# → Cost chart rendered
+# → Endpoint table displayed
+# → Data refreshes when period changes
 ```
 
-> Backend에 seed 데이터 + 몇 건의 requests가 있어야 의미 있는 데이터 표시됨.
+> Meaningful data display requires seed data + several requests in the Backend.
 
-## 완료 기준
+## Completion Criteria
 
-- [x] 메트릭 카드 4개 (Total Requests, Cache Hit Rate, Avg Latency, Cache Savings)
-- [x] 비용 시계열 차트 (recharts LineChart)
-- [x] 엔드포인트 테이블 (Top 10)
-- [x] 예산 사용량 표시
-- [x] 기간 선택기 (1h, 24h, 7d, 30d)
-- [x] 로컬에서 Dashboard 페이지 렌더링 확인
+- [x] 4 metric cards (Total Requests, Cache Hit Rate, Avg Latency, Cache Savings)
+- [x] Cost time series chart (recharts LineChart)
+- [x] Endpoint table (Top 10)
+- [x] Budget usage display
+- [x] Period selector (1h, 24h, 7d, 30d)
+- [x] Verify Dashboard page renders locally

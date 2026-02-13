@@ -1,218 +1,218 @@
-# Pag0 Smart Proxy - 비즈니스 모델
+# Pag0 Smart Proxy - Business Model
 
-> **TL;DR**: Pag0는 Freemium + Usage-Based Savings Share 하이브리드 모델로, 고객의 캐시 절감액 15%를 수익화합니다. LTV/CAC 94.4x, Payback 6.6일의 압도적 Unit Economics로 Year 1 ARR $1.3M, Year 3 ARR $13M을 목표합니다.
+> **TL;DR**: Pag0 uses a Freemium + Usage-Based Savings Share hybrid model, monetizing 15% of customer cache savings. With overwhelming Unit Economics of LTV/CAC 94.4x and Payback 6.6 days, we target Year 1 ARR $1.3M and Year 3 ARR $13M.
 
-## 관련 문서
+## Related Documents
 
-| 문서 | 관련성 |
+| Document | Relevance |
 |------|--------|
-| [01-PRODUCT-BRIEF.md](01-PRODUCT-BRIEF.md) | 제품 정의 및 핵심 가치 제안 |
-| [02-COMPETITOR-ANALYSIS.md](02-COMPETITOR-ANALYSIS.md) | 경쟁사 가격 모델 비교 |
-| [09-00-USE-CASES-INDEX.md](09-00-USE-CASES-INDEX.md) | 유스케이스별 수익 시나리오 |
-| [13-GO-TO-MARKET.md](13-GO-TO-MARKET.md) | 시장 진입 및 성장 전략 |
-| [14-INVESTOR-ONE-PAGER.md](14-INVESTOR-ONE-PAGER.md) | 투자자 대상 핵심 지표 요약 |
-| [00-GLOSSARY.md](00-GLOSSARY.md) | 핵심 용어 및 약어 정리 |
+| [01-PRODUCT-BRIEF.md](01-PRODUCT-BRIEF.md) | Product definition and core value proposition |
+| [02-COMPETITOR-ANALYSIS.md](02-COMPETITOR-ANALYSIS.md) | Competitor pricing model comparison |
+| [09-00-USE-CASES-INDEX.md](09-00-USE-CASES-INDEX.md) | Revenue scenarios by use case |
+| [13-GO-TO-MARKET.md](13-GO-TO-MARKET.md) | Market entry and growth strategy |
+| [14-INVESTOR-ONE-PAGER.md](14-INVESTOR-ONE-PAGER.md) | Key metrics summary for investors |
+| [00-GLOSSARY.md](00-GLOSSARY.md) | Key terms and abbreviations |
 
 ---
 
-## 개요
+## Overview
 
-Pag0는 **Freemium + Usage-Based Savings Share** 하이브리드 모델로 AI 에이전트 지출 관리 시장을 공략합니다. 고객은 비용을 절감하면서 우리는 그 절감액의 일부를 수익으로 가져가는 Win-Win 구조입니다.
+Pag0 targets the AI agent spend management market with a **Freemium + Usage-Based Savings Share** hybrid model. Customers save costs while we take a portion of those savings as revenue - a Win-Win structure.
 
-**핵심 차별점**: 고객이 가치를 얻을 때만 우리도 수익을 얻습니다. (Value-aligned pricing)
+**Core Differentiation**: We only earn revenue when customers get value. (Value-aligned pricing)
 
 ---
 
-## 1. 수익 모델 상세
+## 1. Revenue Model Details
 
-### 가격 정책 (Tier 구조)
+### Pricing Policy (Tier Structure)
 
 ```yaml
-# 가격 정책
+# Pricing Policy
 tiers:
   - name: "Free"
-    price: "$0/월"
-    requests: "1,000/일"
-    features: ["기본 정책", "7일 analytics", "커뮤니티 지원"]
-    target: "개인 개발자, POC"
+    price: "$0/month"
+    requests: "1,000/day"
+    features: ["Basic policies", "7-day analytics", "Community support"]
+    target: "Individual developers, POC"
   - name: "Pro"
-    price: "$49/월"
-    requests: "50,000/일"
-    features: ["고급 정책", "90일 analytics", "Curation API", "이메일 지원"]
-    target: "스타트업, 중소기업"
+    price: "$49/month"
+    requests: "50,000/day"
+    features: ["Advanced policies", "90-day analytics", "Curation API", "Email support"]
+    target: "Startups, SMBs"
   - name: "Enterprise"
-    price: "$299/월"
-    requests: "무제한"
-    features: ["맞춤 정책", "무제한 analytics", "Compliance 리포트", "White-label", "SLA", "전담 지원"]
-    target: "대기업, 금융, 의료"
+    price: "$299/month"
+    requests: "Unlimited"
+    features: ["Custom policies", "Unlimited analytics", "Compliance reports", "White-label", "SLA", "Dedicated support"]
+    target: "Enterprises, Finance, Healthcare"
 ```
 
-| Tier | 가격 | 요청 한도 | 핵심 기능 | 타겟 고객 |
+| Tier | Price | Request Limit | Core Features | Target Customers |
 |------|------|-----------|-----------|-----------|
-| **Free** | $0/월 | 1,000 req/day | Basic policy, 7일 analytics, 커뮤니티 지원 | 개인 개발자, POC |
-| **Pro** | $49/월 | 50,000 req/day | Advanced policies, 90일 analytics, Curation API, 이메일 지원 | 스타트업, 중소기업 |
-| **Enterprise** | $299/월 | Unlimited | Custom policies, Unlimited analytics, Compliance reports, White-label, SLA, 전담 지원 | 대기업, 금융, 의료 |
+| **Free** | $0/month | 1,000 req/day | Basic policy, 7-day analytics, Community support | Individual developers, POC |
+| **Pro** | $49/month | 50,000 req/day | Advanced policies, 90-day analytics, Curation API, Email support | Startups, SMBs |
+| **Enterprise** | $299/month | Unlimited | Custom policies, Unlimited analytics, Compliance reports, White-label, SLA, Dedicated support | Enterprises, Finance, Healthcare |
 
-### Savings Share 모델
+### Savings Share Model
 
-**개념**: 캐싱으로 절감한 비용의 15%를 Pag0가 수수료로 받습니다.
+**Concept**: Pag0 takes 15% of costs saved through caching as commission.
 
-**계산 공식**:
-
-```
-월별 Savings Share = Σ(캐시 히트 건수 × 평균 요청당 비용) × 15%
-```
-
-**예시 시나리오** (Pro tier 고객):
+**Calculation Formula**:
 
 ```
-가정:
-- 일일 요청: 10,000건
-- 평균 요청당 비용: $0.05 (x402 평균)
-- 캐시 히트율: 40% (Pag0 목표)
-
-계산:
-- 일일 캐시 히트: 10,000 × 40% = 4,000건
-- 일일 절감액: 4,000 × $0.05 = $200
-- 일일 Savings Share (15%): $200 × 15% = $30
-- 월별 Savings Share (30일): $30 × 30 = $900
-
-고객 관점:
-- 구독료: $49/월
-- 실제 절감: $6,000/월
-- 순 이득: $6,000 - $49 - $900 = $5,051/월
-- ROI: 103배
-
-Pag0 관점:
-- 구독료: $49/월
-- Savings Share: $900/월
-- 총 수익: $949/월 (ARPU)
+Monthly Savings Share = Σ(Cache hits × Average cost per request) × 15%
 ```
 
-### 추가 수익원 (Phase 3+)
+**Example Scenario** (Pro tier customer):
 
-1. **White-label 라이선스**: 대기업에 자체 브랜딩 제공 ($5K-$20K/년)
-2. **API Marketplace Commission**: 큐레이션으로 연결된 거래의 3% 수수료
-3. **Premium Analytics**: 맞춤형 BI 리포트 ($500-$2K/월)
-4. **Consulting Services**: 에이전트 아키텍처 컨설팅 ($200/시간)
+```
+Assumptions:
+- Daily requests: 10,000
+- Average cost per request: $0.05 (x402 average)
+- Cache hit rate: 40% (Pag0 target)
+
+Calculation:
+- Daily cache hits: 10,000 × 40% = 4,000
+- Daily savings: 4,000 × $0.05 = $200
+- Daily Savings Share (15%): $200 × 15% = $30
+- Monthly Savings Share (30 days): $30 × 30 = $900
+
+Customer perspective:
+- Subscription: $49/month
+- Actual savings: $6,000/month
+- Net benefit: $6,000 - $49 - $900 = $5,051/month
+- ROI: 103x
+
+Pag0 perspective:
+- Subscription: $49/month
+- Savings Share: $900/month
+- Total revenue: $949/month (ARPU)
+```
+
+### Additional Revenue Streams (Phase 3+)
+
+1. **White-label License**: Self-branding for enterprises ($5K-$20K/year)
+2. **API Marketplace Commission**: 3% fee on transactions connected through curation
+3. **Premium Analytics**: Custom BI reports ($500-$2K/month)
+4. **Consulting Services**: Agent architecture consulting ($200/hour)
 
 ---
 
-## 2. 가격 책정 근거
+## 2. Pricing Rationale
 
-### 비용 절감 시뮬레이션
+### Cost Savings Simulation
 
-**시나리오 1: 소규모 에이전트 (Free tier)**
+**Scenario 1: Small Agent (Free tier)**
 
 ```yaml
-일일 사용량:
+Daily usage:
   requests: 500
   cache_hit_rate: 35%
   avg_cost_per_request: $0.05
 
-월별 절감:
+Monthly savings:
   total_requests: 15,000
   cached_requests: 5,250
   savings: $262.50
 
-Pag0 비용:
+Pag0 cost:
   subscription: $0
-  savings_share: $0 (Free tier는 savings share 없음)
+  savings_share: $0 (Free tier has no savings share)
 
-고객 순이득: $262.50/월
+Customer net benefit: $262.50/month
 ```
 
-**시나리오 2: 중규모 에이전트 (Pro tier)**
+**Scenario 2: Medium Agent (Pro tier)**
 
 ```yaml
-일일 사용량:
+Daily usage:
   requests: 10,000
   cache_hit_rate: 40%
   avg_cost_per_request: $0.05
 
-월별 절감:
+Monthly savings:
   total_requests: 300,000
   cached_requests: 120,000
   savings: $6,000
 
-Pag0 비용:
+Pag0 cost:
   subscription: $49
   savings_share: $900
   total: $949
 
-고객 순이득: $5,051/월
-ROI: 5.3배
+Customer net benefit: $5,051/month
+ROI: 5.3x
 ```
 
-**시나리오 3: 대규모 에이전트 (Enterprise tier)**
+**Scenario 3: Large Agent (Enterprise tier)**
 
 ```yaml
-일일 사용량:
+Daily usage:
   requests: 100,000
-  cache_hit_rate: 45% (대규모일수록 패턴 반복 多)
+  cache_hit_rate: 45% (larger scale = more pattern repetition)
   avg_cost_per_request: $0.05
 
-월별 절감:
+Monthly savings:
   total_requests: 3,000,000
   cached_requests: 1,350,000
   savings: $67,500
 
-Pag0 비용:
+Pag0 cost:
   subscription: $299
   savings_share: $10,125
   total: $10,424
 
-고객 순이득: $57,076/월
-ROI: 5.5배
+Customer net benefit: $57,076/month
+ROI: 5.5x
 ```
 
-### 경쟁 제품 가격 비교
+### Competitive Pricing Comparison
 
-| 제품 카테고리 | 제품명 | 가격 모델 | 월 비용 (10K req 기준) |
+| Product Category | Product | Pricing Model | Monthly Cost (10K req basis) |
 |--------------|--------|-----------|----------------------|
-| **API Gateway SaaS** | Kong Konnect | $500/월 (Pro) | $500 |
-| | Apigee | $150/월 + $0.005/req | $200 |
+| **API Gateway SaaS** | Kong Konnect | $500/month (Pro) | $500 |
+| | Apigee | $150/month + $0.005/req | $200 |
 | | AWS API Gateway | $0.003/req | $90 |
-| **Proxy/Cache** | Cloudflare Workers | $5/월 + $0.5/1M req | $10 |
+| **Proxy/Cache** | Cloudflare Workers | $5/month + $0.5/1M req | $10 |
 | | Fastly | $0.12/GB + $0.0075/req | $75 |
-| **x402 Competitors** | 없음 (직접 비교 대상 없음) | - | - |
+| **x402 Competitors** | None (no direct comparison) | - | - |
 | **Pag0** | Pro tier + Savings | $49 + $900 share | $949 |
 
-**분석**:
+**Analysis**:
 
-- Pag0는 API Gateway보다 비싸보이지만, **실제 절감액($6,000)**을 고려하면 압도적 가치
-- 경쟁사는 "비용 전가" 모델 (고객이 더 많이 쓸수록 더 비쌈)
-- Pag0는 "비용 절감" 모델 (고객이 많이 절감할수록 수익 증가, but 고객은 여전히 순이득)
+- Pag0 looks more expensive than API Gateways, but considering **actual savings ($6,000)** it's overwhelmingly valuable
+- Competitors use "cost pass-through" model (more customer usage = more expensive)
+- Pag0 uses "cost savings" model (more customer savings = more revenue, but customer still has net benefit)
 
-### 고객 가치 기반 프라이싱 (Value-based Pricing)
+### Value-based Pricing
 
-**원칙**: 고객이 얻는 가치의 15-20%를 가격으로 책정
+**Principle**: Price at 15-20% of value customers receive
 
 ```
-고객 가치 = 정책 위반 방지 + 큐레이션 시간 절약 + 캐시 절감
+Customer value = Policy violation prevention + Curation time savings + Cache savings
 
-캐시 절감:
-  Pro tier 평균 $6,000/월
+Cache savings:
+  Pro tier average $6,000/month
 
-정책 위반 방지:
-  에이전트 폭주 1회 방지 시 평균 $500-$2,000 손실 방지
-  월 1회 발생 가정 시 $1,000/월 가치
+Policy violation prevention:
+  Preventing 1 agent runaway saves average $500-$2,000
+  Assuming 1x/month = $1,000/month value
 
-큐레이션 시간 절약:
-  개발자 시급 $100 × 월 5시간 절약 = $500/월
+Curation time savings:
+  Developer rate $100/hour × 5 hours saved per month = $500/month
 
-총 고객 가치: $7,500/월
+Total customer value: $7,500/month
 
-Pag0 가격: $949/월 (12.6% of value)
-→ Value-aligned, 여유 있는 가격대
+Pag0 price: $949/month (12.6% of value)
+→ Value-aligned, comfortable pricing
 ```
 
 ---
 
-## 3. 시장 규모 (TAM/SAM/SOM)
+## 3. Market Size (TAM/SAM/SOM)
 
 ```yaml
-# 시장 규모 요약
+# Market Size Summary
 tam: "$20B (API Management + AI Agent Payments 2028)"
 sam: "$2B (x402 Ecosystem + Enterprise AI Agents)"
 som_year1: "$1.17M ARR (market share 0.58%)"
@@ -222,61 +222,61 @@ som_year3: "$11.7M ARR (market share 5.85%)"
 
 ### TAM (Total Addressable Market)
 
-**글로벌 API Management + AI Agent Payments 시장**
+**Global API Management + AI Agent Payments Market**
 
 ```yaml
-API Management 시장:
-  2024 규모: $5.8B (Gartner)
-  2028 예상: $11.2B
+API Management market:
+  2024 size: $5.8B (Gartner)
+  2028 projection: $11.2B
   CAGR: 18%
 
-AI Agent Payments 시장:
-  2024 규모: $1.2B (신생 시장)
-  2028 예상: $8.5B (McKinsey)
+AI Agent Payments market:
+  2024 size: $1.2B (emerging market)
+  2028 projection: $8.5B (McKinsey)
   CAGR: 63%
 
-합산 TAM (2028): ~$20B
+Combined TAM (2028): ~$20B
 ```
 
-**근거**:
+**Rationale**:
 
 - Gartner: "API Management Market Guide 2024"
-- McKinsey: "The State of AI in 2024" - Agentic AI 섹션
-- 보수적 추정: API Management의 15% + AI Payments의 30%가 spend control 필요
+- McKinsey: "The State of AI in 2024" - Agentic AI section
+- Conservative estimate: 15% of API Management + 30% of AI Payments need spend control
 
 ### SAM (Serviceable Addressable Market)
 
 **x402 Ecosystem + Enterprise AI Agents**
 
 ```yaml
-x402 생태계 (2025-2026):
-  예상 개발자: 50,000 (Coinbase 추정)
-  예상 에이전트 수: 200,000
-  평균 월 지출: $500
-  시장 규모: $100M/년
+x402 ecosystem (2025-2026):
+  Expected developers: 50,000 (Coinbase estimate)
+  Expected agents: 200,000
+  Average monthly spend: $500
+  Market size: $100M/year
 
 Enterprise AI Agents:
-  Fortune 5000 중 AI 에이전트 채택: 30% (1,500 기업)
-  기업당 평균 에이전트: 50개
-  총 에이전트: 75,000개
-  평균 월 지출: $2,000
-  시장 규모: $1.8B/년
+  Fortune 5000 with AI agent adoption: 30% (1,500 companies)
+  Average agents per company: 50
+  Total agents: 75,000
+  Average monthly spend: $2,000
+  Market size: $1.8B/year
 
-합산 SAM: ~$2B/년
+Combined SAM: ~$2B/year
 ```
 
-**전환 가능성**:
+**Conversion Likelihood**:
 
-- x402 개발자: Pag0 도입률 20% 가정 → $20M
-- Enterprise: 도입률 10% 가정 → $180M
-- 현실적 SAM: $200M/년
+- x402 developers: 20% Pag0 adoption rate → $20M
+- Enterprise: 10% adoption rate → $180M
+- Realistic SAM: $200M/year
 
 ### SOM (Serviceable Obtainable Market)
 
-**Year 1 목표: x402 Hackathon Community + Early Adopters**
+**Year 1 Target: x402 Hackathon Community + Early Adopters**
 
 ```yaml
-Year 1 Target (보수적):
+Year 1 Target (conservative):
   Free tier: 500 users (0 revenue)
   Pro tier: 50 users @ $949 ARPU = $47K MRR = $570K ARR
   Enterprise tier: 5 customers @ $10K ARPU = $50K MRR = $600K ARR
@@ -284,7 +284,7 @@ Year 1 Target (보수적):
   Total Year 1 ARR: $1.17M
   Market share: 0.58% of SAM
 
-Year 2 Target (성장 가속):
+Year 2 Target (accelerated growth):
   Free tier: 2,000 users
   Pro tier: 200 users = $190K MRR
   Enterprise tier: 20 customers = $200K MRR
@@ -292,7 +292,7 @@ Year 2 Target (성장 가속):
   Total Year 2 ARR: $4.68M
   Market share: 2.34% of SAM
 
-Year 3 Target (스케일):
+Year 3 Target (scale):
   Free tier: 5,000 users
   Pro tier: 500 users = $475K MRR
   Enterprise tier: 50 customers = $500K MRR
@@ -301,93 +301,93 @@ Year 3 Target (스케일):
   Market share: 5.85% of SAM
 ```
 
-**달성 전략**:
+**Achievement Strategy**:
 
-- Year 1: 커뮤니티 구축 + Product-market fit 검증
-- Year 2: Enterprise sales 본격화 + 파트너십 확대
-- Year 3: 생태계 lock-in + 신규 기능 (marketplace, white-label)
+- Year 1: Community building + Product-market fit validation
+- Year 2: Full enterprise sales + Partnership expansion
+- Year 3: Ecosystem lock-in + New features (marketplace, white-label)
 
 ---
 
-## 4. 핵심 경제 지표 (Unit Economics)
+## 4. Core Economic Metrics (Unit Economics)
 
 ```yaml
-# Unit Economics 요약
+# Unit Economics Summary
 unit_economics:
   pro_tier:
     ltv: "$16,133"
     cac: "$150"
     ltv_cac_ratio: "107.5x"
-    payback_period: "5.6일"
+    payback_period: "5.6 days"
   enterprise_tier:
     ltv: "$275,174"
     cac: "$3,000"
     ltv_cac_ratio: "91.7x"
-    payback_period: "10.8일"
+    payback_period: "10.8 days"
   blended:
     ltv: "$67,941"
     cac: "$720"
     ltv_cac_ratio: "94.4x"
-    payback_period: "6.6일"
+    payback_period: "6.6 days"
     gross_margin: "80%+"
 ```
 
 ### CAC (Customer Acquisition Cost)
 
-**채널별 CAC 추정**:
+**CAC Estimate by Channel**:
 
 ```yaml
 Free tier (Self-service):
-  Content marketing: $0 (오픈소스 + 커뮤니티)
-  Hackathon presence: $5K/년 ÷ 500 users = $10/user
+  Content marketing: $0 (open source + community)
+  Hackathon presence: $5K/year ÷ 500 users = $10/user
   Average CAC: $10
 
 Pro tier (Product-led growth):
-  Free → Pro 전환율: 10%
+  Free → Pro conversion rate: 10%
   Free CAC × 10 + Marketing: $100 + $50 = $150
   Average CAC: $150
 
 Enterprise tier (Sales-led):
-  Outbound sales: $100/시간 × 20시간 = $2,000
+  Outbound sales: $100/hour × 20 hours = $2,000
   Marketing/Events: $500
-  Demo/POC 지원: $500
+  Demo/POC support: $500
   Average CAC: $3,000
 ```
 
 ### LTV (Lifetime Value)
 
-**Tier별 LTV 계산**:
+**LTV Calculation by Tier**:
 
 ```yaml
 Pro tier:
-  ARPU: $949/월
-  Gross margin: 85% (인프라 비용 15%)
-  Churn rate: 5%/월 (annual churn 43%)
-  Average lifetime: 20개월
+  ARPU: $949/month
+  Gross margin: 85% (infrastructure cost 15%)
+  Churn rate: 5%/month (annual churn 43%)
+  Average lifetime: 20 months
 
   LTV = $949 × 85% × 20 = $16,133
 
 Enterprise tier:
-  ARPU: $10,424/월
-  Gross margin: 80% (dedicated support 비용)
-  Churn rate: 3%/월 (annual churn 30%)
-  Average lifetime: 33개월
+  ARPU: $10,424/month
+  Gross margin: 80% (dedicated support cost)
+  Churn rate: 3%/month (annual churn 30%)
+  Average lifetime: 33 months
 
   LTV = $10,424 × 80% × 33 = $275,174
 ```
 
-### LTV/CAC 비율
+### LTV/CAC Ratio
 
 ```yaml
 Pro tier:
   LTV: $16,133
   CAC: $150
-  LTV/CAC: 107.5x ← 매우 건강
+  LTV/CAC: 107.5x ← Very healthy
 
 Enterprise tier:
   LTV: $275,174
   CAC: $3,000
-  LTV/CAC: 91.7x ← 매우 건강
+  LTV/CAC: 91.7x ← Very healthy
 
 Blended (Pro 80% + Enterprise 20%):
   LTV: $67,941
@@ -395,11 +395,11 @@ Blended (Pro 80% + Enterprise 20%):
   LTV/CAC: 94.4x
 ```
 
-**벤치마크 비교**:
+**Benchmark Comparison**:
 
-- SaaS 업계 기준: LTV/CAC > 3x (건강), > 5x (우수)
-- Pag0: 94.4x ← 압도적 우수
-- 이유: Product-led growth + Value-aligned pricing
+- SaaS industry standard: LTV/CAC > 3x (healthy), > 5x (excellent)
+- Pag0: 94.4x ← Overwhelmingly excellent
+- Reason: Product-led growth + Value-aligned pricing
 
 ### Payback Period
 
@@ -407,25 +407,25 @@ Blended (Pro 80% + Enterprise 20%):
 Pro tier:
   CAC: $150
   Monthly profit: $949 × 85% = $807
-  Payback period: $150 ÷ $807 = 0.19개월 (5.6일)
+  Payback period: $150 ÷ $807 = 0.19 months (5.6 days)
 
 Enterprise tier:
   CAC: $3,000
   Monthly profit: $10,424 × 80% = $8,339
-  Payback period: $3,000 ÷ $8,339 = 0.36개월 (10.8일)
+  Payback period: $3,000 ÷ $8,339 = 0.36 months (10.8 days)
 
-Blended average: 0.22개월 (6.6일)
+Blended average: 0.22 months (6.6 days)
 ```
 
-**벤치마크**: SaaS 평균 12개월, 우수 기업 6개월
-**Pag0**: 0.22개월 ← 극도로 빠름
+**Benchmark**: SaaS average 12 months, excellent companies 6 months
+**Pag0**: 0.22 months ← Extremely fast
 
 ---
 
-## 5. 성장 전략
+## 5. Growth Strategy
 
 ```yaml
-# 성장 프로젝션 요약
+# Growth Projections Summary
 growth_projections:
   year1:
     arr: "$1.31M"
@@ -444,120 +444,120 @@ growth_projections:
     enterprise: 50
 ```
 
-### Phase 1 (0-6개월): 커뮤니티 확보 및 PMF 검증
+### Phase 1 (0-6 months): Community Acquisition and PMF Validation
 
-**목표**:
+**Goals**:
 
 - 100 MAU (Free tier)
-- 10 Pro tier 고객
+- 10 Pro tier customers
 - 1 Enterprise pilot
-- Product-market fit 검증
+- Product-market fit validation
 
-**전략**:
+**Strategy**:
 
 ```yaml
-제품 개발:
-  - 핵심 5개 모듈 안정화
-  - SDK 오픈소스 공개 (GitHub)
-  - 문서/튜토리얼 완성
+Product development:
+  - Stabilize core 5 modules
+  - Open source SDK release (GitHub)
+  - Complete documentation/tutorials
 
-커뮤니티 구축:
-  - x402 Discord/Telegram 활발히 참여
-  - Hackathon 후속 이벤트 주최
-  - 개발자 Showcase (월 1회)
+Community building:
+  - Active participation in x402 Discord/Telegram
+  - Host post-hackathon events
+  - Developer Showcase (monthly)
 
-파트너십:
-  - x402 공식 파트너십 체결
-  - SKALE Developer Program 가입
-  - Coinbase Developer Platform 등록
+Partnerships:
+  - Establish official x402 partnership
+  - Join SKALE Developer Program
+  - Register for Coinbase Developer Platform
 
-마케팅:
-  - Tech blog 주 1회 발행
-  - Twitter/X에서 개발 과정 공유
-  - Reddit r/ethereum, r/cryptocurrency 참여
+Marketing:
+  - Tech blog weekly posts
+  - Share development progress on Twitter/X
+  - Participate in Reddit r/ethereum, r/cryptocurrency
 ```
 
-**핵심 지표**:
+**Key Metrics**:
 
 - Weekly Active Agents: 50+
 - Cache hit rate: 40%+
 - NPS (Net Promoter Score): 50+
-- Free → Pro 전환율: 5%+
+- Free → Pro conversion rate: 5%+
 
-### Phase 2 (6-12개월): 엔터프라이즈 파일럿 및 수익 성장
+### Phase 2 (6-12 months): Enterprise Pilots and Revenue Growth
 
-**목표**:
+**Goals**:
 
 - 500 MAU
-- 50 Pro tier 고객
+- 50 Pro tier customers
 - 5 Enterprise customers
 - $100K MRR
 
-**전략**:
+**Strategy**:
 
 ```yaml
-제품 확장:
-  - Compliance 기능 강화 (EU AI Act 대응)
+Product expansion:
+  - Enhanced compliance features (EU AI Act compliance)
   - Advanced analytics (BI integration)
-  - White-label 베타
+  - White-label beta
 
-Sales 본격화:
-  - Sales hire (BDR 1명)
-  - Enterprise POC 프로그램
-  - Case study 3개 발행
+Full sales launch:
+  - Hire sales (1 BDR)
+  - Enterprise POC program
+  - Publish 3 case studies
 
-생태계 통합:
-  - The Graph subgraph 론칭
-  - Virtuals G.A.M.E. SDK 플러그인
-  - Anthropic MCP 지원
+Ecosystem integration:
+  - Launch The Graph subgraph
+  - Virtuals G.A.M.E. SDK plugin
+  - Anthropic MCP support
 
-마케팅 확대:
-  - Conference 스폰서 (ETHDenver, Consensus)
-  - YouTube 튜토리얼 시리즈
-  - Podcast 출연 (Web3, AI 카테고리)
+Marketing expansion:
+  - Conference sponsorships (ETHDenver, Consensus)
+  - YouTube tutorial series
+  - Podcast appearances (Web3, AI categories)
 ```
 
-**핵심 지표**:
+**Key Metrics**:
 
 - MRR growth: 15% MoM
 - Enterprise pipeline: $500K ARR
 - Developer satisfaction: 4.5/5
 - API uptime: 99.9%
 
-### Phase 3 (12-24개월): 플랫폼 확장 및 스케일링
+### Phase 3 (12-24 months): Platform Expansion and Scaling
 
-**목표**:
+**Goals**:
 
 - 2,000 MAU
 - 200 Pro tier
 - 20 Enterprise customers
 - $1M MRR ($12M ARR)
 
-**전략**:
+**Strategy**:
 
 ```yaml
-제품 플랫폼화:
-  - API Marketplace 론칭
-  - White-label 정식 출시
-  - Multi-protocol 지원 (402pay, h402)
+Product platformization:
+  - Launch API Marketplace
+  - Official white-label release
+  - Multi-protocol support (402pay, h402)
 
-국제 확장:
-  - EU/APAC 서버 오픈
-  - 다국어 지원 (영어, 한국어, 일본어)
-  - 로컬 파트너십
+International expansion:
+  - Open EU/APAC servers
+  - Multi-language support (English, Korean, Japanese)
+  - Local partnerships
 
-생태계 리더십:
-  - x402 컨퍼런스 공동 주최
-  - 오픈소스 컨트리뷰션 (프로토콜 개선 제안)
-  - Standards body 참여
+Ecosystem leadership:
+  - Co-host x402 conference
+  - Open source contributions (protocol improvement proposals)
+  - Standards body participation
 
-기업 영업 강화:
-  - Sales team 확대 (AE 2명, SDR 2명)
+Enterprise sales strengthening:
+  - Expand sales team (2 AEs, 2 SDRs)
   - Enterprise features (SSO, RBAC, Audit logs)
   - Compliance certifications (SOC2, ISO27001)
 ```
 
-**핵심 지표**:
+**Key Metrics**:
 
 - ARR: $12M
 - Net revenue retention: 120%+
@@ -566,42 +566,42 @@ Sales 본격화:
 
 ---
 
-## 6. 수익 프로젝션 (3년 예측)
+## 6. Revenue Projections (3-Year Forecast)
 
-### 가정 (Assumptions)
+### Assumptions
 
 ```yaml
-성장 가정:
+Growth assumptions:
   Year 1:
-    - MAU 성장: 0 → 500 (exponential)
-    - Free → Pro 전환율: 10%
-    - Pro → Enterprise 업그레이드: 10%
-    - 월별 성장률: 20% (초기) → 15% (후기)
+    - MAU growth: 0 → 500 (exponential)
+    - Free → Pro conversion rate: 10%
+    - Pro → Enterprise upgrade: 10%
+    - Monthly growth rate: 20% (early) → 15% (late)
 
   Year 2:
-    - MAU 성장: 500 → 2,000
-    - 전환율 개선: 12% (제품 성숙도)
-    - 월별 성장률: 10% (안정화)
+    - MAU growth: 500 → 2,000
+    - Improved conversion rate: 12% (product maturity)
+    - Monthly growth rate: 10% (stabilization)
 
   Year 3:
-    - MAU 성장: 2,000 → 5,000
-    - 전환율: 15%
-    - 월별 성장률: 8%
+    - MAU growth: 2,000 → 5,000
+    - Conversion rate: 15%
+    - Monthly growth rate: 8%
 
-가격 가정:
-  - Pro ARPU: $949 (고정)
-  - Enterprise ARPU: $10,424 (고정)
-  - Savings share: 전체 ARPU의 95% 차지
+Pricing assumptions:
+  - Pro ARPU: $949 (fixed)
+  - Enterprise ARPU: $10,424 (fixed)
+  - Savings share: 95% of total ARPU
 
-비용 가정:
-  - 인프라 비용: 15% of revenue
-  - 인건비: 2명 창업자 ($10K/월 each) + hires
-  - 마케팅: 20% of revenue (Year 1), 15% (Year 2+)
+Cost assumptions:
+  - Infrastructure cost: 15% of revenue
+  - Personnel: 2 founders ($10K/month each) + hires
+  - Marketing: 20% of revenue (Year 1), 15% (Year 2+)
 ```
 
-### 월별 수익 프로젝션 (Year 1)
+### Monthly Revenue Projections (Year 1)
 
-| 월 | MAU | Pro | Enterprise | MRR | MoM Growth | 누적 ARR |
+| Month | MAU | Pro | Enterprise | MRR | MoM Growth | Cumulative ARR |
 |----|-----|-----|------------|-----|------------|----------|
 | 1 | 20 | 2 | 0 | $1,898 | - | $22,776 |
 | 2 | 35 | 4 | 0 | $3,796 | 100% | $45,552 |
@@ -616,30 +616,30 @@ Sales 본격화:
 | 11 | 540 | 54 | 4 | $93,014 | 8% | $1,116,168 |
 | 12 | 600 | 60 | 5 | $109,176 | 17% | $1,310,112 |
 
-**Year 1 합계**:
+**Year 1 Total**:
 
-- Total MRR (12월): $109,176
+- Total MRR (Month 12): $109,176
 - ARR (run-rate): $1,310,112
-- Average MoM growth: 60% (초기), 15% (후기)
+- Average MoM growth: 60% (early), 15% (late)
 
-### 연도별 요약 프로젝션
+### Annual Summary Projections
 
-| 지표 | Year 1 | Year 2 | Year 3 |
+| Metric | Year 1 | Year 2 | Year 3 |
 |------|--------|--------|--------|
-| **사용자** |
-| MAU (말) | 600 | 2,000 | 5,000 |
+| **Users** |
+| MAU (end) | 600 | 2,000 | 5,000 |
 | Pro tier | 60 | 240 | 750 |
 | Enterprise | 5 | 20 | 50 |
-| **수익** |
-| MRR (말) | $109K | $432K | $1,082K |
+| **Revenue** |
+| MRR (end) | $109K | $432K | $1,082K |
 | ARR | $1.31M | $5.18M | $12.98M |
 | YoY growth | - | 295% | 151% |
-| **비용** |
+| **Costs** |
 | Infra (15%) | $197K | $777K | $1,947K |
 | People | $360K | $720K | $1,200K |
 | Marketing (20%/15%) | $262K | $777K | $1,947K |
 | Total OpEx | $819K | $2,274K | $5,094K |
-| **손익** |
+| **Profit/Loss** |
 | Gross profit | $1,113K | $4,403K | $11,033K |
 | EBITDA | $491K | $2,906K | $7,886K |
 | Net margin | 37% | 56% | 61% |
@@ -647,137 +647,137 @@ Sales 본격화:
 ### Break-even Analysis
 
 ```yaml
-월별 고정비 (Year 1 평균):
-  인건비: $30K (2명 창업자 + 계약직)
-  인프라: $5K
-  마케팅: $15K
-  기타: $5K
-  Total: $55K/월
+Monthly fixed costs (Year 1 average):
+  Personnel: $30K (2 founders + contractors)
+  Infrastructure: $5K
+  Marketing: $15K
+  Other: $5K
+  Total: $55K/month
 
 Break-even MRR: $55K
-도달 시점: Month 8 (August)
+Achievement: Month 8 (August)
 
-누적 손실 (Month 1-7): $187K
-누적 이익 (Month 8-12): $272K
-Year 1 net: +$85K (자체 수익 달성)
+Cumulative loss (Month 1-7): $187K
+Cumulative profit (Month 8-12): $272K
+Year 1 net: +$85K (self-sustaining)
 
-Seed 투자 필요성:
-- 최소 런웨이: $200K (첫 7개월)
-- 권장 런웨이: $500K (18개월 여유)
-- Series A까지 자체 수익으로 도달 가능
+Seed investment need:
+- Minimum runway: $200K (first 7 months)
+- Recommended runway: $500K (18 months buffer)
+- Can reach Series A on self-generated revenue
 ```
 
-### 시나리오 분석
+### Scenario Analysis
 
-**Pessimistic Case (보수적)**:
+**Pessimistic Case (conservative)**:
 
 ```yaml
-가정:
-  - MoM growth: 10% (절반)
-  - 전환율: 5% (절반)
-  - Churn: 7%/월 (높음)
+Assumptions:
+  - MoM growth: 10% (half)
+  - Conversion rate: 5% (half)
+  - Churn: 7%/month (high)
 
-결과:
+Results:
   Year 1 ARR: $650K (50% of base)
   Year 2 ARR: $2.6M
   Break-even: Month 12
 
-판단: 여전히 viable, Seed $500K로 충분
+Assessment: Still viable, Seed $500K sufficient
 ```
 
-**Optimistic Case (공격적)**:
+**Optimistic Case (aggressive)**:
 
 ```yaml
-가정:
+Assumptions:
   - MoM growth: 25% (x1.5)
-  - 전환율: 15% (x1.5)
-  - Churn: 3%/월 (낮음)
-  - Enterprise 비중 높음
+  - Conversion rate: 15% (x1.5)
+  - Churn: 3%/month (low)
+  - Higher enterprise mix
 
-결과:
+Results:
   Year 1 ARR: $2M (x1.5)
   Year 2 ARR: $8M
   Break-even: Month 5
 
-판단: Series A $5M+ 유치 가능
+Assessment: Series A $5M+ achievable
 ```
 
 ---
 
-## 7. 경쟁 우위 및 방어 전략
+## 7. Competitive Advantages and Defense Strategy
 
-### 데이터 해자
+### Data Moat
 
-**메커니즘**:
+**Mechanism**:
 
 ```
-더 많은 에이전트 사용
-→ 더 많은 API 호출 데이터 축적
-→ 더 정확한 큐레이션
-→ 더 높은 가치
-→ 더 많은 에이전트 유입
+More agent usage
+→ More API call data accumulation
+→ More accurate curation
+→ Higher value
+→ More agent acquisition
 (Positive Feedback Loop)
 ```
 
-**정량적 우위**:
+**Quantitative Advantage**:
 
-- 100K requests 데이터 → 큐레이션 정확도 70%
+- 100K requests data → Curation accuracy 70%
 - 1M requests → 85%
 - 10M requests → 95%+
 
-**선발주자 이점**: 6개월 리드 = 10M requests gap (따라잡기 어려움)
+**First-mover advantage**: 6-month lead = 10M request gap (hard to catch up)
 
-### 생태계 통합
+### Ecosystem Integration
 
-**파트너십 전략**:
+**Partnership Strategy**:
 
 ```yaml
-x402 공식 파트너:
-  - Bazaar에서 "Pag0 Verified" 배지
-  - x402 SDK에 Pag0 예제 코드 포함
-  - 공동 마케팅 ($0 cost)
+x402 official partner:
+  - "Pag0 Verified" badge in Bazaar
+  - Pag0 example code in x402 SDK
+  - Co-marketing ($0 cost)
 
 SKALE Developer Program:
-  - Zero Gas 활용 사례 showcasing
-  - Grant 지원 ($50K)
+  - Showcase Zero Gas use cases
+  - Grant support ($50K)
 
 The Graph Subgraph:
-  - 온체인 결제 데이터 + Pag0 분석 통합
-  - DeFi 프로토콜 통합 가능성
+  - Integrate on-chain payment data + Pag0 analytics
+  - DeFi protocol integration potential
 
 Virtuals G.A.M.E. SDK:
-  - 게임 에이전트 빌트인 지출 관리
-  - Game economy 필수 인프라
+  - Built-in spend management for game agents
+  - Essential game economy infrastructure
 ```
 
-**결과**: 후발주자는 이 관계망을 복제하기 어려움
+**Result**: Late entrants find this network difficult to replicate
 
-### 네트워크 효과
+### Network Effects
 
-**Curation의 네트워크 효과**:
+**Curation Network Effects**:
 
-- Agent A가 API X 사용 → 데이터 축적
-- Agent B가 "추천해줘" 요청 → API X 추천
-- Agent B도 API X 사용 → 데이터 더 축적
-- 선순환
+- Agent A uses API X → Data accumulation
+- Agent B requests "recommend" → Recommends API X
+- Agent B also uses API X → More data accumulation
+- Virtuous cycle
 
 **Indirect Network Effect**:
 
-- API 제공자들이 Pag0 데이터 보고 서비스 개선
-- 개선된 API가 더 좋은 점수
-- 에이전트가 더 신뢰
+- API providers see Pag0 data and improve services
+- Improved APIs get better scores
+- Agents trust more
 
-### 기술 장벽
+### Technical Barriers
 
 ```yaml
-복제 어려움:
-  1. Real-time policy engine (복잡한 edge case)
-  2. Smart cache invalidation (도메인 지식 필요)
-  3. 멀티 프로토콜 지원 (x402, 402pay, h402)
-  4. 온체인 결제 추적 (SKALE, Ethereum L2)
-  5. ML-based anomaly detection (데이터 필요)
+Replication difficulty:
+  1. Real-time policy engine (complex edge cases)
+  2. Smart cache invalidation (domain knowledge required)
+  3. Multi-protocol support (x402, 402pay, h402)
+  4. On-chain payment tracking (SKALE, Ethereum L2)
+  5. ML-based anomaly detection (data required)
 
-특허 가능성:
+Patent potential:
   - "Proxy-based AI agent payment policy enforcement"
   - "Cache-aware micropayment optimization"
   - "Usage-data-driven API curation algorithm"
@@ -785,160 +785,160 @@ Virtuals G.A.M.E. SDK:
 
 ---
 
-## 8. 리스크 및 완화 전략
+## 8. Risks and Mitigation Strategies
 
-### 시장 리스크
+### Market Risks
 
-**Risk 1: x402 채택 저조**
+**Risk 1: Low x402 adoption**
 
 ```yaml
-확률: 30% (중간)
-영향: 높음 (핵심 시장)
+Probability: 30% (medium)
+Impact: High (core market)
 
-완화 전략:
-  1. Multi-protocol 지원 (402pay, h402, x4Pay)
-  2. Anthropic MCP, OpenAI Assistants로 피봇 가능
-  3. 일반 API gateway로 포지셔닝 변경 옵션
+Mitigation strategy:
+  1. Multi-protocol support (402pay, h402, x4Pay)
+  2. Can pivot to Anthropic MCP, OpenAI Assistants
+  3. Option to reposition as general API gateway
 
 Fallback Plan:
-  - x402 없어도 "AI agent spend management"는 유효
-  - MCP 서버 오케스트레이션 비용 관리로 전환
-  - Total addressable market 변화 없음
+  - "AI agent spend management" valid even without x402
+  - Pivot to MCP server orchestration cost management
+  - Total addressable market unchanged
 ```
 
-**Risk 2: 경쟁자 출현**
+**Risk 2: Competitor emergence**
 
 ```yaml
-확률: 60% (높음)
-영향: 중간 (선발주자 우위 있음)
+Probability: 60% (high)
+Impact: Medium (first-mover advantage exists)
 
-완화 전략:
-  1. 빠른 데이터 해자 구축 (6개월 리드)
-  2. 생태계 파트너십 조기 체결
-  3. 오픈소스로 커뮤니티 선점
+Mitigation strategy:
+  1. Build data moat quickly (6-month lead)
+  2. Secure ecosystem partnerships early
+  3. Preempt community with open source
 
-차별화 포인트:
-  - 3-in-1 통합 솔루션 (정책 + 큐레이션 + 캐시)
-  - Savings-aligned pricing (경쟁사 따라하기 어려움)
-  - Real usage data (주관적 리뷰와 차별화)
+Differentiation points:
+  - 3-in-1 integrated solution (policy + curation + cache)
+  - Savings-aligned pricing (hard for competitors to copy)
+  - Real usage data (differentiated from subjective reviews)
 ```
 
-### 기술 리스크
+### Technical Risks
 
-**Risk 3: 캐싱 무결성 이슈**
+**Risk 3: Cache integrity issues**
 
 ```yaml
-확률: 20% (낮음)
-영향: 높음 (신뢰 손실)
+Probability: 20% (low)
+Impact: High (trust loss)
 
-완화 전략:
-  1. Cache-Control 헤더 엄격 준수
-  2. API 제공자 opt-in 메커니즘
-  3. Cache miss 시 자동 fallback
-  4. 감사 로그 + 투명성 리포트
+Mitigation strategy:
+  1. Strict Cache-Control header compliance
+  2. API provider opt-in mechanism
+  3. Automatic fallback on cache miss
+  4. Audit logs + transparency reports
 
-보험:
-  - Errors & Omissions 보험 ($1M)
-  - SLA에 명확한 책임 한계 명시
+Insurance:
+  - Errors & Omissions insurance ($1M)
+  - Clear liability limits in SLA
 ```
 
-**Risk 4: 확장성 문제**
+**Risk 4: Scalability issues**
 
 ```yaml
-확률: 40% (중간)
-영향: 중간 (성장 둔화)
+Probability: 40% (medium)
+Impact: Medium (growth slowdown)
 
-완화 전략:
-  1. 초기부터 horizontal scaling 설계
+Mitigation strategy:
+  1. Design for horizontal scaling from start
   2. Redis Cluster + PostgreSQL sharding
-  3. Cloudflare Workers 멀티 리전
-  4. Performance budget 설정 (<100ms p99)
+  3. Cloudflare Workers multi-region
+  4. Set performance budget (<100ms p99)
 
 Contingency:
-  - SKALE infra 활용 (Zero Gas + 높은 TPS)
+  - Utilize SKALE infra (Zero Gas + high TPS)
   - CDN edge caching (Cloudflare/Fastly)
 ```
 
-### 비즈니스 리스크
+### Business Risks
 
-**Risk 5: Unit economics 악화**
+**Risk 5: Unit economics deterioration**
 
 ```yaml
-확률: 25% (낮음-중간)
-영향: 높음 (수익성 저해)
+Probability: 25% (low-medium)
+Impact: High (profitability impediment)
 
-완화 전략:
-  1. 인프라 비용 모니터링 (목표 <15% of revenue)
-  2. Tiered pricing으로 소액 고객 제한
-  3. Enterprise focus로 ARPU 증가
+Mitigation strategy:
+  1. Monitor infrastructure costs (target <15% of revenue)
+  2. Limit small customers with tiered pricing
+  3. Increase ARPU with enterprise focus
 
 Early warning signals:
-  - Gross margin <70% → 가격 인상 or 기능 제한
-  - CAC payback >6개월 → 마케팅 채널 재조정
+  - Gross margin <70% → Price increase or feature restriction
+  - CAC payback >6 months → Realign marketing channels
 ```
 
 **Risk 6: Regulatory compliance**
 
 ```yaml
-확률: 30% (EU AI Act 등)
-영향: 중간 (기능 추가 필요)
+Probability: 30% (EU AI Act etc.)
+Impact: Medium (feature additions required)
 
-완화 전략:
-  1. Phase 2부터 compliance 기능 개발
-  2. Legal counsel 확보 (fractional GC)
-  3. SOC2, ISO27001 인증 취득 (Year 2)
+Mitigation strategy:
+  1. Develop compliance features from Phase 2
+  2. Secure legal counsel (fractional GC)
+  3. Obtain SOC2, ISO27001 certification (Year 2)
 
-기회로 전환:
-  - Compliance를 Enterprise tier 차별화 포인트로 활용
-  - "EU AI Act Ready" 마케팅
+Convert to opportunity:
+  - Use compliance as Enterprise tier differentiator
+  - "EU AI Act Ready" marketing
 ```
 
 ---
 
-## 9. 투자 유치 전략
+## 9. Investment Strategy
 
-### Seed 라운드 ($500K)
+### Seed Round ($500K)
 
-**타이밍**: 해커톤 직후 (PMF 검증 직전)
+**Timing**: Immediately post-hackathon (pre-PMF validation)
 
 **Use of Funds**:
 
 ```yaml
-인건비 (60%): $300K
-  - 2명 창업자 급여 12개월
-  - 계약직 개발자 1명 (6개월)
+Personnel (60%): $300K
+  - 2 founders salary 12 months
+  - 1 contractor developer (6 months)
 
-제품 개발 (20%): $100K
-  - 인프라 비용 (Redis, Postgres, Cloudflare)
-  - Third-party API (The Graph, analytics tools)
+Product development (20%): $100K
+  - Infrastructure costs (Redis, Postgres, Cloudflare)
+  - Third-party APIs (The Graph, analytics tools)
   - Security audit
 
-마케팅 (15%): $75K
-  - Conference 참가/스폰서
+Marketing (15%): $75K
+  - Conference participation/sponsorship
   - Content creation
-  - Community 이벤트
+  - Community events
 
-법무/행정 (5%): $25K
-  - 법인 설립 (Delaware C-corp)
-  - IP 보호 (특허 출원)
-  - 회계/세무
+Legal/Admin (5%): $25K
+  - Incorporation (Delaware C-corp)
+  - IP protection (patent filing)
+  - Accounting/Tax
 ```
 
-**투자자 타겟**:
+**Target Investors**:
 
 - **Web3 VCs**: Paradigm, a16z crypto, Coinbase Ventures
 - **AI-focused VCs**: Greylock, Sequoia, Lightspeed
-- **Strategic angels**: Coinbase 임직원, SKALE 팀, x402 contributors
+- **Strategic angels**: Coinbase employees, SKALE team, x402 contributors
 
 **Valuation**: $3M-$5M pre-money (10-17% dilution)
 
 ### Series A ($5M+)
 
-**타이밍**: Year 1 말 (ARR $1M+ 달성 후)
+**Timing**: End of Year 1 (after reaching ARR $1M+)
 
-**조건**:
+**Conditions**:
 
-- ARR: $1M+ (달성 확정)
+- ARR: $1M+ (confirmed achievement)
 - MoM growth: 15%+
 - Enterprise customers: 5+
 - Net revenue retention: 110%+
@@ -947,12 +947,12 @@ Early warning signals:
 
 ```yaml
 Sales & Marketing (50%): $2.5M
-  - Sales team 구축 (AE 2, SDR 2, SE 1)
-  - Enterprise 마케팅 캠페인
+  - Build sales team (2 AEs, 2 SDRs, 1 SE)
+  - Enterprise marketing campaigns
   - International expansion
 
 R&D (30%): $1.5M
-  - 엔지니어 5명 채용
+  - Hire 5 engineers
   - Platform features (marketplace, white-label)
   - ML/AI for anomaly detection
 
@@ -962,121 +962,121 @@ Operations (20%): $1M
   - Office/infrastructure
 ```
 
-**Valuation 목표**: $25M-$40M pre-money
+**Valuation Target**: $25M-$40M pre-money
 
 ---
 
-## 10. Exit 전략
+## 10. Exit Strategy
 
-### 전략적 인수 - 주요 경로
+### Strategic Acquisition - Primary Path
 
-**잠재 인수자**:
+**Potential Acquirers**:
 
 ```yaml
 Tier 1 - x402 Ecosystem:
   Coinbase:
-    - Rationale: x402 생태계 강화
+    - Rationale: Strengthen x402 ecosystem
     - Valuation: $50M-$150M (ARR 10-30x)
     - Timing: Year 2-3
 
   SKALE Network:
-    - Rationale: Zero Gas 킬러 앱
+    - Rationale: Zero Gas killer app
     - Valuation: $30M-$80M
     - Timing: Year 2
 
 Tier 2 - API Management:
   Kong:
-    - Rationale: AI agent 시장 진출
+    - Rationale: AI agent market entry
     - Valuation: $100M-$200M
     - Timing: Year 3-4
 
   Apigee (Google):
-    - Rationale: Cloud AI 통합
+    - Rationale: Cloud AI integration
     - Valuation: $150M-$300M
     - Timing: Year 3-5
 
 Tier 3 - Identity/Security:
   Okta:
-    - Rationale: "Auth0 for payments" 포지셔닝
+    - Rationale: "Auth0 for payments" positioning
     - Valuation: $200M-$500M
     - Timing: Year 4-5
-    - Precedent: Auth0 인수 $6.5B
+    - Precedent: Auth0 acquisition $6.5B
 
   Cloudflare:
-    - Rationale: Edge platform 확장
+    - Rationale: Edge platform expansion
     - Valuation: $150M-$400M
     - Timing: Year 3-5
 ```
 
-**Exit 시나리오 (Optimistic)**:
+**Exit Scenario (Optimistic)**:
 
-- Okta가 "Auth0 패턴 재현" 목적으로 Year 4에 $300M 인수
-- 창업자 지분 40% 가정 → $120M exit
+- Okta acquires for $300M in Year 4 to "replicate Auth0 pattern"
+- Founder stake 40% assumption → $120M exit
 
-### IPO - 보조 경로
+### IPO - Secondary Path
 
-**조건**:
+**Conditions**:
 
 - ARR $100M+
 - YoY growth 50%+
 - Gross margin 75%+
 - Rule of 40 >60
 
-**타임라인**: Year 7-10 (비현실적, 인수가 더 likely)
+**Timeline**: Year 7-10 (unrealistic, acquisition more likely)
 
-### 지속 경영 - Fallback
+### Continued Operation - Fallback
 
-**시나리오**:
+**Scenario**:
 
-- Seed 후 추가 투자 불필요
-- Year 2부터 흑자 전환
-- 배당으로 창업자 보상
-- 장기 플랫폼 구축
+- No additional investment needed after Seed
+- Turn profitable from Year 2
+- Compensate founders with dividends
+- Build long-term platform
 
-**재무 모델**:
+**Financial Model**:
 
 - Year 5 ARR: $30M
 - Net margin: 40%
-- 연 배당: $12M (창업자 지분 40% → $4.8M/년)
+- Annual dividend: $12M (founder stake 40% → $4.8M/year)
 
 ---
 
-## 요약 및 핵심 메트릭
+## Summary and Key Metrics
 
-### 비즈니스 모델 핵심
+### Business Model Core
 
 ```yaml
-가치 제안:
-  - 고객은 비용 절감
-  - Pag0는 절감액 일부를 수익화
-  - Win-Win 구조
+Value proposition:
+  - Customers save costs
+  - Pag0 monetizes portion of savings
+  - Win-Win structure
 
-수익 구조:
-  - Subscription: $49-$299/월 (안정적 MRR)
+Revenue structure:
+  - Subscription: $49-$299/month (stable MRR)
   - Savings Share: 15% (Usage-based upside)
-  - 추가 수익: White-label, Marketplace commission
+  - Additional revenue: White-label, Marketplace commission
 
 Unit Economics:
-  - LTV/CAC: 94.4x (압도적 우수)
-  - Payback: 6.6일 (극도로 빠름)
-  - Gross Margin: 80%+ (SaaS 수준)
+  - LTV/CAC: 94.4x (overwhelmingly excellent)
+  - Payback: 6.6 days (extremely fast)
+  - Gross Margin: 80%+ (SaaS level)
 
-성장 로드맵:
+Growth roadmap:
   - Year 1: $1.3M ARR (Community + PMF)
   - Year 2: $5.2M ARR (Enterprise + Scale)
   - Year 3: $13M ARR (Platform + Exit-ready)
 
-경쟁 우위:
-  - Data Moat (사용량 데이터 독점)
+Competitive advantages:
+  - Data Moat (exclusive usage data)
   - Ecosystem Lock-in (x402, SKALE, The Graph)
-  - Network Effects (큐레이션 선순환)
+  - Network Effects (curation virtuous cycle)
 ```
 
-### 투자 매력도
+### Investment Attractiveness
 
 **SaaS Metrics Benchmark**:
 
-| Metric | Pag0 Target | SaaS 평균 | 등급 |
+| Metric | Pag0 Target | SaaS Average | Grade |
 |--------|-------------|----------|------|
 | LTV/CAC | 94.4x | 3-5x | A+ |
 | Payback Period | 0.22mo | 12mo | A+ |
@@ -1086,13 +1086,13 @@ Unit Economics:
 | Rule of 40 | 70+ | 40 | A+ |
 | CAC Payback | <1mo | 12mo | A+ |
 
-**결론**: 투자 적격성 매우 높음 (Top 5% SaaS)
+**Conclusion**: Very high investment eligibility (Top 5% SaaS)
 
 ---
 
-## 부록: 재무 모델 상세
+## Appendix: Detailed Financial Model
 
-### Year 1 월별 상세 손익계산서 (샘플: Month 6)
+### Year 1 Monthly Detailed P&L (Sample: Month 6)
 
 ```yaml
 Revenue:
@@ -1119,9 +1119,9 @@ EBITDA: $2,585
 Net Income: $2,585 (6.8% margin)
 ```
 
-### 민감도 분석 (Sensitivity Analysis)
+### Sensitivity Analysis
 
-**변수: 캐시 히트율**
+**Variable: Cache Hit Rate**
 
 | Cache Hit Rate | Savings Share | ARPU Impact | LTV Impact |
 |----------------|---------------|-------------|------------|
@@ -1130,7 +1130,7 @@ Net Income: $2,585 (6.8% margin)
 | 50% | $1,125/mo | $1,174/mo | +24% |
 | 60% | $1,350/mo | $1,399/mo | +47% |
 
-**변수: 전환율**
+**Variable: Conversion Rate**
 
 | Free→Pro | Year 1 ARR | Break-even | LTV/CAC |
 |----------|------------|------------|---------|
@@ -1139,7 +1139,7 @@ Net Income: $2,585 (6.8% margin)
 | 15% | $1.97M | Month 6 | 141x |
 | 20% | $2.62M | Month 5 | 188x |
 
-**결론**: 보수적 가정에서도 viable, 상방 잠재력 높음
+**Conclusion**: Viable even under conservative assumptions, high upside potential
 
 ---
 

@@ -1,36 +1,36 @@
 # TASK-22: Deployment (Fly.io + Vercel)
 
-| 항목 | 내용 |
-|------|------|
-| **패키지** | `packages/proxy` (Fly.io), `packages/dashboard` (Vercel) |
-| **예상 시간** | 2시간 |
-| **의존성** | [TASK-11](./TASK-11-integration.md) (백엔드 완성), [TASK-12](./TASK-12-dashboard-layout.md) (대시보드 완성) |
-| **차단 대상** | 없음 (최종 배포) |
-| **참조 문서** | `docs/CLAUDE-hackathon.md` 배포 전략 섹션 |
+| Item | Content |
+|------|---------|
+| **Package** | `packages/proxy` (Fly.io), `packages/dashboard` (Vercel) |
+| **Estimated Time** | 2 hours |
+| **Dependencies** | [TASK-11](./TASK-11-integration.md) (backend complete), [TASK-12](./TASK-12-dashboard-layout.md) (dashboard complete) |
+| **Blocks** | None (final deployment) |
+| **Reference Docs** | `docs/CLAUDE-hackathon.md` deployment strategy section |
 
-## ⚠️ 수동 승인 필요
+## ⚠️ Manual Approval Required
 
-> **이 태스크는 사용자의 명시적 허락 없이 진행하지 않는다.** 로컬 테스트가 충분히 완료된 후 사용자가 직접 배포 시점을 결정한다.
+> **This task will NOT proceed without explicit user permission.** After sufficient local testing is complete, the user will decide the deployment timing.
 
-## 목표
+## Goal
 
-Proxy API를 **Fly.io**에, Dashboard를 **Vercel**에 배포하여 라이브 데모 환경을 구성한다.
+Deploy Proxy API to **Fly.io** and Dashboard to **Vercel** to set up a live demo environment.
 
-## 배포 대상
+## Deployment Targets
 
-| 컴포넌트 | 프로젝트 | 플랫폼 | URL 패턴 |
-|----------|----------|--------|----------|
+| Component | Project | Platform | URL Pattern |
+|-----------|---------|----------|-------------|
 | **Proxy API** | `packages/proxy` | Fly.io | `pag0-proxy.fly.dev` |
 | **Dashboard** | `packages/dashboard` | Vercel | `pag0-dashboard.vercel.app` |
-| **MCP Server** | `packages/mcp` | 로컬 (stdio) | Claude Code 연동 |
-| **PostgreSQL** | - | Supabase | 이미 프로비저닝됨 |
-| **Redis** | - | Upstash | 이미 프로비저닝됨 |
+| **MCP Server** | `packages/mcp` | Local (stdio) | Claude Code integration |
+| **PostgreSQL** | - | Supabase | Already provisioned |
+| **Redis** | - | Upstash | Already provisioned |
 
-## 구현 항목
+## Implementation Items
 
 ### 1. Proxy API → Fly.io
 
-#### 1.1 fly.toml 생성
+#### 1.1 Create fly.toml
 
 ```toml
 app = "pag0-proxy"
@@ -59,7 +59,7 @@ primary_region = "nrt"
   memory_mb = 256
 ```
 
-#### 1.2 Dockerfile (Bun 런타임)
+#### 1.2 Dockerfile (Bun runtime)
 
 ```dockerfile
 FROM oven/bun:1 as builder
@@ -75,7 +75,7 @@ EXPOSE 3000
 CMD ["bun", "run", "dist/index.js"]
 ```
 
-#### 1.3 환경변수 설정
+#### 1.3 Environment Variables Setup
 
 ```bash
 fly secrets set \
@@ -87,7 +87,7 @@ fly secrets set \
   --app pag0-proxy
 ```
 
-#### 1.4 배포 및 확인
+#### 1.4 Deploy and Verify
 
 ```bash
 fly launch --name pag0-proxy --region nrt --no-deploy
@@ -97,7 +97,7 @@ curl https://pag0-proxy.fly.dev/health
 
 ### 2. Dashboard → Vercel
 
-#### 2.1 Vercel 설정
+#### 2.1 Vercel Configuration
 
 ```bash
 cd packages/dashboard
@@ -106,18 +106,18 @@ npx vercel env add NEXT_PUBLIC_API_URL  # → https://pag0-proxy.fly.dev
 npx vercel env add NEXT_PUBLIC_APP_NAME # → Pag0
 ```
 
-#### 2.2 배포
+#### 2.2 Deploy
 
 ```bash
 npx vercel --prod
 ```
 
-#### 2.3 CORS 연결 확인
+#### 2.3 CORS Connection Verification
 
-- Proxy의 `CORS_ORIGINS`에 Vercel Dashboard URL 추가 필수
-- Dashboard → Proxy API 호출 정상 동작 확인
+- Must add Vercel Dashboard URL to Proxy's `CORS_ORIGINS`
+- Verify Dashboard → Proxy API calls work correctly
 
-### 3. 연결 아키텍처
+### 3. Connection Architecture
 
 ```
 Dashboard (Vercel)  ──HTTPS──>  Proxy API (Fly.io)  ──TCP──>  Redis (Upstash)
@@ -125,30 +125,30 @@ Dashboard (Vercel)  ──HTTPS──>  Proxy API (Fly.io)  ──TCP──>  Re
                                                      ──HTTPS─> x402 Facilitator
 ```
 
-## 배포 타이밍
+## Deployment Timeline
 
-| 시점 | 액션 |
-|------|------|
-| Day 1 오후 | Proxy API 첫 배포 (Fly.io) — `/health` + `/proxy` 동작 확인 |
-| Day 2 저녁 | Proxy API 업데이트 — 전체 API 엔드포인트 동작 |
-| Day 3 오전 | Dashboard 첫 배포 (Vercel) — API 연동 확인 |
-| Day 3 오후 | 최종 배포 — 데모 데이터 시딩 + 라이브 데모 |
+| Timing | Action |
+|--------|--------|
+| Day 1 PM | First Proxy API deployment (Fly.io) — verify `/health` + `/proxy` work |
+| Day 2 Evening | Proxy API update — all API endpoints working |
+| Day 3 AM | First Dashboard deployment (Vercel) — verify API integration |
+| Day 3 PM | Final deployment — demo data seeding + live demo |
 
-## 폴백 전략
+## Fallback Strategy
 
-| 리스크 | 폴백 |
-|--------|------|
-| Fly.io 배포 실패 | `localhost:3000`에서 데모 + 화면 녹화 |
-| Vercel 배포 실패 | `localhost:3001`에서 Next.js dev 서버로 데모 |
-| 둘 다 실패 | 테스트 스크립트 실행 결과 + 아키텍처 다이어그램으로 피치 |
+| Risk | Fallback |
+|------|----------|
+| Fly.io deployment fails | Demo on `localhost:3000` + screen recording |
+| Vercel deployment fails | Demo on `localhost:3001` with Next.js dev server |
+| Both fail | Pitch with test script results + architecture diagram |
 
-## 완료 기준
+## Completion Criteria
 
-- [ ] `fly.toml` 생성 및 구성
-- [ ] Dockerfile 작성 (Bun 런타임)
-- [ ] Fly.io 환경변수 설정 완료
-- [ ] Proxy API 배포 + `/health` 응답 확인
-- [ ] Vercel 프로젝트 설정 + 환경변수
-- [ ] Dashboard 배포 + API 연동 확인
-- [ ] CORS 설정 검증 (Dashboard → Proxy)
-- [ ] 데모 시나리오 라이브 환경 동작 확인
+- [ ] `fly.toml` created and configured
+- [ ] Dockerfile written (Bun runtime)
+- [ ] Fly.io environment variables configured
+- [ ] Proxy API deployed + `/health` response verified
+- [ ] Vercel project setup + environment variables
+- [ ] Dashboard deployed + API integration verified
+- [ ] CORS configuration validated (Dashboard → Proxy)
+- [ ] Demo scenarios verified in live environment

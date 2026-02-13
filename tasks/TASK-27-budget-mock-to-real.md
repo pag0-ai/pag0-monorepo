@@ -1,19 +1,19 @@
-# TASK-27: Dashboard 예산 표시 — Mock → 실제 데이터
+# TASK-27: Dashboard Budget Display — Mock → Real Data
 
 **Priority**: HIGH
-**Status**: ✅ 완료
+**Status**: ✅ Completed
 **Phase**: 5 (Dashboard with Data)
 
-## 문제
+## Problem
 
-`packages/dashboard/app/dashboard/page.tsx` 68-73줄:
+`packages/dashboard/app/dashboard/page.tsx` lines 68-73:
 ```typescript
 // Budget data (mock for MVP - replace with actual budget API)
 const dailyBudget = { spent: 5_000_000, limit: 10_000_000 };
 const monthlyBudget = { spent: 120_000_000, limit: 300_000_000 };
 ```
 
-백엔드 `/api/analytics/summary` 응답에 이미 `budgetUsage` 포함:
+Backend `/api/analytics/summary` response already includes `budgetUsage`:
 ```json
 {
   "budgetUsage": {
@@ -23,10 +23,10 @@ const monthlyBudget = { spent: 120_000_000, limit: 300_000_000 };
 }
 ```
 
-## 수정
+## Fix
 
-하드코딩을 `summary.budgetUsage`로 교체.
+Replace hardcoded values with `summary.budgetUsage`.
 
-## 수정 파일
+## Files to Modify
 
-- `packages/dashboard/app/dashboard/page.tsx` — mock 삭제, summary 데이터 사용
+- `packages/dashboard/app/dashboard/page.tsx` — Remove mock, use summary data

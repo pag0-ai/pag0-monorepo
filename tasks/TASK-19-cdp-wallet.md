@@ -1,26 +1,26 @@
 # TASK-19: CDP Wallet Integration (Coinbase Server Wallet)
 
-| 항목 | 내용 |
+| Item | Details |
 |------|------|
-| **패키지** | `packages/mcp` |
-| **예상 시간** | 2~3시간 |
-| **상태** | ✅ **완료** |
-| **의존성** | [TASK-16](./TASK-16-mcp-integration.md) (MCP 서버 완성) |
-| **차단 대상** | TASK-20 (ERC-8004에서 wallet 주소 사용), TASK-21 (MCP tool 확장) |
-| **참조 문서** | `docs/03-TECH-SPEC.md` §3.2, `docs/12-SDK-GUIDE.md` §1.6 |
+| **Package** | `packages/mcp` |
+| **Estimated Time** | 2~3 hours |
+| **Status** | ✅ **Complete** |
+| **Dependencies** | [TASK-16](./TASK-16-mcp-integration.md) (MCP server complete) |
+| **Blocks** | TASK-20 (use wallet address in ERC-8004), TASK-21 (MCP tool expansion) |
+| **Reference Docs** | `docs/03-TECH-SPEC.md` §3.2, `docs/12-SDK-GUIDE.md` §1.6 |
 
-## 목표
+## Objective
 
-현재 `ethers.Wallet` 기반 로컬 키 관리를 **Coinbase CDP Server Wallet**으로 교체하여, AI Agent에 키 노출 없이 Coinbase 인프라에서 안전하게 결제 서명을 수행한다.
+Replace current `ethers.Wallet`-based local key management with **Coinbase CDP Server Wallet** to enable AI Agents to securely perform payment signatures within Coinbase infrastructure without key exposure.
 
-## 구현 결과
+## Implementation Results
 
-### 아키텍처: Dual Wallet Mode (`WALLET_MODE=local|cdp`)
+### Architecture: Dual Wallet Mode (`WALLET_MODE=local|cdp`)
 
-기존 `ethers.Wallet` 모드와 새로운 CDP Server Wallet 모드를 `IWallet` 인터페이스로 통합하여 하위 호환 유지.
+Integrate existing `ethers.Wallet` mode with new CDP Server Wallet mode via `IWallet` interface to maintain backward compatibility.
 
 ```
-WALLET_MODE=local (기본값)     WALLET_MODE=cdp
+WALLET_MODE=local (default)     WALLET_MODE=cdp
   ┌──────────────┐              ┌──────────────┐
   │  Pag0Wallet  │              │  CdpWallet   │
   │ (ethers.Wallet)│            │ (@coinbase/  │
@@ -35,26 +35,26 @@ WALLET_MODE=local (기본값)     WALLET_MODE=cdp
              └─────────────┘
 ```
 
-### 변경 파일
+### Changed Files
 
-| 파일 | 작업 | 설명 |
+| File | Action | Description |
 |------|------|------|
-| `src/cdp-wallet.ts` | **신규** | `CdpWallet` 클래스 — `@coinbase/cdp-sdk` CdpClient 래퍼. `getStatus()`, `signPayment()`, `requestFaucet()` |
-| `src/wallet.ts` | **수정** | `IWallet` 인터페이스 추가, `Pag0Wallet`에 `walletMode` 속성 추가 |
-| `src/index.ts` | **수정** | `WALLET_MODE` 환경변수 기반 지갑 선택 로직, `CdpWallet` import + `init()` |
-| `src/tools/wallet.ts` | **수정** | `IWallet` 타입 사용, `walletMode` 응답에 포함 |
-| `src/tools/wallet-fund.ts` | **신규** | `pag0_wallet_fund` MCP 도구 (CDP 모드 전용 테스트넷 faucet) |
-| `src/tools/proxy.ts` | **수정** | wallet 파라미터 `Pag0Wallet` → `IWallet` |
-| `src/tools/smart.ts` | **수정** | wallet 파라미터 `Pag0Wallet` → `IWallet` |
-| `.env.example` | **수정** | `WALLET_MODE`, `CDP_API_KEY_ID`, `CDP_API_KEY_SECRET`, `CDP_WALLET_SECRET` 추가 |
-| `package.json` | **수정** | `@coinbase/cdp-sdk ^1.44.0` 의존성 추가 |
+| `src/cdp-wallet.ts` | **New** | `CdpWallet` class — `@coinbase/cdp-sdk` CdpClient wrapper. `getStatus()`, `signPayment()`, `requestFaucet()` |
+| `src/wallet.ts` | **Modified** | Added `IWallet` interface, added `walletMode` property to `Pag0Wallet` |
+| `src/index.ts` | **Modified** | Wallet selection logic based on `WALLET_MODE` env var, `CdpWallet` import + `init()` |
+| `src/tools/wallet.ts` | **Modified** | Use `IWallet` type, include `walletMode` in response |
+| `src/tools/wallet-fund.ts` | **New** | `pag0_wallet_fund` MCP tool (CDP mode only testnet faucet) |
+| `src/tools/proxy.ts` | **Modified** | wallet parameter `Pag0Wallet` → `IWallet` |
+| `src/tools/smart.ts` | **Modified** | wallet parameter `Pag0Wallet` → `IWallet` |
+| `.env.example` | **Modified** | Added `WALLET_MODE`, `CDP_API_KEY_ID`, `CDP_API_KEY_SECRET`, `CDP_WALLET_SECRET` |
+| `package.json` | **Modified** | Added `@coinbase/cdp-sdk ^1.44.0` dependency |
 
-### MCP 도구 (12개 → 기존 11 + 신규 1)
+### MCP Tools (12 total → existing 11 + new 1)
 
-- `pag0_wallet_status` — 지갑 주소, USDC 잔고, 네트워크 + **walletMode** 표시
-- `pag0_wallet_fund` **(신규)** — Base Sepolia 테스트넷 USDC faucet 요청 (CDP 모드 전용)
+- `pag0_wallet_status` — Wallet address, USDC balance, network + **walletMode** displayed
+- `pag0_wallet_fund` **(New)** — Base Sepolia testnet USDC faucet request (CDP mode only)
 
-### 환경변수
+### Environment Variables
 
 ```env
 # Wallet mode: "local" (ethers.Wallet) or "cdp" (Coinbase Server Wallet)
@@ -66,26 +66,26 @@ CDP_API_KEY_SECRET=
 CDP_WALLET_SECRET=
 ```
 
-## 보안 고려사항
+## Security Considerations
 
-| 항목 | 설계 |
+| Item | Design |
 |------|------|
-| 키 관리 | Coinbase Server Wallet — 키는 Coinbase 인프라에서 관리, Pag0는 API Key만 보유 |
-| 서명 권한 | pag0-mcp만 서명 요청 가능, AI Agent 자체에 키 노출 없음 |
-| 지출 한도 | Policy Engine의 예산 검증을 통과한 요청만 서명 진행 |
-| 감사 추적 | 모든 서명/결제를 Analytics Collector에 기록 |
+| Key Management | Coinbase Server Wallet — keys managed in Coinbase infrastructure, Pag0 only holds API Key |
+| Signing Authority | Only pag0-mcp can request signatures, no key exposure to AI Agent itself |
+| Spending Limits | Only requests that pass Policy Engine budget validation proceed to signing |
+| Audit Trail | All signatures/payments logged to Analytics Collector |
 
-## 폴백 전략
+## Fallback Strategy
 
-- CDP SDK 연동 실패 시: `WALLET_MODE=local` (기본값)로 기존 `ethers.Wallet` 유지
-- CDP API 장애 시: 에러 메시지 반환
+- CDP SDK integration failure: `WALLET_MODE=local` (default) maintains existing `ethers.Wallet`
+- CDP API outage: Return error message
 
-## 완료 기준
+## Completion Criteria
 
-- [x] `CdpWallet` 클래스 구현 (`cdp-wallet.ts`) — `IWallet` 인터페이스 준수
-- [x] `@coinbase/cdp-sdk ^1.44.0` 패키지 설치 및 TypeScript strict 빌드 통과
-- [x] `WALLET_MODE=local|cdp` 전환 지원 (기본값 `local`, 하위 호환)
-- [x] `pag0_wallet_status` tool이 `walletMode` 포함하여 반환
-- [x] `pag0_wallet_fund` tool 구현 (CDP 모드, Base Sepolia 전용)
-- [x] 402 → CDP `signPayment()` → 재요청 플로우 (IWallet 인터페이스 통해 동작)
-- [x] `.env.example` 업데이트
+- [x] `CdpWallet` class implementation (`cdp-wallet.ts`) — complies with `IWallet` interface
+- [x] `@coinbase/cdp-sdk ^1.44.0` package installed and TypeScript strict build passes
+- [x] `WALLET_MODE=local|cdp` switching support (default `local`, backward compatible)
+- [x] `pag0_wallet_status` tool returns including `walletMode`
+- [x] `pag0_wallet_fund` tool implemented (CDP mode, Base Sepolia only)
+- [x] 402 → CDP `signPayment()` → retry flow (operates via IWallet interface)
+- [x] `.env.example` updated

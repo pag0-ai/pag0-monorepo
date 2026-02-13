@@ -1,29 +1,29 @@
-# Pag0 배포 가이드
+# Pag0 Deployment Guide
 
-> **TL;DR**: Pag0는 Fly.io 또는 Cloudflare Workers로 배포하며, Upstash Redis(캐시) + Supabase PostgreSQL(정책/메트릭) + SKALE(감사 로그)로 구성됩니다. 로컬 Docker Compose부터 프로덕션 CI/CD까지 단계별로 안내합니다.
+> **TL;DR**: Pag0 is deployed to Fly.io or Cloudflare Workers, configured with Upstash Redis (cache) + Supabase PostgreSQL (policy/metrics) + SKALE (audit logs). Step-by-step guidance from local Docker Compose to production CI/CD.
 
-## 관련 문서
+## Related Documentation
 
-| 문서 | 관련성 |
+| Document | Relevance |
 |------|--------|
-| [03-TECH-SPEC.md](03-TECH-SPEC.md) | 아키텍처 및 컴포넌트 상세 |
-| [06-DEV-TASKS.md](06-DEV-TASKS.md) | Day별 구현 체크리스트 |
-| [10-SECURITY-DESIGN.md](10-SECURITY-DESIGN.md) | 보안 설정 및 체크리스트 |
-| [00-GLOSSARY.md](00-GLOSSARY.md) | 핵심 용어 및 약어 정리 |
+| [03-TECH-SPEC.md](03-TECH-SPEC.md) | Architecture and component details |
+| [06-DEV-TASKS.md](06-DEV-TASKS.md) | Day-by-day implementation checklist |
+| [10-SECURITY-DESIGN.md](10-SECURITY-DESIGN.md) | Security configuration and checklist |
+| [00-GLOSSARY.md](00-GLOSSARY.md) | Core terms and abbreviations |
 
 ---
 
-## 1. 환경 구성
+## 1. Environment Configuration
 
-### 1.1 환경별 인프라
+### 1.1 Infrastructure by Environment
 
-| 환경 | 목적 | 인프라 | 네트워크 |
+| Environment | Purpose | Infrastructure | Network |
 |------|------|--------|----------|
-| **Development** | 로컬 개발 | Docker Compose | Base Sepolia |
-| **Staging** | 통합 테스트 | Fly.io + Upstash + Supabase | Base Sepolia |
-| **Production** | 프로덕션 | Cloudflare Workers / Fly.io | Base Mainnet |
+| **Development** | Local development | Docker Compose | Base Sepolia |
+| **Staging** | Integration testing | Fly.io + Upstash + Supabase | Base Sepolia |
+| **Production** | Production | Cloudflare Workers / Fly.io | Base Mainnet |
 
-### 1.2 아키텍처 다이어그램
+### 1.2 Architecture Diagram
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -53,28 +53,28 @@
 
 ---
 
-## 2. 사전 요구사항
+## 2. Prerequisites
 
-### 2.1 개발 도구 설치
+### 2.1 Development Tools Installation
 
 ```bash
-# Bun 설치 (권장)
+# Install Bun (recommended)
 curl -fsSL https://bun.sh/install | bash
 
-# 또는 Node.js 20+
+# Or Node.js 20+
 nvm install 20
 nvm use 20
 
-# Docker Desktop 설치
+# Install Docker Desktop
 # https://www.docker.com/products/docker-desktop/
 
 # Git
-git --version  # 2.x 이상
+git --version  # 2.x or higher
 ```
 
-### 2.2 필수 계정 생성
+### 2.2 Required Account Creation
 
-| 서비스 | 용도 | 가입 링크 | 무료 티어 |
+| Service | Purpose | Signup Link | Free Tier |
 |--------|------|-----------|-----------|
 | **Upstash** | Redis (Cache) | <https://upstash.com> | 10,000 requests/day |
 | **Supabase** | PostgreSQL | <https://supabase.com> | 500 MB, 2 projects |
@@ -82,7 +82,7 @@ git --version  # 2.x 이상
 | **Cloudflare** | Workers (optional) | <https://cloudflare.com> | 100,000 req/day |
 | **Coinbase CDP** | x402 Facilitator | <https://portal.cdp.coinbase.com> | Testnet free |
 
-### 2.3 CLI 도구 설치
+### 2.3 CLI Tools Installation
 
 ```bash
 # Fly.io CLI
@@ -99,9 +99,9 @@ npm install -g supabase
 
 ---
 
-## 3. 환경 변수
+## 3. Environment Variables
 
-### 3.1 환경 변수 템플릿
+### 3.1 Environment Variables Template
 
 `.env.example`:
 
@@ -168,7 +168,7 @@ AXIOM_DATASET=pag0-logs
 ALERT_WEBHOOK_URL=https://discord.com/api/webhooks/...
 ```
 
-### 3.2 환경 변수 생성 스크립트
+### 3.2 Environment Variables Generation Script
 
 ```bash
 #!/bin/bash
@@ -212,18 +212,18 @@ echo "✅ .env file created. Please fill in service credentials."
 
 ---
 
-## 4. 로컬 개발 환경 설정
+## 4. Local Development Environment Setup
 
-### 4.1 단계별 설정
+### 4.1 Step-by-Step Setup
 
-**Step 1: 저장소 클론**
+**Step 1: Clone Repository**
 
 ```bash
 git clone https://github.com/yourusername/pag0.git
 cd pag0
 ```
 
-**Step 2: 의존성 설치**
+**Step 2: Install Dependencies**
 
 ```bash
 bun install
@@ -231,7 +231,7 @@ bun install
 npm install
 ```
 
-**Step 3: Docker Compose 실행** (로컬 Redis + PostgreSQL)
+**Step 3: Run Docker Compose** (local Redis + PostgreSQL)
 
 ```bash
 docker-compose up -d
@@ -267,13 +267,13 @@ volumes:
   postgres_data:
 ```
 
-**Step 4: 환경 변수 설정**
+**Step 4: Configure Environment Variables**
 
 ```bash
 chmod +x scripts/generate-env.sh
 ./scripts/generate-env.sh
 
-# 로컬 개발용 값으로 수정
+# Update with local development values
 export DATABASE_URL=postgresql://postgres:postgres@localhost:5432/pag0_dev
 export REDIS_URL=redis://localhost:6379
 ```
@@ -281,21 +281,21 @@ export REDIS_URL=redis://localhost:6379
 **Step 5: Database Migration**
 
 ```bash
-# Prisma 사용 시
+# Using Prisma
 bunx prisma migrate dev --name init
 
-# 또는 SQL 직접 실행
+# Or run SQL directly
 psql $DATABASE_URL < migrations/001_initial_schema.sql
 ```
 
-**Step 6: 개발 서버 실행**
+**Step 6: Run Development Server**
 
 ```bash
 bun run dev
 # or
 npm run dev
 
-# 서버 시작: http://localhost:3000
+# Server starts at: http://localhost:3000
 ```
 
 **Step 7: Health Check**
@@ -303,7 +303,7 @@ npm run dev
 ```bash
 curl http://localhost:3000/health
 
-# 응답:
+# Response:
 # {
 #   "status": "ok",
 #   "version": "0.1.0",
@@ -316,35 +316,35 @@ curl http://localhost:3000/health
 # }
 ```
 
-### 4.2 x402 테스트넷 설정
+### 4.2 x402 Testnet Setup
 
-**Step 1: Base Sepolia Testnet ETH 받기**
+**Step 1: Get Base Sepolia Testnet ETH**
 
 ```bash
-# Coinbase Wallet 또는 MetaMask에서 Base Sepolia 네트워크 추가
+# Add Base Sepolia network in Coinbase Wallet or MetaMask
 # Faucet: https://portal.cdp.coinbase.com/products/faucet
 
-# 주소 확인
+# Check address
 cast wallet address --private-key $SKALE_PRIVATE_KEY
 ```
 
-**Step 2: USDC Testnet 토큰 받기**
+**Step 2: Get USDC Testnet Tokens**
 
 ```bash
-# Coinbase Faucet에서 USDC 요청
-# 또는 Uniswap Testnet에서 스왑
+# Request USDC from Coinbase Faucet
+# Or swap on Uniswap Testnet
 
-# 잔액 확인
+# Check balance
 cast call 0x036CbD53842c5426634e7929541eC2318f3dCF7e \
   "balanceOf(address)(uint256)" \
   YOUR_ADDRESS \
   --rpc-url https://sepolia.base.org
 ```
 
-**Step 3: 테스트 요청**
+**Step 3: Test Request**
 
 ```bash
-# SDK 사용
+# Using SDK
 cat > test-proxy.ts << 'EOF'
 import { createPag0Client } from '@pag0/sdk';
 
@@ -371,20 +371,20 @@ bun run test-proxy.ts
 
 ---
 
-## 5. 배포 절차
+## 5. Deployment Procedures
 
-### 5.1 Fly.io 배포 설정
+### 5.1 Fly.io Deployment Setup
 
-**Step 1: Fly.io 초기화**
+**Step 1: Initialize Fly.io**
 
 ```bash
 fly auth login
 fly launch --name pag0-staging --region nrt --no-deploy
 
-# fly.toml 생성됨
+# fly.toml created
 ```
 
-**Step 2: fly.toml 설정**
+**Step 2: Configure fly.toml**
 
 ```toml
 app = "pag0-staging"
@@ -434,10 +434,10 @@ primary_region = "nrt"
   memory_mb = 256
 ```
 
-**Step 3: 환경 변수 설정**
+**Step 3: Set Environment Variables**
 
 ```bash
-# Secrets 설정 (암호화 저장)
+# Set secrets (encrypted storage)
 fly secrets set \
   DATABASE_URL="postgresql://..." \
   REDIS_URL="https://..." \
@@ -447,46 +447,46 @@ fly secrets set \
   SKALE_PRIVATE_KEY="0x..." \
   --app pag0-staging
 
-# 일반 환경 변수
+# Set regular environment variables
 fly config env set \
   X402_FACILITATOR_URL=https://facilitator-testnet.cdp.coinbase.com \
   X402_NETWORK=base-sepolia \
   --app pag0-staging
 ```
 
-**Step 4: 배포**
+**Step 4: Deploy**
 
 ```bash
 fly deploy --app pag0-staging
 
-# 로그 확인
+# Check logs
 fly logs --app pag0-staging
 
-# 상태 확인
+# Check status
 fly status --app pag0-staging
 ```
 
-**Step 5: 도메인 연결** (optional)
+**Step 5: Connect Domain** (optional)
 
 ```bash
-# Custom domain 추가
+# Add custom domain
 fly certs add staging.pag0.io --app pag0-staging
 
-# DNS 레코드 추가
+# Add DNS records
 # A record: staging.pag0.io → [FLY_IP]
 # AAAA record: staging.pag0.io → [FLY_IPv6]
 ```
 
-### 5.2 Cloudflare Workers 배포 설정
+### 5.2 Cloudflare Workers Deployment Setup
 
-**Step 1: Wrangler 초기화**
+**Step 1: Initialize Wrangler**
 
 ```bash
 wrangler init pag0-worker
 cd pag0-worker
 ```
 
-**Step 2: wrangler.toml 설정**
+**Step 2: Configure wrangler.toml**
 
 ```toml
 name = "pag0-worker"
@@ -519,7 +519,7 @@ kv_namespaces = [...]
 vars = { X402_NETWORK = "base-sepolia" }
 ```
 
-**Step 3: Hono 앱을 Workers 형식으로 변환**
+**Step 3: Convert Hono App to Workers Format**
 
 ```typescript
 // src/index.ts
@@ -532,7 +532,7 @@ app.get('/health', (c) => {
 });
 
 app.post('/proxy', async (c) => {
-  // Proxy 로직
+  // Proxy logic
   const cache = c.env.CACHE; // KV Namespace
   const db = c.env.DB;       // D1 Database
 
@@ -542,7 +542,7 @@ app.post('/proxy', async (c) => {
 export default app;
 ```
 
-**Step 4: 배포**
+**Step 4: Deploy**
 
 ```bash
 # Staging
@@ -551,48 +551,48 @@ wrangler deploy --env staging
 # Production
 wrangler deploy --env production
 
-# 로그 확인
+# Check logs
 wrangler tail --env production
 ```
 
-### 5.3 Supabase 마이그레이션
+### 5.3 Supabase Migration
 
-**Step 1: Supabase 프로젝트 생성**
+**Step 1: Create Supabase Project**
 
 ```bash
-# Dashboard에서 프로젝트 생성 또는 CLI 사용
+# Create project in Dashboard or use CLI
 supabase projects create pag0-staging --org-id YOUR_ORG_ID
 
-# 로컬에서 연결
+# Link locally
 supabase link --project-ref YOUR_PROJECT_REF
 ```
 
-**Step 2: Migration 파일 생성**
+**Step 2: Create Migration File**
 
 ```bash
-# 로컬 마이그레이션 생성
+# Create local migration
 supabase migration new initial_schema
 
-# migrations/TIMESTAMP_initial_schema.sql 편집
+# Edit migrations/TIMESTAMP_initial_schema.sql
 ```
 
-**Step 3: Migration 실행**
+**Step 3: Run Migration**
 
 ```bash
-# 로컬에서 테스트
+# Test locally
 supabase db reset
 
-# Staging에 배포
+# Deploy to Staging
 supabase db push --project-ref YOUR_PROJECT_REF
 
-# Production에 배포
+# Deploy to Production
 supabase db push --project-ref PROD_PROJECT_REF --confirm
 ```
 
-**Step 4: RLS (Row Level Security) 활성화**
+**Step 4: Enable RLS (Row Level Security)**
 
 ```sql
--- Supabase Dashboard > SQL Editor에서 실행
+-- Run in Supabase Dashboard > SQL Editor
 ALTER TABLE policies ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Users can only see their own policies"
@@ -604,49 +604,49 @@ CREATE POLICY "Users can only see their own policies"
     )
   );
 
--- 추가 정책들...
+-- Additional policies...
 ```
 
-### 5.4 Upstash Redis 프로비저닝
+### 5.4 Upstash Redis Provisioning
 
-**Step 1: Upstash Console에서 Database 생성**
+**Step 1: Create Database in Upstash Console**
 
-- Region: 애플리케이션과 가까운 지역 선택 (예: Tokyo)
+- Region: Select region close to your application (e.g., Tokyo)
 - Type: Redis (Global or Regional)
-- TLS: 활성화
+- TLS: Enable
 
-**Step 2: 연결 정보 복사**
+**Step 2: Copy Connection Information**
 
 ```bash
-# Dashboard에서 복사
+# Copy from Dashboard
 REDIS_URL=https://us1-xxxxx.upstash.io
 REDIS_TOKEN=AxxxxxxxxxxxxxxxxxxxQ==
 
-# Fly.io에 설정
+# Set in Fly.io
 fly secrets set \
   REDIS_URL=$REDIS_URL \
   REDIS_TOKEN=$REDIS_TOKEN \
   --app pag0-staging
 ```
 
-**Step 3: 연결 테스트**
+**Step 3: Test Connection**
 
 ```bash
-# Upstash REST API 테스트
+# Test Upstash REST API
 curl -H "Authorization: Bearer $REDIS_TOKEN" \
   "$REDIS_URL/SET/test/hello"
 
 curl -H "Authorization: Bearer $REDIS_TOKEN" \
   "$REDIS_URL/GET/test"
 
-# 응답: {"result":"hello"}
+# Response: {"result":"hello"}
 ```
 
 ---
 
 ## 6. CI/CD
 
-### 6.1 GitHub Actions 워크플로우
+### 6.1 GitHub Actions Workflow
 
 `.github/workflows/deploy.yml`:
 
@@ -749,7 +749,7 @@ jobs:
             }'
 ```
 
-### 6.2 브랜치 전략
+### 6.2 Branch Strategy
 
 ```
 main (Production)
@@ -763,15 +763,15 @@ staging (Staging)
 feature/* (Feature branches)
 ```
 
-**워크플로우**:
+**Workflow**:
 
-1. `feature/new-feature` 브랜치 생성
-2. 개발 완료 후 `staging`으로 PR
-3. Staging 배포 및 테스트
-4. 테스트 통과 후 `main`으로 PR
-5. Production 배포 (자동)
+1. Create `feature/new-feature` branch
+2. After development complete, PR to `staging`
+3. Deploy to Staging and test
+4. After tests pass, PR to `main`
+5. Deploy to Production (automatic)
 
-### 6.3 자동 배포 트리거
+### 6.3 Automated Deployment Triggers
 
 | Trigger | Action | Environment |
 |---------|--------|-------------|
@@ -782,9 +782,9 @@ feature/* (Feature branches)
 
 ---
 
-## 7. 모니터링
+## 7. Monitoring
 
-### 7.1 상태 확인 엔드포인트
+### 7.1 Health Check Endpoint
 
 ```typescript
 // src/routes/health.ts
@@ -823,7 +823,7 @@ async function checkX402Facilitator() {
 }
 ```
 
-### 7.2 메트릭 엔드포인트
+### 7.2 Metrics Endpoint
 
 ```typescript
 app.get('/metrics', async (c) => {
@@ -849,9 +849,9 @@ pag0_redis_connected_clients ${parseRedisInfo(stats[0], 'connected_clients')}
 });
 ```
 
-### 7.3 로깅 (Axiom/Logtail)
+### 7.3 Logging (Axiom/Logtail)
 
-**Axiom 연동**:
+**Axiom Integration**:
 
 ```typescript
 import { Axiom } from '@axiomhq/js';
@@ -861,7 +861,7 @@ const axiom = new Axiom({
   dataset: process.env.AXIOM_DATASET!
 });
 
-// 요청 로깅
+// Request logging
 app.use('*', async (c, next) => {
   const start = Date.now();
   await next();
@@ -878,7 +878,7 @@ app.use('*', async (c, next) => {
   }]);
 });
 
-// 에러 로깅
+// Error logging
 app.onError((err, c) => {
   axiom.ingest([{
     timestamp: new Date().toISOString(),
@@ -892,7 +892,7 @@ app.onError((err, c) => {
 });
 ```
 
-### 7.4 알림 (Discord/Slack)
+### 7.4 Alerts (Discord/Slack)
 
 ```typescript
 async function sendAlert(message: string, severity: 'info' | 'warning' | 'error') {
@@ -912,7 +912,7 @@ async function sendAlert(message: string, severity: 'info' | 'warning' | 'error'
   });
 }
 
-// 사용 예시
+// Usage example
 if (errorRate > 0.05) {
   await sendAlert(`Error rate spike: ${(errorRate * 100).toFixed(2)}%`, 'error');
 }
@@ -920,43 +920,43 @@ if (errorRate > 0.05) {
 
 ---
 
-## 8. 장애 대응
+## 8. Incident Response
 
-### 8.1 Proxy 다운 시
+### 8.1 When Proxy is Down
 
 **Agent SDK Fallback**:
 
 ```typescript
-// SDK에 내장된 fallback 로직
+// Built-in fallback logic in SDK
 const pag0 = createPag0Client({
   apiKey: 'pag0_xxx',
-  fallbackMode: 'direct', // Proxy 실패 시 직접 x402 호출
+  fallbackMode: 'direct', // Direct x402 call if Proxy fails
   retries: 3
 });
 
-// Proxy 다운 감지 시 자동으로 직접 호출
+// Automatically calls directly when Proxy is down
 const response = await pag0.fetch(url);
 ```
 
-**수동 복구**:
+**Manual Recovery**:
 
 ```bash
-# Health check 실패 시
+# When health check fails
 fly status --app pag0-prod
 
-# 로그 확인
+# Check logs
 fly logs --app pag0-prod | grep ERROR
 
-# 긴급 재시작
+# Emergency restart
 fly apps restart pag0-prod
 
-# 스케일 업 (트래픽 급증 시)
+# Scale up (traffic spike)
 fly scale count 3 --app pag0-prod
 ```
 
-### 8.2 Redis 다운 시
+### 8.2 When Redis is Down
 
-**캐시 바이패스 모드**:
+**Cache Bypass Mode**:
 
 ```typescript
 let redisAvailable = true;
@@ -977,21 +977,21 @@ async function cachedFetch(key: string, fetcher: () => Promise<any>) {
   } catch (err) {
     console.error('Redis error:', err);
     redisAvailable = false;
-    setTimeout(() => { redisAvailable = true; }, 60000); // 1분 후 재시도
+    setTimeout(() => { redisAvailable = true; }, 60000); // Retry after 1 minute
     return await fetcher();
   }
 }
 ```
 
-### 8.3 PostgreSQL 다운 시
+### 8.3 When PostgreSQL is Down
 
-**Policy 캐시 Fallback**:
+**Policy Cache Fallback**:
 
 ```typescript
 const policyCache = new Map<string, Policy>();
 
 async function getPolicy(projectId: string): Promise<Policy> {
-  // 먼저 메모리 캐시 확인
+  // Check memory cache first
   if (policyCache.has(projectId)) {
     return policyCache.get(projectId)!;
   }
@@ -1003,13 +1003,13 @@ async function getPolicy(projectId: string): Promise<Policy> {
   } catch (err) {
     console.error('Database error:', err);
 
-    // Redis에서 백업 시도
+    // Try backup from Redis
     const cached = await redis.get(`policy:${projectId}`);
     if (cached) {
       return JSON.parse(cached);
     }
 
-    // 기본 정책 반환
+    // Return default policy
     return {
       maxPerRequest: '1000000',
       dailyBudget: '10000000',
@@ -1019,68 +1019,68 @@ async function getPolicy(projectId: string): Promise<Policy> {
 }
 ```
 
-### 8.4 롤백 절차
+### 8.4 Rollback Procedure
 
 **Fly.io Rollback**:
 
 ```bash
-# 이전 버전으로 롤백
+# Rollback to previous version
 fly releases --app pag0-prod
 
-# 특정 버전으로 롤백
+# Rollback to specific version
 fly deploy --image registry.fly.io/pag0-prod:v42 --app pag0-prod
 
-# 즉시 롤백 (최신 stable 버전)
+# Immediate rollback (latest stable version)
 fly releases rollback --app pag0-prod
 ```
 
 **Database Migration Rollback**:
 
 ```bash
-# Supabase migration 되돌리기
+# Rollback Supabase migration
 supabase db reset --version PREVIOUS_VERSION
 
-# 또는 수동 SQL 실행
+# Or run manual SQL
 psql $DATABASE_URL < migrations/rollback/002_rollback_new_feature.sql
 ```
 
 **Cloudflare Workers Rollback**:
 
 ```bash
-# 이전 배포로 롤백
+# Rollback to previous deployment
 wrangler rollback --env production
 
-# 특정 버전으로
+# Rollback to specific version
 wrangler rollback --message "Rollback to v1.2.3" --env production
 ```
 
 ---
 
-## 9. 프로덕션 체크리스트
+## 9. Production Checklist
 
-### 배포 전 확인 항목
+### Pre-Deployment Verification
 
-- [ ] 모든 환경 변수 설정 완료
-- [ ] Database migration 실행 및 검증
-- [ ] TLS 인증서 설정 (Fly.io/Cloudflare)
-- [ ] Rate limiting 활성화
-- [ ] CORS 정책 설정 (허용 도메인만)
-- [ ] Health check endpoint 동작 확인
-- [ ] Metrics endpoint 보안 (인증 필요)
-- [ ] 로깅 외부 저장 설정 (Axiom)
-- [ ] 알림 webhook 테스트
-- [ ] Backup 자동화 (PostgreSQL daily)
-- [ ] DNS 레코드 설정 (A/AAAA)
-- [ ] CDN 캐싱 정책 (Cloudflare)
-- [ ] 부하 테스트 (1000 req/s)
+- [ ] All environment variables configured
+- [ ] Database migration executed and verified
+- [ ] TLS certificates configured (Fly.io/Cloudflare)
+- [ ] Rate limiting enabled
+- [ ] CORS policy configured (allowed domains only)
+- [ ] Health check endpoint working
+- [ ] Metrics endpoint secured (authentication required)
+- [ ] External logging configured (Axiom)
+- [ ] Alert webhook tested
+- [ ] Backup automation (PostgreSQL daily)
+- [ ] DNS records configured (A/AAAA)
+- [ ] CDN caching policy (Cloudflare)
+- [ ] Load testing (1000 req/s)
 
-### 배포 후 검증
+### Post-Deployment Validation
 
 ```bash
 # Health check
 curl https://api.pag0.io/health
 
-# Proxy 요청 테스트
+# Proxy request test
 curl -X POST https://api.pag0.io/proxy \
   -H "X-API-Key: pag0_prod_xxx" \
   -H "Content-Type: application/json" \
@@ -1089,19 +1089,19 @@ curl -X POST https://api.pag0.io/proxy \
     "method": "GET"
   }'
 
-# Analytics 확인
+# Analytics check
 curl https://api.pag0.io/api/analytics/summary \
   -H "Authorization: Bearer $JWT_TOKEN"
 
-# 부하 테스트 (wrk)
+# Load test (wrk)
 wrk -t12 -c400 -d30s https://api.pag0.io/health
 ```
 
 ---
 
-## 10. 비용 추정 (월간)
+## 10. Cost Estimation (Monthly)
 
-| 서비스 | Free Tier | Paid (Staging) | Paid (Production) |
+| Service | Free Tier | Paid (Staging) | Paid (Production) |
 |--------|-----------|----------------|-------------------|
 | Fly.io | $0 (Sleep) | $5-10 | $20-50 |
 | Upstash Redis | $0 (10K req) | $10-20 | $50-100 |
@@ -1113,4 +1113,4 @@ wrk -t12 -c400 -d30s https://api.pag0.io/health
 
 ---
 
-**다음 단계**: 배포 완료 후 [12-SDK-GUIDE.md](12-SDK-GUIDE.md)를 참고하여 SDK 통합 및 사용자 온보딩을 진행하세요.
+**Next Steps**: After deployment is complete, refer to [12-SDK-GUIDE.md](12-SDK-GUIDE.md) to proceed with SDK integration and user onboarding.

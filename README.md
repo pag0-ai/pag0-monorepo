@@ -1,6 +1,6 @@
 # Pag0 - Smart Proxy Layer for x402
 
-> AI 에이전트의 유료 API 사용을 제어하는 스마트 프록시 플랫폼
+> A smart proxy platform that controls paid API usage for AI agents
 
 **3-in-1 Middleware**: Spend Firewall + API Curation + Smart Cache
 
@@ -12,7 +12,7 @@
 
 ## Guides
 
-- [MCP Agent Demo Script 실행 가이드](guides/1-RUN-MCP-AGENT-SCRIPT.md)
+- [MCP Agent Demo Script Setup Guide](guides/1-RUN-MCP-AGENT-SCRIPT.md)
 
 ## Tech Stack
 

@@ -1,41 +1,41 @@
-# TASK-35: .env.example에 Dashboard 환경변수 추가
+# TASK-35: Add Dashboard environment variables to .env.example
 
-**Priority**: P2 (환경 설정)
-**Status**: ✅ 완료 (커밋 `38967db`)
+**Priority**: P2 (environment setup)
+**Status**: ✅ Complete (commit `38967db`)
 **Phase**: 9 (Demo Polish)
 
-## 문제
+## Problem
 
-`.env.example`에 Dashboard 패키지용 환경변수가 누락:
+`.env.example` missing Dashboard package environment variables:
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (Google OAuth)
-- `NEXTAUTH_URL`, `NEXTAUTH_SECRET` (NextAuth v5 필수)
+- `NEXTAUTH_URL`, `NEXTAUTH_SECRET` (NextAuth v5 required)
 - `NEXT_PUBLIC_API_URL` (lib/api.ts)
-- `PAG0_INTERNAL_SECRET` (dashboard → proxy 통신)
+- `PAG0_INTERNAL_SECRET` (dashboard → proxy communication)
 
-## 영향
+## Impact
 
-새 개발자가 프로젝트 셋업 시 어떤 환경변수가 필요한지 알 수 없음. 로그인/온보딩 플로우가 깨짐.
+New developers don't know which environment variables are required for project setup. Login/onboarding flow breaks.
 
-## 수정
+## Fix
 
-- `.env.example`에 Dashboard 섹션 추가
+- Add Dashboard section to `.env.example`
 
-## 완료 기준
+## Completion Criteria
 
-- [ ] `.env.example`에 `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` 포함
-- [ ] `.env.example`에 `NEXTAUTH_URL`, `NEXTAUTH_SECRET` 포함
-- [ ] `.env.example`에 `NEXT_PUBLIC_API_URL` 포함
-- [ ] `PAG0_INTERNAL_SECRET`는 이미 존재하므로 중복 추가 없을 것
+- [ ] `.env.example` includes `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
+- [ ] `.env.example` includes `NEXTAUTH_URL`, `NEXTAUTH_SECRET`
+- [ ] `.env.example` includes `NEXT_PUBLIC_API_URL`
+- [ ] `PAG0_INTERNAL_SECRET` already exists, no duplicate addition
 
-## 검증 결과
+## Verification Results
 
 - [x] `GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com` (L47) ✅
 - [x] `GOOGLE_CLIENT_SECRET=GOCSPX-your-google-client-secret` (L48) ✅
 - [x] `NEXTAUTH_URL=http://localhost:3001` (L51) ✅
 - [x] `NEXTAUTH_SECRET=your-nextauth-secret` (L52) ✅
 - [x] `NEXT_PUBLIC_API_URL=http://localhost:3000` (L55) ✅
-- [x] `PAG0_INTERNAL_SECRET` 기존 L38에 이미 존재 — 중복 없음 ✅
+- [x] `PAG0_INTERNAL_SECRET` already exists at L38 — no duplicate ✅
 
-## 수정 파일
+## Modified Files
 
 - `.env.example`

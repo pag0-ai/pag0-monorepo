@@ -1,67 +1,67 @@
-# 유스케이스 목록 (Use Cases Index)
+# Use Cases Index
 
-> **TL;DR**: Pag0 Smart Proxy의 6가지 실전 활용 사례를 정리합니다. 각 유스케이스는 **Spend Firewall**(비용 통제), **Data-Driven Curation**(API 최적화), **Smart Cache**(중복 절감)의 3-in-1 가치를 구체적인 코드, 비용 비교, 아키텍처 다이어그램과 함께 보여줍니다.
-
----
-
-## 유스케이스 목록
-
-| # | 유스케이스 | 파일 | 대상 | 난이도 | 핵심 가치 |
-|---|-----------|------|------|--------|-----------|
-| UC1 | AI 리서치 에이전트 | [09-01](09-01-UC-AI-RESEARCH.md) | 개인 개발자 | ★★☆ | 월 $1,672 절감 (37%) |
-| UC2 | 엔터프라이즈 팀 관리 | [09-02](09-02-UC-ENTERPRISE.md) | 기업 | ★★★ | 월 $50K 절감 + 컴플라이언스 |
-| UC3 | DeFi 트레이딩 에이전트 | [09-03](09-03-UC-DEFI-TRADING.md) | DeFi 개발자 | ★★★ | 버그 손실 99.8% 방지 |
-| UC4 | MCP 서버 오케스트레이션 | [09-04](09-04-UC-MCP-ORCHESTRATION.md) | MCP 사용자 | ★★☆ | 가시성 + 통제력 |
-| UC5 | API 큐레이션 자동 최적화 | [09-05](09-05-UC-API-CURATION.md) | API 소비자 | ★★☆ | 비용 36% 절감 + 자동화 |
-| UC6 | Claude Code 멀티에이전트 세션 | [09-06](09-06-UC-CLAUDE-CODE.md) | Claude Code 사용자 | ★★★ | 폭주 방지 + 캐시 37% 절감 |
+> **TL;DR**: Summarizes 6 practical use cases for Pag0 Smart Proxy. Each use case demonstrates the 3-in-1 value of **Spend Firewall** (cost control), **Data-Driven Curation** (API optimization), and **Smart Cache** (redundancy reduction) with concrete code, cost comparisons, and architecture diagrams.
 
 ---
 
-## 유스케이스별 핵심 가치 요약
+## Use Cases List
 
-| Use Case | 주요 문제 | Pag0 솔루션 | 핵심 지표 |
-|----------|----------|------------|----------|
-| **1. 리서치 에이전트** | 중복 결제 낭비 (45%) | Smart Cache (40% 히트) | 월 $1,672 절감 (37%) |
-| **2. 엔터프라이즈 팀** | 전사 지출 가시성 부재 | 팀별 정책 + 대시보드 | 월 $50K 절감 + 컴플라이언스 |
-| **3. DeFi 트레이딩 봇** | 폭주 위험 + 악성 공격 | Spend Firewall + 이상 탐지 | 버그 손실 99.8% 방지 |
-| **4. MCP 오케스트레이션** | 비용 불투명 | MCP Bridge + 세션 예산 | 가시성 + 통제력 |
-| **5. API 큐레이션** | 선택 근거 부재 | Data-driven 추천 | 비용 36% 절감 + 자동화 |
-| **6. Claude Code 세션** | 자율 에이전트 폭주 + 중복 호출 | 에이전트별 예산 격리 + 공유 캐시 | 폭주 방지 + 캐시 37% 절감 |
+| # | Use Case | File | Target Audience | Difficulty | Key Value |
+|---|----------|------|-----------------|------------|-----------|
+| UC1 | AI Research Agent | [09-01](09-01-UC-AI-RESEARCH.md) | Individual Developers | ★★☆ | $1,672/month savings (37%) |
+| UC2 | Enterprise Team Management | [09-02](09-02-UC-ENTERPRISE.md) | Enterprises | ★★★ | $50K/month savings + Compliance |
+| UC3 | DeFi Trading Agent | [09-03](09-03-UC-DEFI-TRADING.md) | DeFi Developers | ★★★ | 99.8% bug loss prevention |
+| UC4 | MCP Server Orchestration | [09-04](09-04-UC-MCP-ORCHESTRATION.md) | MCP Users | ★★☆ | Visibility + Control |
+| UC5 | API Curation Auto-Optimization | [09-05](09-05-UC-API-CURATION.md) | API Consumers | ★★☆ | 36% cost savings + Automation |
+| UC6 | Claude Code Multi-Agent Session | [09-06](09-06-UC-CLAUDE-CODE.md) | Claude Code Users | ★★★ | Runaway prevention + 37% cache savings |
 
 ---
 
-## 공통 패턴: 3-in-1 가치
+## Key Value Summary by Use Case
+
+| Use Case | Main Problem | Pag0 Solution | Key Metrics |
+|----------|--------------|---------------|-------------|
+| **1. Research Agent** | Duplicate payment waste (45%) | Smart Cache (40% hit rate) | $1,672/month savings (37%) |
+| **2. Enterprise Team** | Lack of organization-wide spend visibility | Team-based policies + Dashboard | $50K/month savings + Compliance |
+| **3. DeFi Trading Bot** | Runaway risk + Malicious attacks | Spend Firewall + Anomaly detection | 99.8% bug loss prevention |
+| **4. MCP Orchestration** | Opaque costs | MCP Bridge + Session budget | Visibility + Control |
+| **5. API Curation** | Lack of selection rationale | Data-driven recommendations | 36% cost savings + Automation |
+| **6. Claude Code Session** | Autonomous agent runaway + Duplicate calls | Agent-level budget isolation + Shared cache | Runaway prevention + 37% cache savings |
+
+---
+
+## Common Pattern: 3-in-1 Value
 
 ```yaml
-모든 유스케이스에서:
+Across all use cases:
 
-  1. Spend Firewall (통제):
-     - 예산 한도 설정
-     - 정책 위반 차단
-     - 이상 탐지 및 알림
+  1. Spend Firewall (Control):
+     - Set budget limits
+     - Block policy violations
+     - Anomaly detection and alerts
 
-  2. Data-Driven Curation (최적화):
-     - 실사용 데이터 수집
-     - 객관적 API 비교
-     - 자동 최적화 추천
+  2. Data-Driven Curation (Optimization):
+     - Collect real usage data
+     - Objective API comparisons
+     - Automated optimization recommendations
 
-  3. Smart Cache (절감):
-     - 중복 결제 방지
-     - 평균 40% 비용 절감
-     - 응답 속도 향상
+  3. Smart Cache (Savings):
+     - Prevent duplicate payments
+     - Average 40% cost savings
+     - Improved response speed
 
-결과:
-  - 비용: 30-50% 절감
-  - 리스크: 90%+ 감소
-  - 생산성: 개발자 시간 주 5-10시간 절약
-  - 자동화: 의사결정 자동화로 운영 효율 향상
+Results:
+  - Cost: 30-50% reduction
+  - Risk: 90%+ reduction
+  - Productivity: Save 5-10 developer hours/week
+  - Automation: Improved operational efficiency through automated decision-making
 ```
 
 ---
 
-## 관련 문서
+## Related Documents
 
-- [01-PRODUCT-BRIEF](01-PRODUCT-BRIEF.md) - 제품 개요 및 비전
-- [03-TECH-SPEC](03-TECH-SPEC.md) - 기술 사양 (Spend Firewall, Curation, Smart Cache 구현 상세)
-- [04-API-SPEC](04-API-SPEC.md) - API 레퍼런스 (코드 예시의 API 상세)
-- [12-SDK-GUIDE](12-SDK-GUIDE.md) - SDK 가이드 (`@pag0/sdk` 사용법)
+- [01-PRODUCT-BRIEF](01-PRODUCT-BRIEF.md) - Product overview and vision
+- [03-TECH-SPEC](03-TECH-SPEC.md) - Technical specifications (Spend Firewall, Curation, Smart Cache implementation details)
+- [04-API-SPEC](04-API-SPEC.md) - API reference (API details for code examples)
+- [12-SDK-GUIDE](12-SDK-GUIDE.md) - SDK guide (`@pag0/sdk` usage)

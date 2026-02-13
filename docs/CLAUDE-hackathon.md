@@ -1,107 +1,107 @@
 # Pag0 Smart Proxy — Hackathon CLAUDE.md
 
-> Pag0 = x402 생태계의 유일한 스마트 프록시 레이어. Spend Firewall + API Curation + Smart Cache를 하나로 제공하는 3-in-1 미들웨어.
+> Pag0 = The only smart proxy layer in the x402 ecosystem. A 3-in-1 middleware providing Spend Firewall + API Curation + Smart Cache.
 
-## 제품 요약
+## Product Summary
 
-- **핵심 가치**: AI Agent가 x402 API를 안전하고 효율적으로 사용하도록 정책 기반 예산 관리, 실사용 데이터 기반 API 큐레이션, 지능형 캐싱(40%+ 비용 절감)을 제공
-- **기능 우선순위**: Spend Firewall > API Curation > Smart Cache
-- **목표**: 3일 해커톤 내 Working MVP 완성 (모든 핵심 기능 동작 + 3개 시나리오 데모 + 배포)
+- **Core Value**: Provides policy-based budget management, real-usage data-driven API curation, and intelligent caching (40%+ cost savings) so AI Agents can use x402 APIs safely and efficiently
+- **Feature Priority**: Spend Firewall > API Curation > Smart Cache
+- **Goal**: Complete Working MVP within 3-day hackathon (all core features working + 3 scenario demos + deployment)
 
 ---
 
-## 기술 스택
+## Tech Stack
 
-| 레이어     | 기술                                  | npm 패키지                                          |
+| Layer      | Technology                            | npm Packages                                        |
 | ---------- | ------------------------------------- | --------------------------------------------------- |
 | Runtime    | Bun                                   | -                                                   |
 | Framework  | Hono                                  | `hono`, `@hono/node-server`                         |
 | x402 SDK   | x402 fetch                            | `@x402/fetch`                                       |
-| Cache      | Redis (Upstash)                       | `ioredis` (TCP, Fly.io용)                           |
+| Cache      | Redis (Upstash)                       | `ioredis` (TCP, for Fly.io)                         |
 | Database   | PostgreSQL (Supabase)                 | `postgres` (NOT `pg`)                               |
 | Blockchain | SKALE (Zero Gas)                      | `ethers`                                            |
 | Dashboard  | Next.js + Tailwind                    | `recharts`, `@tanstack/react-query`, `lucide-react` |
 | Hosting    | Fly.io (backend) / Vercel (dashboard) | -                                                   |
 | Dev        | TypeScript strict                     | `@types/node`, `typescript`                         |
 
-> **주의**: Redis 클라이언트는 `ioredis` (TCP) 사용. Cloudflare Workers 전환 시에만 `@upstash/redis` (REST)로 변경.
+> **Note**: Use `ioredis` (TCP) for Redis client. Only switch to `@upstash/redis` (REST) when migrating to Cloudflare Workers.
 
 ---
 
-## 프로젝트 구조
+## Project Structure
 
 ```
 pag0-proxy/
 ├── src/
-│   ├── index.ts              # Entry point + Hono 라우트 + 미들웨어(auth, rate-limit)
+│   ├── index.ts              # Entry point + Hono routes + middleware (auth, rate-limit)
 │   ├── proxy/
-│   │   ├── core.ts           # ProxyCore 클래스 (요청 중계 오케스트레이션)
-│   │   └── x402.ts           # x402 SDK 래퍼 (X402Integration)
+│   │   ├── core.ts           # ProxyCore class (request relay orchestration)
+│   │   └── x402.ts           # x402 SDK wrapper (X402Integration)
 │   ├── policy/
-│   │   ├── engine.ts         # PolicyEngine (예산/whitelist/blacklist 검증)
-│   │   └── budget.ts         # BudgetTracker (일일/월별 지출 추적)
+│   │   ├── engine.ts         # PolicyEngine (budget/whitelist/blacklist validation)
+│   │   └── budget.ts         # BudgetTracker (daily/monthly spending tracking)
 │   ├── curation/
-│   │   └── engine.ts         # CurationEngine (점수 계산, 추천, 비교)
+│   │   └── engine.ts         # CurationEngine (scoring, recommendation, comparison)
 │   ├── cache/
-│   │   ├── redis.ts          # Redis 클라이언트 설정
-│   │   └── layer.ts          # CacheLayer (키 생성, TTL, 무효화)
+│   │   ├── redis.ts          # Redis client configuration
+│   │   └── layer.ts          # CacheLayer (key generation, TTL, invalidation)
 │   ├── analytics/
-│   │   └── collector.ts      # AnalyticsCollector (메트릭 수집/저장)
+│   │   └── collector.ts      # AnalyticsCollector (metrics collection/storage)
 │   ├── db/
-│   │   ├── postgres.ts       # PostgreSQL 클라이언트
-│   │   └── schema.sql        # DDL 스크립트
+│   │   ├── postgres.ts       # PostgreSQL client
+│   │   └── schema.sql        # DDL scripts
 │   └── types/
-│       └── index.ts          # 공유 TypeScript 인터페이스
-├── .env                      # 환경변수 (git ignore)
+│       └── index.ts          # Shared TypeScript interfaces
+├── .env                      # Environment variables (git ignore)
 └── package.json
 
-pag0-dashboard/               # Next.js + Tailwind (별도 프로젝트)
+pag0-dashboard/               # Next.js + Tailwind (separate project)
 ├── app/
-│   ├── dashboard/page.tsx    # 메트릭 시각화
-│   ├── policies/page.tsx     # 정책 관리 UI
-│   └── rankings/page.tsx     # API 랭킹 보드
-├── components/               # 재사용 컴포넌트
-└── lib/api.ts                # API 클라이언트
+│   ├── dashboard/page.tsx    # Metrics visualization
+│   ├── policies/page.tsx     # Policy management UI
+│   └── rankings/page.tsx     # API ranking board
+├── components/               # Reusable components
+└── lib/api.ts                # API client
 
-pag0-mcp/                     # Demo Agent — MCP Server (별도 프로젝트)
+pag0-mcp/                     # Demo Agent — MCP Server (separate project)
 ├── src/
 │   ├── index.ts              # MCP Server entry (stdio transport)
 │   ├── tools/
 │   │   ├── wallet.ts         # pag0_wallet_status
-│   │   ├── proxy.ts          # pag0_request (402→sign→retry 핵심)
+│   │   ├── proxy.ts          # pag0_request (402→sign→retry core)
 │   │   ├── policy.ts         # pag0_check_budget, pag0_check_policy
 │   │   ├── curation.ts       # pag0_recommend, pag0_compare
 │   │   └── analytics.ts      # pag0_spending, pag0_cache_stats
-│   ├── client.ts             # Pag0 Proxy API HTTP 클라이언트
-│   └── wallet.ts             # ethers.Wallet 래퍼
+│   ├── client.ts             # Pag0 Proxy API HTTP client
+│   └── wallet.ts             # ethers.Wallet wrapper
 ├── .env                      # PAG0_API_URL, PAG0_API_KEY, WALLET_PRIVATE_KEY
 └── package.json
 ```
 
-> **미들웨어**: Auth(API Key 검증), Rate Limiter는 `index.ts`에 Hono 미들웨어로 통합 구현.
+> **Middleware**: Auth (API Key validation) and Rate Limiter are implemented as integrated Hono middleware in `index.ts`.
 
 ---
 
-## 명령어
+## Commands
 
 ```bash
 # Backend
-bun install                    # 의존성 설치
-bun run dev                    # 개발 서버 (localhost:3000)
-bun test                       # 테스트 실행
-bun run build                  # 빌드
+bun install                    # Install dependencies
+bun run dev                    # Development server (localhost:3000)
+bun test                       # Run tests
+bun run build                  # Build
 
 # Database
-bun run db:migrate             # 스키마 마이그레이션
-bun run db:seed                # 시드 데이터 삽입
+bun run db:migrate             # Schema migration
+bun run db:seed                # Insert seed data
 
-# 배포
+# Deployment
 fly launch && fly deploy       # Backend → Fly.io
-fly secrets set KEY=VALUE      # 환경변수 설정
+fly secrets set KEY=VALUE      # Set environment variables
 vercel --prod                  # Dashboard → Vercel
 ```
 
-### 환경변수 (이름만, 값은 .env에)
+### Environment Variables (names only, values in .env)
 
 ```
 # Server
@@ -110,7 +110,7 @@ PORT, NODE_ENV, LOG_LEVEL
 # Database (Supabase)
 DATABASE_URL, DIRECT_URL
 
-# Redis (Upstash) — ioredis TCP 연결용
+# Redis (Upstash) — for ioredis TCP connection
 REDIS_URL, REDIS_TOKEN
 
 # x402
@@ -123,78 +123,78 @@ SKALE_RPC_URL, ERC8004_SIGNER_KEY, ERC8004_REPUTATION_REGISTRY, ERC8004_VALIDATI
 JWT_SECRET, API_KEY_SALT, ENCRYPTION_KEY, CORS_ORIGINS
 ```
 
-> **중요**: 기존 `pag0/.env`에 Redis 크레덴셜이 이미 존재할 수 있음. 새로 생성하지 말고 기존 파일을 확장할 것.
+> **Important**: Redis credentials may already exist in `pag0/.env`. Extend the existing file rather than creating a new one.
 
 ---
 
-## 배포 전략
+## Deployment Strategy
 
-### 배포 대상 & 플랫폼
+### Deployment Targets & Platforms
 
-| 컴포넌트       | 프로젝트          | 플랫폼       | URL 패턴                    | 비고                    |
-| -------------- | ----------------- | ------------ | --------------------------- | ----------------------- |
-| **Proxy API**  | `pag0-proxy/`     | **Fly.io**   | `pag0-proxy.fly.dev`        | Hono + Bun, 메인 백엔드 |
-| **Dashboard**  | `pag0-dashboard/` | **Vercel**   | `pag0-dashboard.vercel.app` | Next.js + Tailwind      |
-| **MCP Server** | `pag0-mcp/`       | **로컬**     | stdio (Claude Code 연동)    | 데모 에이전트           |
-| **PostgreSQL** | -                 | **Supabase** | Pooler URL (port 6543)      | 이미 프로비저닝됨       |
-| **Redis**      | -                 | **Upstash**  | `rediss://` TLS             | 이미 프로비저닝됨       |
+| Component      | Project           | Platform     | URL Pattern                 | Notes                       |
+| -------------- | ----------------- | ------------ | --------------------------- | --------------------------- |
+| **Proxy API**  | `pag0-proxy/`     | **Fly.io**   | `pag0-proxy.fly.dev`        | Hono + Bun, main backend    |
+| **Dashboard**  | `pag0-dashboard/` | **Vercel**   | `pag0-dashboard.vercel.app` | Next.js + Tailwind          |
+| **MCP Server** | `pag0-mcp/`       | **Local**    | stdio (Claude Code integration) | Demo agent              |
+| **PostgreSQL** | -                 | **Supabase** | Pooler URL (port 6543)      | Already provisioned         |
+| **Redis**      | -                 | **Upstash**  | `rediss://` TLS             | Already provisioned         |
 
 ### Proxy API → Fly.io
 
 ```bash
-# 1. 초기화 (최초 1회)
+# 1. Initialize (one-time)
 cd pag0-proxy
 fly auth login
 fly launch --name pag0-proxy --region nrt --no-deploy
 
-# 2. 환경변수 설정
+# 2. Set environment variables
 fly secrets set \
   REDIS_URL="rediss://..." \
   POSTGRES_URL="postgresql://..." \
   JWT_SECRET="$(openssl rand -hex 32)" \
   --app pag0-proxy
 
-# 3. 배포
+# 3. Deploy
 fly deploy --app pag0-proxy
 
-# 4. 확인
+# 4. Verify
 fly status --app pag0-proxy
 curl https://pag0-proxy.fly.dev/health
 ```
 
-**fly.toml 핵심 설정**:
+**fly.toml Core Configuration**:
 
-- `internal_port = 3000` (Hono 기본 포트)
-- `min_machines_running = 1` (해커톤 중 항상 가동)
+- `internal_port = 3000` (Hono default port)
+- `min_machines_running = 1` (always running during hackathon)
 - Health check: `GET /health`
-- VM: `shared-cpu-1x`, 256MB (Free tier 범위)
+- VM: `shared-cpu-1x`, 256MB (within Free tier)
 
 ### Dashboard → Vercel
 
 ```bash
-# 1. 초기화 (최초 1회)
+# 1. Initialize (one-time)
 cd pag0-dashboard
 npx vercel link
 
-# 2. 환경변수 설정 (Vercel Dashboard 또는 CLI)
+# 2. Set environment variables (Vercel Dashboard or CLI)
 npx vercel env add NEXT_PUBLIC_API_URL     # → https://pag0-proxy.fly.dev
 npx vercel env add NEXT_PUBLIC_APP_NAME    # → Pag0
 
-# 3. 배포
+# 3. Deploy
 npx vercel --prod
 
-# 4. 확인
-# Vercel이 출력하는 URL로 접속
+# 4. Verify
+# Visit the URL that Vercel outputs
 ```
 
-**Vercel 설정**:
+**Vercel Configuration**:
 
-- Framework: Next.js (자동 감지)
+- Framework: Next.js (auto-detected)
 - Build: `next build`
 - Output: `.next/`
 - Environment: `NEXT_PUBLIC_API_URL` = Fly.io proxy URL
 
-### Dashboard → Proxy 연결
+### Dashboard → Proxy Connection
 
 ```
 Dashboard (Vercel)  ──HTTPS──>  Proxy API (Fly.io)  ──TCP──>  Redis (Upstash)
@@ -202,39 +202,39 @@ Dashboard (Vercel)  ──HTTPS──>  Proxy API (Fly.io)  ──TCP──>  Re
                                                      ──HTTPS─> x402 Facilitator (Coinbase)
 ```
 
-- Dashboard는 `NEXT_PUBLIC_API_URL`로 Proxy API 호출
-- Proxy의 CORS 설정에 Dashboard URL 추가 필수: `CORS_ORIGINS=https://pag0-dashboard.vercel.app`
-- Dashboard에서 직접 DB/Redis 접근 금지 — 모든 데이터는 Proxy API 경유
+- Dashboard calls Proxy API via `NEXT_PUBLIC_API_URL`
+- Must add Dashboard URL to Proxy CORS settings: `CORS_ORIGINS=https://pag0-dashboard.vercel.app`
+- Dashboard must NOT directly access DB/Redis — all data goes through Proxy API
 
-### 해커톤 배포 타이밍
+### Hackathon Deployment Timeline
 
-| 시점           | 액션                                                        |
-| -------------- | ----------------------------------------------------------- |
-| **Day 1 오후** | Proxy API 첫 배포 (Fly.io) — `/health` + `/proxy` 동작 확인 |
-| **Day 2 저녁** | Proxy API 업데이트 — 전체 API 엔드포인트 동작               |
-| **Day 3 오전** | Dashboard 첫 배포 (Vercel) — API 연동 확인                  |
-| **Day 3 오후** | 최종 배포 — 데모 시나리오 데이터 시딩 + 라이브 데모         |
+| Timing           | Action                                                                 |
+| ---------------- | ---------------------------------------------------------------------- |
+| **Day 1 PM**     | First Proxy API deploy (Fly.io) — verify `/health` + `/proxy` working |
+| **Day 2 Evening** | Proxy API update — all API endpoints working                          |
+| **Day 3 AM**     | First Dashboard deploy (Vercel) — verify API integration              |
+| **Day 3 PM**     | Final deploy — demo scenario data seeding + live demo                 |
 
-### 배포 실패 시 폴백
+### Deployment Failure Fallbacks
 
-- **Fly.io 실패**: `localhost:3000`에서 데모 + 화면 녹화
-- **Vercel 실패**: `localhost:3001`에서 Next.js dev 서버로 데모
-- **둘 다 실패**: 테스트 스크립트 실행 결과 + 아키텍처 다이어그램으로 피치
+- **Fly.io failure**: Demo on `localhost:3000` + screen recording
+- **Vercel failure**: Demo on `localhost:3001` with Next.js dev server
+- **Both fail**: Pitch with test script execution results + architecture diagrams
 
 ---
 
 ## Demo Agent — MCP Server
 
-### 왜 필요한가
+### Why is it needed?
 
-Track 1 (Best Agentic App) 심사기준은 **discover → decide → pay/settle → outcome** 워크플로우를 에이전트가 수행하는 것. Pag0 Proxy만으로는 "인프라"일 뿐 "에이전트"가 아님. **Claude Code를 에이전트로, Pag0를 MCP tool로** 연결하면:
+Track 1 (Best Agentic App) judging criteria requires agents to perform the **discover → decide → pay/settle → outcome** workflow. Pag0 Proxy alone is just "infrastructure", not an "agent". **Connecting Claude Code as the agent with Pag0 as an MCP tool** provides:
 
-- Claude가 자연어로 **reasoning** — "anthropic이 costScore 88로 openai(75)보다 높으니 선택"
-- 매 호출 전 budget/policy 체크 — **guardrails의 실체적 증거** (심사기준 Trust+Safety)
-- 전체 tool call 로그 — **audit trail** (심사기준 Receipts/Logs)
-- MCP는 오픈 프로토콜 — Anthropic 종속이 아님 (OpenAI, Cursor 등도 지원)
+- Claude performs **reasoning** in natural language — "Choose anthropic with costScore 88, higher than openai(75)"
+- Budget/policy checks before every call — **concrete evidence of guardrails** (judging criteria: Trust+Safety)
+- Complete tool call logs — **audit trail** (judging criteria: Receipts/Logs)
+- MCP is an open protocol — not Anthropic-dependent (also supports OpenAI, Cursor, etc.)
 
-### 어디서 실행되나
+### Where does it run?
 
 ```
 Claude Code ──MCP(stdio)──> Pag0 MCP Server ──HTTP──> Pag0 Proxy API (Fly.io)
@@ -243,7 +243,7 @@ Claude Code ──MCP(stdio)──> Pag0 MCP Server ──HTTP──> Pag0 Proxy
                                 │                        └──HTTPS─> x402 API Servers
                                 │
                                 ├── ethers.Wallet (PK from env)
-                                │   └── x402 payment 서명
+                                │   └── x402 payment signing
                                 │
                                 └── .env
                                     ├── PAG0_API_URL
@@ -251,33 +251,33 @@ Claude Code ──MCP(stdio)──> Pag0 MCP Server ──HTTP──> Pag0 Proxy
                                     └── WALLET_PRIVATE_KEY
 ```
 
-> **핵심 원칙**: 프록시는 절대 결제를 서명하지 않는다. MCP Server가 Agent의 지갑을 보유하고 x402 결제를 서명하는 주체 (= Agent의 손).
+> **Core Principle**: The proxy NEVER signs payments. The MCP Server holds the Agent's wallet and is the entity that signs x402 payments (= Agent's hands).
 
-### Tool 목록
+### Tool List
 
-#### Tier 1 — 필수 (데모 최소 요건, Day 3 오전 ~2h)
+#### Tier 1 — Required (minimum demo requirements, Day 3 AM ~2h)
 
 | Tool | Input | Output | Pag0 API |
 | --- | --- | --- | --- |
-| `pag0_wallet_status` | (없음) | `{ address, balanceUSDC, network }` | 직접 (ethers RPC) |
-| `pag0_request` | `{ url, method, headers?, body? }` | `{ response, cost, cached, latency, budgetRemaining }` | `POST /proxy` + wallet 서명 |
-| `pag0_check_budget` | (없음) | `{ daily: {spent, limit, remaining}, monthly: {...} }` | `GET /api/analytics/summary` |
+| `pag0_wallet_status` | (none) | `{ address, balanceUSDC, network }` | Direct (ethers RPC) |
+| `pag0_request` | `{ url, method, headers?, body? }` | `{ response, cost, cached, latency, budgetRemaining }` | `POST /proxy` + wallet signing |
+| `pag0_check_budget` | (none) | `{ daily: {spent, limit, remaining}, monthly: {...} }` | `GET /api/analytics/summary` |
 | `pag0_recommend` | `{ category, sort_by?, limit? }` | `EndpointScore[]` | `GET /api/curation/recommend` |
-| `pag0_compare` | `{ endpoints: string[] }` | `{ overall, cost, latency, reliability }` 별 winner | `GET /api/curation/compare` |
+| `pag0_compare` | `{ endpoints: string[] }` | `{ overall, cost, latency, reliability }` winner per category | `GET /api/curation/compare` |
 
-> **`pag0_request` 내부 플로우**: 1) Proxy에 요청 → 2) 402 수신 시 PaymentRequired 파싱 → 3) ethers.Wallet로 서명 → 4) 서명 헤더 포함 재시도 → 5) 응답 + 비용 메타데이터 반환. `@x402/fetch`의 `wrapFetch`를 활용하되 Proxy URL 경유.
+> **`pag0_request` internal flow**: 1) Request to Proxy → 2) Parse PaymentRequired on 402 response → 3) Sign with ethers.Wallet → 4) Retry with signature header → 5) Return response + cost metadata. Uses `wrapFetch` from `@x402/fetch` but routes through Proxy URL.
 
-#### Tier 2 — 데모 임팩트 강화 (Day 3 오전 잔여 ~1h)
+#### Tier 2 — Enhanced Demo Impact (Day 3 AM remaining ~1h)
 
 | Tool | Input | Output | Pag0 API |
 | --- | --- | --- | --- |
-| `pag0_check_policy` | `{ url, estimatedCost }` | `{ allowed, reason, policyName }` | dry-run 또는 `GET /api/policies` |
+| `pag0_check_policy` | `{ url, estimatedCost }` | `{ allowed, reason, policyName }` | dry-run or `GET /api/policies` |
 | `pag0_spending` | `{ period?: "day"\|"month" }` | `{ totalSpent, totalSaved, requestCount, cacheHitRate }` | `GET /api/analytics/summary` |
-| `pag0_cache_stats` | (없음) | `{ hitRate, hitCount, missCount, savedAmount }` | `GET /api/analytics/cache` |
+| `pag0_cache_stats` | (none) | `{ hitRate, hitCount, missCount, savedAmount }` | `GET /api/analytics/cache` |
 | `pag0_tx_history` | `{ limit? }` | `{ endpoint, cost, cached, timestamp }[]` | `GET /api/analytics/endpoints` |
-| `pag0_list_policies` | (없음) | `Policy[]` | `GET /api/policies` |
+| `pag0_list_policies` | (none) | `Policy[]` | `GET /api/policies` |
 
-#### Tier 3 — 시간 남으면
+#### Tier 3 — If time permits
 
 | Tool | Pag0 API |
 | --- | --- |
@@ -285,54 +285,54 @@ Claude Code ──MCP(stdio)──> Pag0 MCP Server ──HTTP──> Pag0 Proxy
 | `pag0_score` | `GET /api/curation/score/:endpoint` |
 | `pag0_create_policy` | `POST /api/policies` |
 
-### 데모 시나리오 (2-3분 영상, split-screen: 터미널 + Dashboard)
+### Demo Scenarios (2-3 min video, split-screen: terminal + Dashboard)
 
 ```
-시나리오 A: Smart API Selection + Payment (40초)
+Scenario A: Smart API Selection + Payment (40s)
 ─────────────────────────────────────────────────
-User: "AI API 중 가장 효율적인 걸 골라서 텍스트 요약해줘"
+User: "Choose the most efficient AI API and summarize this text"
 
-1. pag0_wallet_status        → "잔액 5.0 USDC, base-sepolia"
-2. pag0_check_budget          → "일일 한도 10 USDC 중 2 USDC 사용"
-3. pag0_recommend(AI)         → [anthropic:92점, openai:85점, cohere:78점]
-4. pag0_compare(anth, openai) → anthropic이 cost 88, latency 95로 우세
-5. pag0_request(anthropic...) → x402 결제 → 응답 + {cost:0.5 USDC}
+1. pag0_wallet_status        → "Balance 5.0 USDC, base-sepolia"
+2. pag0_check_budget          → "Used 2 USDC of 10 USDC daily limit"
+3. pag0_recommend(AI)         → [anthropic:92 score, openai:85 score, cohere:78 score]
+4. pag0_compare(anth, openai) → anthropic wins with cost 88, latency 95
+5. pag0_request(anthropic...) → x402 payment → response + {cost:0.5 USDC}
 
-→ 심사기준 매칭: discover(3) → decide(4) → pay(5) → outcome(응답)
+→ Judging criteria match: discover(3) → decide(4) → pay(5) → outcome(response)
 
-시나리오 B: Policy Enforcement (30초)
+Scenario B: Policy Enforcement (30s)
 ──────────────────────────────────────
-User: "이 비싼 API 호출해줘" (한도 초과)
+User: "Call this expensive API" (exceeds limit)
 
-1. pag0_check_budget          → "잔여 1 USDC"
-2. pag0_check_policy(url, 2)  → "거부: 일일 예산 초과"
-3. Claude: "예산 한도를 초과합니다. 대안을 찾겠습니다"
-4. pag0_recommend(같은 카테고리) → 저렴한 대안 제시
-5. pag0_request(대안)         → 성공
+1. pag0_check_budget          → "Remaining 1 USDC"
+2. pag0_check_policy(url, 2)  → "Denied: daily budget exceeded"
+3. Claude: "Budget limit exceeded. I'll find an alternative"
+4. pag0_recommend(same category) → Suggests cheaper alternative
+5. pag0_request(alternative)  → Success
 
-→ 심사기준 매칭: Trust+Safety (guardrails가 실제로 동작)
+→ Judging criteria match: Trust+Safety (guardrails actually working)
 
-시나리오 C: Cache Savings (30초)
+Scenario C: Cache Savings (30s)
 ─────────────────────────────────
-User: 동일 요청 2회 실행
+User: Execute same request twice
 
-1. pag0_request(첫 번째)      → {cost:0.5 USDC, cached:false, latency:200ms}
-2. pag0_request(동일 요청)    → {cost:0 USDC, cached:true, latency:5ms}
-3. pag0_spending               → "캐시로 0.5 USDC 절약, 히트율 50%"
+1. pag0_request(first)        → {cost:0.5 USDC, cached:false, latency:200ms}
+2. pag0_request(same request) → {cost:0 USDC, cached:true, latency:5ms}
+3. pag0_spending              → "Saved 0.5 USDC via cache, 50% hit rate"
 
-→ 심사기준 매칭: Real utility (비용 절감의 증거)
+→ Judging criteria match: Real utility (evidence of cost savings)
 ```
 
-### 언제 만드나
+### When to build
 
-| 시점 | 액션 | 선행 조건 |
+| Timing | Action | Prerequisite |
 | --- | --- | --- |
-| **Day 2 저녁** | wallet PK 준비, 테스트넷 USDC 확보, `pag0-mcp/` 프로젝트 scaffold | 테스트넷 faucet |
-| **Day 3 오전 (0-2h)** | Tier 1 tools 구현 (5개) | Proxy API 배포 완료 |
-| **Day 3 오전 (2-3h)** | Tier 2 tools + 데모 리허설 | Tier 1 동작 확인 |
-| **Day 3 오후** | 데모 영상 촬영 (split-screen) | MCP + Dashboard 모두 동작 |
+| **Day 2 Evening** | Prepare wallet PK, get testnet USDC, scaffold `pag0-mcp/` project | Testnet faucet |
+| **Day 3 AM (0-2h)** | Implement Tier 1 tools (5 tools) | Proxy API deployment complete |
+| **Day 3 AM (2-3h)** | Tier 2 tools + demo rehearsal | Tier 1 working verification |
+| **Day 3 PM** | Demo video recording (split-screen) | Both MCP + Dashboard working |
 
-### `.mcp.json` 설정 (Claude Code 연동)
+### `.mcp.json` Configuration (Claude Code Integration)
 
 ```jsonc
 {
@@ -350,184 +350,184 @@ User: 동일 요청 2회 실행
 }
 ```
 
-### MCP 실패 시 폴백
+### MCP Failure Fallbacks
 
-- **Proxy API 미배포**: `PAG0_API_URL=http://localhost:3000`으로 로컬 Proxy 사용
-- **Wallet 잔액 부족**: 테스트넷 faucet 재실행 또는 mock 402 서버로 전환
-- **MCP 자체 오류**: 터미널에서 `curl`로 Proxy API 직접 호출 데모
+- **Proxy API not deployed**: Use local Proxy with `PAG0_API_URL=http://localhost:3000`
+- **Wallet insufficient balance**: Re-run testnet faucet or switch to mock 402 server
+- **MCP itself fails**: Demo direct Proxy API calls from terminal with `curl`
 
 ---
 
-## 아키텍처 & 핵심 개념
+## Architecture & Core Concepts
 
-### 5개 핵심 컴포넌트
+### 5 Core Components
 
-1. **Proxy Core** — x402 요청 중계, 402 응답 파싱, payment relay
-2. **Policy Engine (Spend Firewall)** — 예산 한도, whitelist/blacklist, 승인 워크플로우
-3. **Curation Engine** — 엔드포인트 점수화(비용/지연/신뢰성), 추천, 비교
-4. **Cache Layer** — Redis 응답 캐싱, TTL 관리, 패턴별 규칙
-5. **Analytics Collector** — 요청 메트릭 수집/집계/저장 (비동기)
+1. **Proxy Core** — x402 request relay, 402 response parsing, payment relay
+2. **Policy Engine (Spend Firewall)** — Budget limits, whitelist/blacklist, approval workflow
+3. **Curation Engine** — Endpoint scoring (cost/latency/reliability), recommendations, comparison
+4. **Cache Layer** — Redis response caching, TTL management, pattern-based rules
+5. **Analytics Collector** — Request metrics collection/aggregation/storage (async)
 
-### 요청 흐름
+### Request Flow
 
 ```
 Agent → Pag0 Proxy → Auth Check → Policy Check → Cache Check
   → [Cache HIT] → Response + metadata (cost=0)
-  → [Cache MISS] → x402 Server → 402 응답 → Agent가 서명 → Facilitator 검증
+  → [Cache MISS] → x402 Server → 402 response → Agent signs → Facilitator verification
     → Post-processing: Cache Store + Analytics Log (async) + Budget Update
     → Response + metadata (cost, latency, cache info)
 ```
 
 ### CRITICAL INVARIANTS
 
-- **프록시는 절대 결제를 서명하지 않는다** — payment relay만 수행, Agent가 직접 서명
-- **USDC는 항상 BIGINT 6 decimals** — 1 USDC = 1,000,000. 절대 floating point 금지
-- **인증**: `X-Pag0-API-Key` 헤더, SHA-256 해시로 DB 조회
-- **API Key**: SHA-256 → `users.api_key_hash` VARCHAR(64). Password: bcrypt(12) → `users.password_hash`. 별도 `api_keys` 테이블은 MVP에서 사용 안함
+- **Proxy NEVER signs payments** — only performs payment relay, Agent signs directly
+- **USDC always BIGINT 6 decimals** — 1 USDC = 1,000,000. Absolutely NO floating point
+- **Authentication**: `X-Pag0-API-Key` header, DB lookup with SHA-256 hash
+- **API Key**: SHA-256 → `users.api_key_hash` VARCHAR(64). Password: bcrypt(12) → `users.password_hash`. No separate `api_keys` table in MVP
 
-### 캐시 조건 (isCacheable)
+### Cache Conditions (isCacheable)
 
-4가지 조건 모두 충족 시에만 캐시:
+Cache only when ALL 4 conditions are met:
 
 1. HTTP status 2xx
-2. GET 또는 idempotent 메서드
-3. `Cache-Control: no-store` 헤더 없음
-4. 응답 크기 < `maxCacheSizeBytes`
+2. GET or idempotent method
+3. No `Cache-Control: no-store` header
+4. Response size < `maxCacheSizeBytes`
 
-### 성능 목표 (P95)
+### Performance Goals (P95)
 
-| 작업            | 목표                    |
+| Operation       | Target                  |
 | --------------- | ----------------------- |
 | Cache Hit       | <10ms                   |
 | Policy Check    | <5ms                    |
-| Analytics Write | <50ms (비동기)          |
-| 전체 API 응답   | <300ms                  |
-| 처리량          | 1,000+ req/sec/instance |
+| Analytics Write | <50ms (async)           |
+| Full API Response | <300ms                |
+| Throughput      | 1,000+ req/sec/instance |
 
 ---
 
-## DB 빠른 참조
+## DB Quick Reference
 
-### PostgreSQL 10개 테이블
+### PostgreSQL 10 Tables
 
-| 테이블                     | 용도                                                        |
+| Table                      | Purpose                                                     |
 | -------------------------- | ----------------------------------------------------------- |
-| `users`                    | 사용자 계정, api_key_hash (SHA-256), password_hash (bcrypt) |
-| `projects`                 | 프로젝트 (사용자당 복수)                                    |
-| `policies`                 | 지출 정책 (예산, whitelist, blacklist)                      |
-| `budgets`                  | 예산 추적 (daily_spent, monthly_spent)                      |
-| `requests`                 | 요청 로그 (월별 파티셔닝)                                   |
-| `endpoint_scores`          | 엔드포인트 점수 (overall, cost, latency, reliability)       |
-| `categories`               | API 카테고리                                                |
-| `endpoint_metrics_hourly`  | 시간별 집계                                                 |
-| `endpoint_metrics_daily`   | 일별 집계                                                   |
-| `endpoint_metrics_monthly` | 월별 집계                                                   |
+| `users`                    | User accounts, api_key_hash (SHA-256), password_hash (bcrypt) |
+| `projects`                 | Projects (multiple per user)                                |
+| `policies`                 | Spending policies (budget, whitelist, blacklist)            |
+| `budgets`                  | Budget tracking (daily_spent, monthly_spent)                |
+| `requests`                 | Request logs (monthly partitioning)                         |
+| `endpoint_scores`          | Endpoint scores (overall, cost, latency, reliability)       |
+| `categories`               | API categories                                              |
+| `endpoint_metrics_hourly`  | Hourly aggregation                                          |
+| `endpoint_metrics_daily`   | Daily aggregation                                           |
+| `endpoint_metrics_monthly` | Monthly aggregation                                         |
 
-> **categories 시드 데이터**: AI, Data, Blockchain, IoT, Finance, Social, Communication, Storage (8개)
+> **categories seed data**: AI, Data, Blockchain, IoT, Finance, Social, Communication, Storage (8 categories)
 
-### Redis 6개 키 패턴
+### Redis 6 Key Patterns
 
 ```
-cache:{sha256(url+method+body)}           → JSON response    (TTL: 설정 가능, 기본 300s)
-budget:{projectId}:daily                   → spent amount     (TTL: 자정 UTC)
-budget:{projectId}:monthly                 → spent amount     (TTL: 월말)
+cache:{sha256(url+method+body)}           → JSON response    (TTL: configurable, default 300s)
+budget:{projectId}:daily                   → spent amount     (TTL: midnight UTC)
+budget:{projectId}:monthly                 → spent amount     (TTL: end of month)
 rate:{projectId}:{window}                  → request count    (TTL: 60s)
 score:{endpoint}                           → EndpointScore    (TTL: 300s)
 metrics:{projectId}:{endpoint}:hourly      → hash counters    (TTL: 7200s)
-nonce:{paymentId}                          → "1"              (TTL: 3600s, replay 방지)
+nonce:{paymentId}                          → "1"              (TTL: 3600s, replay prevention)
 ```
 
 ---
 
-## API 빠른 참조
+## API Quick Reference
 
-### 엔드포인트 목록
+### Endpoint List
 
-| Method | Path                            | 설명                  |
-| ------ | ------------------------------- | --------------------- |
-| POST   | `/proxy`                        | x402 요청 중계 (핵심) |
-| GET    | `/api/policies`                 | 정책 목록             |
-| POST   | `/api/policies`                 | 정책 생성             |
-| GET    | `/api/policies/:id`             | 정책 상세             |
-| PUT    | `/api/policies/:id`             | 정책 수정             |
-| DELETE | `/api/policies/:id`             | 정책 삭제             |
-| GET    | `/api/analytics/summary`        | 전체 요약 통계        |
-| GET    | `/api/analytics/endpoints`      | 엔드포인트별 통계     |
-| GET    | `/api/analytics/costs`          | 비용 시계열           |
-| GET    | `/api/analytics/cache`          | 캐시 성능             |
-| GET    | `/api/curation/recommend`       | 카테고리별 추천       |
-| GET    | `/api/curation/compare`         | 엔드포인트 비교       |
-| GET    | `/api/curation/rankings`        | 카테고리별 랭킹       |
-| GET    | `/api/curation/categories`      | 카테고리 목록         |
-| GET    | `/api/curation/score/:endpoint` | 개별 엔드포인트 점수  |
-| POST   | `/api/auth/register`            | 사용자 등록           |
-| POST   | `/api/auth/login`               | 로그인                |
-| GET    | `/api/auth/me`                  | 현재 사용자 정보      |
-| GET    | `/health`                       | 헬스 체크             |
+| Method | Path                            | Description                    |
+| ------ | ------------------------------- | ------------------------------ |
+| POST   | `/proxy`                        | x402 request relay (core)      |
+| GET    | `/api/policies`                 | List policies                  |
+| POST   | `/api/policies`                 | Create policy                  |
+| GET    | `/api/policies/:id`             | Policy details                 |
+| PUT    | `/api/policies/:id`             | Update policy                  |
+| DELETE | `/api/policies/:id`             | Delete policy                  |
+| GET    | `/api/analytics/summary`        | Overall summary statistics     |
+| GET    | `/api/analytics/endpoints`      | Per-endpoint statistics        |
+| GET    | `/api/analytics/costs`          | Cost time series               |
+| GET    | `/api/analytics/cache`          | Cache performance              |
+| GET    | `/api/curation/recommend`       | Recommendations by category    |
+| GET    | `/api/curation/compare`         | Endpoint comparison            |
+| GET    | `/api/curation/rankings`        | Rankings by category           |
+| GET    | `/api/curation/categories`      | Category list                  |
+| GET    | `/api/curation/score/:endpoint` | Individual endpoint score      |
+| POST   | `/api/auth/register`            | User registration              |
+| POST   | `/api/auth/login`               | Login                          |
+| GET    | `/api/auth/me`                  | Current user info              |
+| GET    | `/health`                       | Health check                   |
 
-### 인증 & Rate Limit
+### Authentication & Rate Limit
 
-- **인증 헤더**: `X-Pag0-API-Key: pag0_live_{32_char_random}`
+- **Auth Header**: `X-Pag0-API-Key: pag0_live_{32_char_random}`
 - **Rate Limit**:
   - Free: 60 req/min, 1,000 req/day
   - Pro: 1,000 req/min, Unlimited req/day
-- **응답 형식**: `application/json`
+- **Response Format**: `application/json`
 
-> **참고**: `04-API-SPEC.md` TL;DR에 "1,000/min freemium"으로 기재되어 있으나, 상세 Rate Limiting 테이블 기준 Free=60/min이 정확한 값임.
-
----
-
-## 코딩 컨벤션
-
-- **TypeScript strict mode** 필수 (`strict: true` in tsconfig)
-- **네이밍**: camelCase (변수/함수), PascalCase (타입/클래스/인터페이스), kebab-case (파일명)
-- **Hono 패턴**: `app.get('/path', handler)`, `c.json()` 응답, `c.req.json()` 바디 파싱
-- **USDC 금액**: 항상 `BigInt` 또는 `string`으로 처리 — `parseFloat` 금지
-- **DB 쿼리**: `postgres` 패키지의 template literal — 문자열 연결 금지 (SQL injection 방지)
-- **비동기**: `async/await` 사용, 콜백 금지
-- **에러 처리**: 커스텀 에러 클래스 (`PolicyViolationError`, `UnauthorizedError`, `RateLimitError`)
-- **에러 응답 형식**: `{ error: { code: string, message: string, details?: any } }`
-- **Analytics 쓰기**: 반드시 비동기 (요청 응답을 블로킹하지 않음)
+> **Note**: The `04-API-SPEC.md` TL;DR states "1,000/min freemium", but the detailed Rate Limiting table shows Free=60/min as the accurate value.
 
 ---
 
-## 해커톤 제약 & 폴백
+## Coding Conventions
 
-### 타임라인
+- **TypeScript strict mode** required (`strict: true` in tsconfig)
+- **Naming**: camelCase (variables/functions), PascalCase (types/classes/interfaces), kebab-case (file names)
+- **Hono patterns**: `app.get('/path', handler)`, `c.json()` response, `c.req.json()` body parsing
+- **USDC amounts**: Always handle as `BigInt` or `string` — NO `parseFloat`
+- **DB queries**: `postgres` package template literals — NO string concatenation (SQL injection prevention)
+- **Async**: Use `async/await`, NO callbacks
+- **Error handling**: Custom error classes (`PolicyViolationError`, `UnauthorizedError`, `RateLimitError`)
+- **Error response format**: `{ error: { code: string, message: string, details?: any } }`
+- **Analytics writes**: Must be async (do NOT block request response)
 
-| Day   | 시간 | 핵심 목표                                                     |
-| ----- | ---- | ------------------------------------------------------------- |
-| Day 0 | ~2h  | 환경 설정, 외부 서비스 계정, x402 SDK 테스트                  |
-| Day 1 | 8h   | Proxy Core (오전) + Policy Engine (오후)                      |
-| Day 2 | 9h   | Curation+Cache (오전) + Analytics (오후) + 통합 테스트 (저녁) |
-| Day 3 | 8h   | Dashboard UI (오전) + Demo+Pitch+배포 (오후)                  |
+---
 
-### MVP 범위 (포함)
+## Hackathon Constraints & Fallbacks
+
+### Timeline
+
+| Day   | Time | Core Goals                                                           |
+| ----- | ---- | -------------------------------------------------------------------- |
+| Day 0 | ~2h  | Environment setup, external service accounts, x402 SDK testing       |
+| Day 1 | 8h   | Proxy Core (AM) + Policy Engine (PM)                                 |
+| Day 2 | 9h   | Curation+Cache (AM) + Analytics (PM) + Integration tests (Evening)   |
+| Day 3 | 8h   | Dashboard UI (AM) + Demo+Pitch+Deployment (PM)                       |
+
+### MVP Scope (Included)
 
 - Proxy Core, Policy Engine, Curation Engine, Cache Layer, Analytics Collector
-- Web Dashboard (기본 시각화, 정책 관리, API 랭킹)
-- 3개 데모 시나리오 (Policy enforcement, Cache savings, API curation)
+- Web Dashboard (basic visualization, policy management, API rankings)
+- 3 demo scenarios (Policy enforcement, Cache savings, API curation)
 
-### MVP 범위 (제외 — Post-hackathon)
+### MVP Scope (Excluded — Post-hackathon)
 
-- Approval workflow (승인 워크플로우)
-- Anomaly detection (이상 탐지)
+- Approval workflow
+- Anomaly detection
 - Background aggregation jobs
-- SKALE on-chain metrics (선택사항)
-- 고급 Dashboard 차트/애니메이션
+- SKALE on-chain metrics (optional)
+- Advanced Dashboard charts/animations
 
-### 폴백 전략
+### Fallback Strategy
 
-| 리스크                  | 폴백                                   |
-| ----------------------- | -------------------------------------- |
-| x402 SDK 통합 실패      | Mock x402 server (402 응답 시뮬레이션) |
-| Upstash Redis 연결 실패 | 로컬 Redis (Docker) 또는 In-memory Map |
-| Supabase 연결 실패      | 로컬 PostgreSQL (Docker)               |
-| Curation 데이터 부족    | Seed data (synthetic metrics)          |
-| Dashboard 시간 부족     | 기본 테이블만 (Tailwind, 차트 생략)    |
-| 배포 실패               | localhost demo + 녹화 영상             |
+| Risk                     | Fallback                                 |
+| ------------------------ | ---------------------------------------- |
+| x402 SDK integration failure | Mock x402 server (402 response simulation) |
+| Upstash Redis connection failure | Local Redis (Docker) or In-memory Map |
+| Supabase connection failure | Local PostgreSQL (Docker)              |
+| Curation data shortage   | Seed data (synthetic metrics)            |
+| Dashboard time shortage  | Basic table only (Tailwind, skip charts) |
+| Deployment failure       | localhost demo + screen recording        |
 
-> **Day 0**: `@x402/fetch` SDK의 실제 API surface 검증 필수 — `X402Client`, `fetch()`, payment header 파싱 동작 확인.
+> **Day 0**: Must verify actual API surface of `@x402/fetch` SDK — verify `X402Client`, `fetch()`, payment header parsing behavior.
 
 ---
 
@@ -535,41 +535,41 @@ nonce:{paymentId}                          → "1"              (TTL: 3600s, rep
 
 ### DO
 
-- USDC 금액에 BigInt 사용 (1 USDC = `"1000000"`)
-- 모든 프록시 요청 전에 Policy 검증
-- 캐시 조건 4가지 모두 확인 후 캐시 저장
-- 모든 요청을 Analytics에 비동기 로깅
-- API Key는 SHA-256 해시로 저장 및 조회
-- Password는 bcrypt(12)로 해싱
-- 기존 `.env` 파일 확인 후 확장 (덮어쓰기 금지)
+- Use BigInt for USDC amounts (1 USDC = `"1000000"`)
+- Validate Policy before all proxy requests
+- Verify all 4 cache conditions before caching
+- Async log all requests to Analytics
+- Store and lookup API Keys with SHA-256 hash
+- Hash Passwords with bcrypt(12)
+- Check existing `.env` file and extend (do NOT overwrite)
 
 ### DON'T
 
-- 프록시에서 결제 서명 — Agent만 서명
-- USDC에 `parseFloat` / `Number` 사용
-- Policy 검증 건너뛰기
-- API Key 원문 저장 (해시만)
-- Analytics 쓰기로 요청 응답 블로킹
-- `pg` 패키지 사용 (`postgres` 사용)
-- `@upstash/redis` 사용 (`ioredis` TCP 사용, Fly.io 배포)
-- 별도 `api_keys` 테이블 생성 (MVP는 `users.api_key_hash`)
+- Sign payments in proxy — Agent signs only
+- Use `parseFloat` / `Number` for USDC
+- Skip Policy validation
+- Store API Key plaintext (hash only)
+- Block request response with Analytics writes
+- Use `pg` package (use `postgres`)
+- Use `@upstash/redis` (use `ioredis` TCP for Fly.io deployment)
+- Create separate `api_keys` table (MVP uses `users.api_key_hash`)
 
 ---
 
-## 참고 문서
+## Reference Documentation
 
-| 문서                                                   | 내용                               |
-| ------------------------------------------------------ | ---------------------------------- |
-| [01-PRODUCT-BRIEF.md](01-PRODUCT-BRIEF.md)             | 제품 개요, 포지셔닝, 타겟 사용자   |
-| [02-COMPETITOR-ANALYSIS.md](02-COMPETITOR-ANALYSIS.md) | 경쟁사 분석                        |
-| [03-TECH-SPEC.md](03-TECH-SPEC.md)                     | 아키텍처, 컴포넌트 상세, 성능 목표 |
-| [04-API-SPEC.md](04-API-SPEC.md)                       | API 엔드포인트 상세 정의           |
-| [05-DB-SCHEMA.md](05-DB-SCHEMA.md)                     | DB 스키마 DDL, Redis 키 패턴       |
-| [06-DEV-TASKS.md](06-DEV-TASKS.md)                     | Day별 개발 태스크 상세             |
-| [07-01-PITCH-SCRIPT.md](07-01-PITCH-SCRIPT.md)         | 피치 스크립트                      |
-| [08-BUSINESS-MODEL.md](08-BUSINESS-MODEL.md)           | 비즈니스 모델                      |
-| [09-00-USE-CASES-INDEX.md](09-00-USE-CASES-INDEX.md)   | 유스케이스 인덱스                  |
-| [10-SECURITY-DESIGN.md](10-SECURITY-DESIGN.md)         | 보안 설계                          |
-| [11-DEPLOYMENT-GUIDE.md](11-DEPLOYMENT-GUIDE.md)       | 배포 가이드, 환경변수 상세         |
-| [12-SDK-GUIDE.md](12-SDK-GUIDE.md)                     | SDK 사용 가이드                    |
-| [00-GLOSSARY.md](00-GLOSSARY.md)                       | 용어집                             |
+| Document                                               | Content                                      |
+| ------------------------------------------------------ | -------------------------------------------- |
+| [01-PRODUCT-BRIEF.md](01-PRODUCT-BRIEF.md)             | Product overview, positioning, target users  |
+| [02-COMPETITOR-ANALYSIS.md](02-COMPETITOR-ANALYSIS.md) | Competitor analysis                          |
+| [03-TECH-SPEC.md](03-TECH-SPEC.md)                     | Architecture, component details, performance goals |
+| [04-API-SPEC.md](04-API-SPEC.md)                       | API endpoint detailed definitions            |
+| [05-DB-SCHEMA.md](05-DB-SCHEMA.md)                     | DB schema DDL, Redis key patterns            |
+| [06-DEV-TASKS.md](06-DEV-TASKS.md)                     | Day-by-day development tasks                 |
+| [07-01-PITCH-SCRIPT.md](07-01-PITCH-SCRIPT.md)         | Pitch script                                 |
+| [08-BUSINESS-MODEL.md](08-BUSINESS-MODEL.md)           | Business model                               |
+| [09-00-USE-CASES-INDEX.md](09-00-USE-CASES-INDEX.md)   | Use cases index                              |
+| [10-SECURITY-DESIGN.md](10-SECURITY-DESIGN.md)         | Security design                              |
+| [11-DEPLOYMENT-GUIDE.md](11-DEPLOYMENT-GUIDE.md)       | Deployment guide, environment variables      |
+| [12-SDK-GUIDE.md](12-SDK-GUIDE.md)                     | SDK usage guide                              |
+| [00-GLOSSARY.md](00-GLOSSARY.md)                       | Glossary                                     |

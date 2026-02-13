@@ -1,27 +1,27 @@
-# TASK-26: Curation 점수 필드명 불일치 수정
+# TASK-26: Fix Curation Score Field Name Mismatch
 
 **Priority**: HIGH
-**Status**: ✅ 완료
+**Status**: ✅ Completed
 **Phase**: 6 (Curation/Rankings)
 
-## 문제
+## Problem
 
-백엔드 curation 점수 필드명과 프론트엔드 인터페이스 불일치.
+Backend curation score field names do not match frontend interface.
 
-| 프론트엔드 | 백엔드 |
+| Frontend | Backend |
 |-----------|--------|
 | `overall` | `overallScore` |
 | `cost` | `costScore` |
 | `latency` | `latencyScore` |
 | `reliability` | `reliabilityScore` |
-| `id` (Category) | (없음) |
+| `id` (Category) | (none) |
 
-## 영향
+## Impact
 
-- 랭킹 테이블의 모든 점수가 `NaN` 또는 `undefined`
-- 카테고리 필터 ID 매칭 실패
+- All scores in ranking table show `NaN` or `undefined`
+- Category filter ID matching fails
 
-## 수정 파일
+## Files to Modify
 
-- `packages/dashboard/lib/api.ts` — `EndpointScore`, `Category` 인터페이스 수정
-- `packages/dashboard/app/rankings/page.tsx` — 점수 참조 업데이트
+- `packages/dashboard/lib/api.ts` — Fix `EndpointScore`, `Category` interfaces
+- `packages/dashboard/app/rankings/page.tsx` — Update score references

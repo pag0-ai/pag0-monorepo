@@ -1,21 +1,21 @@
-# TASK-05: Proxy Core + x402 통합
+# TASK-05: Proxy Core + x402 Integration
 
-| 항목 | 내용 |
+| Item | Content |
 |------|------|
-| **패키지** | `packages/proxy` |
-| **예상 시간** | 2시간 |
-| **의존성** | [TASK-03](./TASK-03-policy-engine.md), [TASK-04](./TASK-04-cache-layer.md), [TASK-06](./TASK-06-analytics-collector.md) |
-| **차단 대상** | [TASK-11](./TASK-11-integration.md) |
+| **Package** | `packages/proxy` |
+| **Estimated Time** | 2 hours |
+| **Dependencies** | [TASK-03](./TASK-03-policy-engine.md), [TASK-04](./TASK-04-cache-layer.md), [TASK-06](./TASK-06-analytics-collector.md) |
+| **Blocks** | [TASK-11](./TASK-11-integration.md) |
 
-## 목표
+## Goal
 
-x402 프록시 요청 처리의 핵심 로직을 구현한다. 2-pass 결제 플로우(402 → 서명 → 재시도)를 포함.
+Implement the core logic for x402 proxy request handling. Includes 2-pass payment flow (402 → sign → retry).
 
-## 구현 파일
+## Implementation Files
 
 ### 1. `packages/proxy/src/proxy/x402.ts` — X402Integration
 
-**역할**: x402 서버로의 요청 전달 및 402 응답 파싱
+**Role**: Forward requests to x402 server and parse 402 responses
 
 ```typescript
 export class X402Integration {
@@ -25,40 +25,40 @@ export class X402Integration {
 }
 ```
 
-**x402 헤더 처리** (`@x402/core/http` 활용):
-- `decodePaymentRequiredHeader()` — 402 응답의 payment 정보 디코딩
-- `encodePaymentResponseHeader()` — 결제 완료 후 헤더 인코딩
+**x402 Header Processing** (using `@x402/core/http`):
+- `decodePaymentRequiredHeader()` — Decode payment info from 402 response
+- `encodePaymentResponseHeader()` — Encode header after payment completion
 
-> **CRITICAL**: 프록시는 절대 결제를 서명하지 않는다. Payment relay만 수행.
+> **CRITICAL**: Proxy NEVER signs payments. Only performs payment relay.
 
 ### 2. `packages/proxy/src/proxy/core.ts` — ProxyCore
 
-**`handleRequest(req)` 전체 흐름** (8단계):
+**`handleRequest(req)` Complete Flow** (8 steps):
 
 ```
-1. Policy 검증 (PolicyEngine.evaluate)
-   → 실패 시 403 PolicyViolationError
+1. Policy Validation (PolicyEngine.evaluate)
+   → Return 403 PolicyViolationError on failure
 
-2. Cache 체크 (CacheLayer.get)
-   → 캐시 히트 시 바로 응답 반환 (cost=0, cached=true)
+2. Cache Check (CacheLayer.get)
+   → Return response immediately on cache hit (cost=0, cached=true)
 
-3. x402 서버로 요청 전달 (X402Integration.forwardRequest)
+3. Forward Request to x402 Server (X402Integration.forwardRequest)
 
-4. 402 응답 처리
-   → PaymentRequired 파싱 후 Agent에게 relay (프록시 비서명)
+4. Handle 402 Response
+   → Parse PaymentRequired and relay to Agent (proxy does not sign)
 
-5. signedPayment 포함 재요청
-   → nonce 확인 (replay 방지: Redis nonce:{paymentId})
-   → x402 서버로 결제 정보와 함께 전달
+5. Retry Request with signedPayment
+   → Check nonce (replay prevention: Redis nonce:{paymentId})
+   → Forward to x402 server with payment info
 
-6. 응답 캐싱 (isCacheable 조건 충족 시)
+6. Cache Response (if isCacheable conditions met)
 
-7. Analytics 로깅 (비동기, 요청 블로킹 금지)
+7. Analytics Logging (async, must not block request)
 
-8. Budget 차감 (BudgetTracker.deduct)
+8. Budget Deduction (BudgetTracker.deduct)
 ```
 
-**ProxyResponse 메타데이터**:
+**ProxyResponse Metadata**:
 ```typescript
 metadata: {
   cost: string;           // "0" for cached, "500000" for paid
@@ -73,70 +73,70 @@ metadata: {
 }
 ```
 
-**Replay 방지**:
+**Replay Prevention**:
 ```typescript
 const nonceKey = `nonce:${signedPayment.id}`;
 const exists = await redis.get(nonceKey);
 if (exists) throw new Error('Payment replay detected');
-await redis.setex(nonceKey, 3600, '1');  // 1시간 TTL
+await redis.setex(nonceKey, 3600, '1');  // 1 hour TTL
 ```
 
-## 테스트 패턴
+## Test Patterns
 
 `prepare-hackathon/test-business-logic-day1.ts`:
-- **테스트 6 (x402 Headers)**: PaymentRequired 인코딩/디코딩, 비용 추출
-- **테스트 1 (USDC Arithmetic)**: BigInt 연산
+- **Test 6 (x402 Headers)**: PaymentRequired encoding/decoding, cost extraction
+- **Test 1 (USDC Arithmetic)**: BigInt operations
 
 `prepare-hackathon/test-business-logic-day3.ts`:
-- **테스트 7 (Demo Scenario)**: 전체 프록시 플로우 시뮬레이션 (11단계)
-  - Auth → Rate Limit → Policy → Budget → Cache → x402 → Payment → Cache Store → Budget Update → Analytics → 재요청 캐시 히트
+- **Test 7 (Demo Scenario)**: Complete proxy flow simulation (11 steps)
+  - Auth → Rate Limit → Policy → Budget → Cache → x402 → Payment → Cache Store → Budget Update → Analytics → Retry Cache Hit
 
-## x402 SDK 참고
+## x402 SDK Reference
 
-`prepare-hackathon/DAY0-FINDINGS.md` 및 `test-x402-sdk.ts`:
+`prepare-hackathon/DAY0-FINDINGS.md` and `test-x402-sdk.ts`:
 - `@x402/fetch` v2.3.0 exports: `wrapFetchWithPayment`, `x402Client`
 - `@x402/core/http`: `encodePaymentRequiredHeader`, `decodePaymentRequiredHeader`
 - `@x402/core/types`: `PaymentRequired`, `SettleResponse`
-- 402 헤더: base64 인코딩된 JSON
+- 402 header: base64-encoded JSON
 
-## 테스트 방법
+## Testing Method
 
 ```bash
-# Docker 로컬 환경 (Redis + PG)
+# Docker local environment (Redis + PG)
 pnpm docker:up
 
-# 서버 시작
+# Start server
 pnpm dev:proxy
 
-# 프록시 요청 테스트 (x402 서버가 없으면 일반 HTTP 서버로 대체)
+# Test proxy request (replace with regular HTTP server if x402 server unavailable)
 curl -X POST http://localhost:3000/proxy \
   -H "X-Pag0-API-Key: {demo_key}" \
   -H "Content-Type: application/json" \
   -d '{"targetUrl": "https://httpbin.org/get", "method": "GET"}'
 
-# 전체 플로우 시뮬레이션
+# Complete flow simulation
 cd prepare-hackathon && bun run test-business-logic-day3.ts
 ```
 
-## 폴백 전략
+## Fallback Strategy
 
-x402 SDK 통합 실패 시:
-- 일반 HTTP fetch로 대체 (`fetch(targetUrl, options)`)
-- 402 응답은 mock PaymentRequired로 시뮬레이션
-- Demo에서는 mock x402 서버 사용 가능
+If x402 SDK integration fails:
+- Fall back to regular HTTP fetch (`fetch(targetUrl, options)`)
+- Simulate 402 response with mock PaymentRequired
+- Use mock x402 server for demo
 
-## 주의사항
+## Cautions
 
-- Analytics 로깅은 반드시 **비동기** (fire-and-forget, 요청 응답 블로킹 금지)
-- Budget 차감은 결제 성공 후에만 수행
-- `metadata.budgetRemaining`은 매 응답에 포함
+- Analytics logging must be **async** (fire-and-forget, must not block request response)
+- Budget deduction only after successful payment
+- `metadata.budgetRemaining` must be included in every response
 
-## 완료 기준
+## Completion Criteria
 
-- [x] X402Integration 클래스 구현 (forwardRequest, parsePaymentRequest)
-- [x] ProxyCore 클래스 구현 (8단계 전체 흐름)
-- [x] 402 → Agent relay → 재시도 플로우 동작
-- [x] Replay 방지 (nonce 체크)
-- [x] Cache 히트 시 cost=0 응답
-- [x] Analytics 비동기 로깅
-- [x] 로컬에서 curl로 프록시 요청 테스트
+- [x] X402Integration class implemented (forwardRequest, parsePaymentRequest)
+- [x] ProxyCore class implemented (complete 8-step flow)
+- [x] 402 → Agent relay → retry flow working
+- [x] Replay prevention (nonce check)
+- [x] cost=0 response on cache hit
+- [x] Analytics async logging
+- [x] Test proxy request with curl locally

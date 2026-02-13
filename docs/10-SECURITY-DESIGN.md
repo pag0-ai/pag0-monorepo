@@ -1,50 +1,50 @@
-# Pag0 보안 설계 문서
+# Pag0 Security Design Document
 
-> **TL;DR**: Pag0의 핵심 보안 강점은 "Proxy는 자금을 통제할 수 없다"는 설계입니다. Zero Trust + 6층 다층 방어 아키텍처로 Agent가 직접 서명한 Payment만 전달하여, 최악의 침해 시나리오에서도 사용자 자금이 안전합니다.
+> **TL;DR**: Pag0's core security strength is the design principle "Proxy cannot control funds". With Zero Trust + 6-layer defense-in-depth architecture, only Agent-signed Payments are relayed, ensuring user funds remain safe even in worst-case breach scenarios.
 
-## 관련 문서
+## Related Documents
 
-| 문서 | 관련성 |
+| Document | Relevance |
 |------|--------|
-| [03-TECH-SPEC.md](03-TECH-SPEC.md) | 시스템 아키텍처 및 컴포넌트 설계 |
-| [04-API-SPEC.md](04-API-SPEC.md) | API 엔드포인트 인증/인가 상세 |
-| [05-DB-SCHEMA.md](05-DB-SCHEMA.md) | DB 보안 스키마 및 RLS 정책 |
-| [11-DEPLOYMENT-GUIDE.md](11-DEPLOYMENT-GUIDE.md) | 보안 배포 체크리스트 |
-| [00-GLOSSARY.md](00-GLOSSARY.md) | 핵심 용어 및 약어 정리 |
+| [03-TECH-SPEC.md](03-TECH-SPEC.md) | System architecture and component design |
+| [04-API-SPEC.md](04-API-SPEC.md) | API endpoint authentication/authorization details |
+| [05-DB-SCHEMA.md](05-DB-SCHEMA.md) | DB security schema and RLS policies |
+| [11-DEPLOYMENT-GUIDE.md](11-DEPLOYMENT-GUIDE.md) | Security deployment checklist |
+| [00-GLOSSARY.md](00-GLOSSARY.md) | Core terms and abbreviations |
 
 ---
 
-## 1. 보안 원칙
+## 1. Security Principles
 
 ### 1.1 Zero Trust Architecture
 
-- **모든 요청 검증**: API Key, Policy, Payment Signature 필수 검증
-- **네트워크 경계 무신뢰**: 내부/외부 구분 없이 동일 보안 수준 적용
-- **최소 신뢰 범위**: 각 컴포넌트는 필요한 최소 권한만 보유
+- **All requests validated**: API Key, Policy, Payment Signature validation required
+- **Network boundary untrusted**: Same security level applied without internal/external distinction
+- **Minimal trust scope**: Each component holds only the minimum required privileges
 
-### 1.2 다층 방어 (Defense in Depth)
+### 1.2 Defense in Depth
 
 ```yaml
-# 보안 레이어 구조
+# Security layer structure
 security_layers:
   - layer: 1
-    name: "네트워크"
+    name: "Network"
     controls: ["TLS 1.3", "Rate Limiting"]
   - layer: 2
-    name: "인증"
+    name: "Authentication"
     controls: ["API Key (bcrypt)", "JWT"]
   - layer: 3
-    name: "인가"
+    name: "Authorization"
     controls: ["Policy Engine", "RBAC"]
   - layer: 4
-    name: "애플리케이션"
+    name: "Application"
     controls: ["Input Validation", "Sanitization"]
   - layer: 5
-    name: "데이터"
-    controls: ["AES-256 암호화", "PII Hashing"]
+    name: "Data"
+    controls: ["AES-256 Encryption", "PII Hashing"]
   - layer: 6
-    name: "감사"
-    controls: ["불변 로그", "이상 탐지"]
+    name: "Audit"
+    controls: ["Immutable Logs", "Anomaly Detection"]
 ```
 
 ```
@@ -56,27 +56,28 @@ Layer 5: Data (Encryption at Rest, PII Hashing)
 Layer 6: Audit (Immutable Logs, Anomaly Detection)
 ```
 
-### 1.3 Least Privilege (최소 권한 원칙)
+### 1.3 Least Privilege Principle
 
-- API Key는 특정 프로젝트에만 접근 가능
-- Policy는 소유자만 수정 가능
-- Database 접근은 읽기/쓰기 분리
-- Redis는 캐시/메트릭 전용 (민감 데이터 제외)
+- API Key can only access specific projects
+- Policy can only be modified by owner
+- Database access is separated into read/write
+- Redis is for cache/metrics only (sensitive data excluded)
 
-### 1.4 **핵심 보안 설계: Proxy는 결제 서명 권한 없음**
+### 1.4 **Core Security Design: Proxy has no payment signing authority**
 
 ```
-┌─────────────────────────────────────────────────────┐
-│ 왜 안전한가?                                           │
-├─────────────────────────────────────────────────────┤
-│ 1. Proxy는 Agent의 Private Key를 보유하지 않음        │
-│ 2. Payment Payload는 Agent가 서명 후 전달            │
-│ 3. Proxy는 서명된 Payload를 단순 전달만 수행          │
-│ 4. Proxy 서버 침해 시에도 자금 탈취 불가능             │
-└─────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────┐
+│ Why is it secure?                                │
+├─────────────────────────────────────────────────┤
+│ 1. Proxy does not hold Agent's Private Key      │
+│ 2. Payment Payload is signed by Agent first     │
+│ 3. Proxy only performs relay of signed Payload  │
+│ 4. Even if Proxy is breached, fund theft is     │
+│    impossible                                    │
+└─────────────────────────────────────────────────┘
 ```
 
-**결제 흐름의 보안 구조**:
+**Security structure of payment flow**:
 
 ```
 Agent                    Pag0 Proxy              x402 Server
@@ -94,7 +95,7 @@ Agent                    Pag0 Proxy              x402 Server
   │ ◄──── 402 Response ──────┤                       │
   │    (Payment Payload)     │                       │
   │                          │                       │
-  ├──► Sign Payment ─────────┤                       │
+  │ ├──► Sign Payment ─────────┤                       │
   │    (with Agent's PK)     │                       │
   │                          │                       │
   ├──► Submit Signed ────────┤                       │
@@ -110,32 +111,32 @@ Agent                    Pag0 Proxy              x402 Server
        (Cache + Log)
 ```
 
-**보안 보장사항**:
+**Security guarantees**:
 
-- Proxy는 Payment Payload를 **읽기만** 가능 (서명 불가)
-- Proxy가 침해되어도 **서명된 결제만 전달**되므로 자금 안전
-- Policy Check는 **결제 전에만** 수행 (결제 후 수정 불가)
+- Proxy can **only read** Payment Payload (cannot sign)
+- Even if Proxy is compromised, **only signed payments are relayed** so funds are safe
+- Policy Check is performed **only before payment** (cannot modify after payment)
 
 ---
 
-## 2. 인증
+## 2. Authentication
 
-### 2.1 API Key 관리
+### 2.1 API Key Management
 
-**발급 형식**:
+**Issuance format**:
 
 ```
 pag0_[environment]_[random_32_bytes_hex]
 
-예시:
+Examples:
 - pag0_dev_a1b2c3d4e5f6...
 - pag0_prod_f6e5d4c3b2a1...
 ```
 
-**저장 방식**:
+**Storage method**:
 
 ```typescript
-// API Key는 bcrypt로 해싱하여 저장
+// API Key is hashed with bcrypt for storage
 import bcrypt from 'bcrypt';
 
 async function createAPIKey(userId: string, projectId: string) {
@@ -146,18 +147,18 @@ async function createAPIKey(userId: string, projectId: string) {
     user_id: userId,
     project_id: projectId,
     key_hash: hashedKey,
-    key_prefix: rawKey.slice(0, 12), // 검색용
+    key_prefix: rawKey.slice(0, 12), // for search
     created_at: new Date(),
     last_used_at: null,
-    expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) // 1년
+    expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) // 1 year
   });
 
-  // 원본 키는 사용자에게 1회만 표시 (재발급 불가)
+  // Original key is shown to user only once (cannot be reissued)
   return rawKey;
 }
 ```
 
-**검증 프로세스**:
+**Validation process**:
 
 ```typescript
 async function validateAPIKey(providedKey: string): Promise<User | null> {
@@ -176,27 +177,27 @@ async function validateAPIKey(providedKey: string): Promise<User | null> {
 }
 ```
 
-### 2.2 API Key 로테이션 정책
+### 2.2 API Key Rotation Policy
 
-| 시나리오 | 조치 | 자동화 |
+| Scenario | Action | Automation |
 |---------|------|--------|
-| 정기 로테이션 | 365일마다 경고 | Dashboard 알림 |
-| 유출 의심 | 즉시 무효화 + 재발급 | 수동 |
-| 미사용 키 | 90일 미사용 시 자동 만료 | Cron Job |
-| 키 손상 | 전체 프로젝트 키 재발급 | CLI 명령어 |
+| Regular rotation | Alert every 365 days | Dashboard notification |
+| Suspected leak | Immediate revocation + reissuance | Manual |
+| Unused keys | Auto-expire after 90 days of non-use | Cron Job |
+| Key compromise | Reissue all project keys | CLI command |
 
-**로테이션 명령어**:
+**Rotation command**:
 
 ```bash
 pag0 keys rotate --project my-agent --grace-period 7d
-# → 새 키 발급, 기존 키는 7일 후 만료
+# → Issue new key, existing key expires after 7 days
 ```
 
-### 2.3 JWT 토큰 (Dashboard 전용)
+### 2.3 JWT Token (Dashboard only)
 
-**용도**: Web Dashboard 세션 관리
+**Purpose**: Web Dashboard session management
 
-**발급**:
+**Issuance**:
 
 ```typescript
 import jwt from 'jsonwebtoken';
@@ -219,20 +220,20 @@ function issueJWT(user: User) {
 }
 ```
 
-**검증**:
+**Validation**:
 
-- 모든 Dashboard API 요청에 Bearer Token 필요
-- Refresh Token은 httpOnly Cookie로 저장 (XSS 방어)
-- Access Token은 localStorage (7일 TTL)
+- All Dashboard API requests require Bearer Token
+- Refresh Token is stored as httpOnly Cookie (XSS defense)
+- Access Token is in localStorage (7 day TTL)
 
 ### 2.4 Rate Limiting
 
-**계층별 제한**:
+**Limits by tier**:
 
 ```typescript
 const rateLimits = {
   byIP: {
-    windowMs: 60 * 1000,      // 1분
+    windowMs: 60 * 1000,      // 1 minute
     max: 60,                   // 60 requests
     message: 'Too many requests from this IP'
   },
@@ -256,7 +257,7 @@ const rateLimits = {
 };
 ```
 
-**구현** (Redis + Token Bucket):
+**Implementation** (Redis + Token Bucket):
 
 ```typescript
 async function checkRateLimit(apiKey: string): Promise<boolean> {
@@ -265,7 +266,7 @@ async function checkRateLimit(apiKey: string): Promise<boolean> {
 
   const count = await redis.incr(key);
   if (count === 1) {
-    await redis.expire(key, 60); // 1분 TTL
+    await redis.expire(key, 60); // 1 minute TTL
   }
 
   const limit = await getUserLimit(apiKey);
@@ -275,11 +276,11 @@ async function checkRateLimit(apiKey: string): Promise<boolean> {
 
 ---
 
-## 3. 인가
+## 3. Authorization
 
-### 3.1 Policy 소유권 검증
+### 3.1 Policy Ownership Verification
 
-**데이터 모델**:
+**Data model**:
 
 ```sql
 CREATE TABLE users (
@@ -312,7 +313,7 @@ CREATE TABLE api_keys (
 );
 ```
 
-**검증 로직**:
+**Verification logic**:
 
 ```typescript
 async function verifyPolicyOwnership(
@@ -333,18 +334,18 @@ async function verifyPolicyOwnership(
 }
 ```
 
-### 3.2 프로젝트별 격리 (Multi-Tenant)
+### 3.2 Project-level Isolation (Multi-Tenant)
 
-**격리 보장**:
+**Isolation guarantee**:
 
-- 모든 쿼리에 `project_id` 필터 필수
-- Row-Level Security (RLS) 활성화 (Supabase)
-- API Key는 단일 프로젝트에만 바인딩
+- All queries must include `project_id` filter
+- Row-Level Security (RLS) enabled (Supabase)
+- API Key is bound to single project only
 
-**Supabase RLS 정책**:
+**Supabase RLS policies**:
 
 ```sql
--- policies 테이블 RLS
+-- policies table RLS
 ALTER TABLE policies ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Users can only see their own policies"
@@ -366,15 +367,15 @@ CREATE POLICY "Users can only update their own policies"
   );
 ```
 
-### 3.3 RBAC 설계
+### 3.3 RBAC Design
 
-**역할 정의**:
+**Role definition**:
 
 ```typescript
 enum Role {
-  ADMIN = 'admin',     // 모든 권한
-  MEMBER = 'member',   // 읽기 + 쓰기 (삭제 제외)
-  VIEWER = 'viewer'    // 읽기 전용
+  ADMIN = 'admin',     // All permissions
+  MEMBER = 'member',   // Read + Write (excluding delete)
+  VIEWER = 'viewer'    // Read only
 }
 
 const permissions = {
@@ -384,7 +385,7 @@ const permissions = {
 };
 ```
 
-**프로젝트 멤버 관리**:
+**Project member management**:
 
 ```sql
 CREATE TABLE project_members (
@@ -398,14 +399,14 @@ CREATE TABLE project_members (
 
 ---
 
-## 4. 데이터 보호
+## 4. Data Protection
 
-### 4.1 전송 구간 암호화
+### 4.1 Transport Encryption
 
-**TLS 1.3 필수**:
+**TLS 1.3 Required**:
 
 ```javascript
-// Hono 서버 설정
+// Hono server configuration
 import { serve } from '@hono/node-server';
 
 serve({
@@ -419,7 +420,7 @@ serve({
 });
 ```
 
-**HSTS 헤더**:
+**HSTS Header**:
 
 ```typescript
 app.use('*', async (c, next) => {
@@ -428,12 +429,12 @@ app.use('*', async (c, next) => {
 });
 ```
 
-### 4.2 저장 구간 암호화
+### 4.2 At-rest Encryption
 
 **PostgreSQL at-rest encryption**:
 
-- Supabase는 기본적으로 AES-256 암호화 활성화
-- 추가 컬럼 레벨 암호화 (민감 데이터):
+- Supabase has AES-256 encryption enabled by default
+- Additional column-level encryption (sensitive data):
 
 ```typescript
 import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
@@ -456,9 +457,9 @@ function decrypt(encrypted: string): string {
 }
 ```
 
-### 4.3 PII 처리
+### 4.3 PII Handling
 
-**요청 본문은 해시만 저장** (원문 미저장):
+**Request body stores only hash** (original not stored):
 
 ```typescript
 import { createHash } from 'crypto';
@@ -471,14 +472,14 @@ async function logRequest(req: Request) {
     timestamp: new Date(),
     endpoint: req.url,
     method: req.method,
-    body_hash: bodyHash,        // 원본 body는 저장 안 함
+    body_hash: bodyHash,        // Original body not stored
     response_status: null,
     cost: null
   });
 }
 ```
 
-**PII 필드 마스킹**:
+**PII field masking**:
 
 ```typescript
 function maskEmail(email: string): string {
@@ -486,13 +487,13 @@ function maskEmail(email: string): string {
   return `${local[0]}***${local[local.length - 1]}@${domain}`;
 }
 
-// 로그 출력 시
+// When logging
 console.log(`User ${maskEmail(user.email)} requested analytics`);
 ```
 
-### 4.4 캐시 보호
+### 4.4 Cache Protection
 
-**Redis TLS 연결**:
+**Redis TLS connection**:
 
 ```typescript
 import { Redis } from '@upstash/redis';
@@ -508,28 +509,28 @@ const redis = new Redis({
 });
 ```
 
-**캐시 키 만료 (자동 삭제)**:
+**Cache key expiration (automatic deletion)**:
 
 ```typescript
 async function cacheResponse(key: string, value: any, ttl: number) {
   await redis.setex(
     key,
-    ttl,                    // 만료 시간 (초)
+    ttl,                    // Expiration time (seconds)
     JSON.stringify(value)
   );
 }
 
-// 민감 데이터는 짧은 TTL
-await cacheResponse('user:session', sessionData, 300); // 5분
+// Sensitive data with short TTL
+await cacheResponse('user:session', sessionData, 300); // 5 minutes
 ```
 
 ---
 
-## 5. x402 결제 보호
+## 5. x402 Payment Protection
 
-### 5.1 Payment Payload 무결성 검증
+### 5.1 Payment Payload Integrity Verification
 
-**서명 검증 프로세스**:
+**Signature verification process**:
 
 ```typescript
 import { verifyMessage } from 'viem';
@@ -557,7 +558,7 @@ async function verifyPaymentSignature(
 }
 ```
 
-**검증 실패 시 거부**:
+**Reject on verification failure**:
 
 ```typescript
 if (!await verifyPaymentSignature(payment, sig, agent)) {
@@ -568,35 +569,35 @@ if (!await verifyPaymentSignature(payment, sig, agent)) {
 }
 ```
 
-### 5.2 Replay Attack 방지
+### 5.2 Replay Attack Prevention
 
-**Nonce 추적**:
+**Nonce tracking**:
 
 ```typescript
-const NONCE_TTL = 3600; // 1시간
+const NONCE_TTL = 3600; // 1 hour
 
 async function checkNonce(agentAddress: string, nonce: string): Promise<boolean> {
   const key = `nonce:${agentAddress}:${nonce}`;
   const exists = await redis.exists(key);
 
   if (exists) {
-    return false; // 이미 사용된 nonce
+    return false; // Nonce already used
   }
 
   await redis.setex(key, NONCE_TTL, '1');
   return true;
 }
 
-// 사용 예시
+// Usage example
 if (!await checkNonce(agent, payment.nonce)) {
   return c.json({ error: 'Nonce already used (replay attack?)' }, 403);
 }
 ```
 
-**Timestamp 검증**:
+**Timestamp validation**:
 
 ```typescript
-const MAX_TIMESTAMP_DRIFT = 300; // 5분
+const MAX_TIMESTAMP_DRIFT = 300; // 5 minutes
 
 function validateTimestamp(timestamp: number): boolean {
   const now = Math.floor(Date.now() / 1000);
@@ -605,9 +606,9 @@ function validateTimestamp(timestamp: number): boolean {
 }
 ```
 
-### 5.3 Facilitator 신뢰 체인 검증
+### 5.3 Facilitator Trust Chain Verification
 
-**Coinbase CDP Facilitator 검증**:
+**Coinbase CDP Facilitator validation**:
 
 ```typescript
 const TRUSTED_FACILITATORS = [
@@ -619,37 +620,37 @@ function validateFacilitator(url: string): boolean {
   return TRUSTED_FACILITATORS.includes(url);
 }
 
-// x402 응답 처리 시
+// When processing x402 response
 const facilitatorUrl = x402Response.headers.get('X-Facilitator-URL');
 if (!validateFacilitator(facilitatorUrl)) {
   throw new Error('Untrusted facilitator');
 }
 ```
 
-### 5.4 프록시 중간자 공격 방지
+### 5.4 Proxy Man-in-the-Middle Attack Prevention
 
-**Proxy는 Payment를 수정할 수 없음**:
+**Proxy cannot modify Payment**:
 
 ```typescript
 async function relayPayment(signedPayment: SignedPayment) {
-  // ❌ 잘못된 예시: Proxy가 amount를 변경
-  // signedPayment.amount = "999999999"; // 서명 불일치로 거부됨
+  // ❌ Wrong example: Proxy changes amount
+  // signedPayment.amount = "999999999"; // Rejected due to signature mismatch
 
-  // ✅ 올바른 예시: 원본 그대로 전달
+  // ✅ Correct example: Relay original as-is
   const response = await fetch(facilitatorUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'X-Signature': signedPayment.signature
     },
-    body: JSON.stringify(signedPayment.payload) // 수정 없이 전달
+    body: JSON.stringify(signedPayment.payload) // Relay without modification
   });
 
   return response;
 }
 ```
 
-**무결성 검증 로깅**:
+**Integrity verification logging**:
 
 ```typescript
 await db.insert('payment_audit', {
@@ -658,49 +659,49 @@ await db.insert('payment_audit', {
   payload_hash: createHash('sha256').update(JSON.stringify(payment)).digest('hex'),
   signature: sig,
   facilitator_response: response.status,
-  modified: false // Proxy는 항상 false
+  modified: false // Proxy is always false
 });
 ```
 
 ---
 
-## 6. 위협 모델링
+## 6. Threat Modeling
 
 ```yaml
-# 위협 모델 요약
+# Threat model summary
 threats:
   - id: "T1"
-    name: "악성 에이전트 예산 우회"
-    severity: "높음"
-    mitigation: "Agent 주소 기반 예산 추적 + On-chain 컨트랙트"
+    name: "Malicious agent budget bypass"
+    severity: "High"
+    mitigation: "Agent address-based budget tracking + On-chain contract"
   - id: "T2"
-    name: "캐시 포이즈닝"
-    severity: "중간"
-    mitigation: "Agent별 캐시 키 격리 + 서명 검증 + TTL 제한"
+    name: "Cache poisoning"
+    severity: "Medium"
+    mitigation: "Agent-based cache key isolation + signature verification + TTL limit"
   - id: "T3"
-    name: "API Key 유출"
-    severity: "높음"
-    mitigation: "GitHub Secret Scanning + 로그 마스킹 + 이상 접근 탐지"
+    name: "API Key leak"
+    severity: "High"
+    mitigation: "GitHub Secret Scanning + log masking + anomaly access detection"
   - id: "T4"
-    name: "DDoS 공격"
-    severity: "높음"
+    name: "DDoS attack"
+    severity: "High"
     mitigation: "Cloudflare DDoS + Rate Limiting + Circuit Breaker"
   - id: "T5"
-    name: "프록시 서버 침해"
-    severity: "치명적"
-    mitigation: "최소 권한 DB 계정 + 자금 탈취 불가 설계"
+    name: "Proxy server compromise"
+    severity: "Critical"
+    mitigation: "Minimal privilege DB account + fund theft impossible design"
 ```
 
-### Threat 1: 악성 에이전트의 예산 우회 시도
+### Threat 1: Malicious agent budget bypass attempt
 
-**시나리오**:
+**Scenario**:
 
-- Agent가 Policy를 무시하고 직접 x402 서버 호출
-- 또는 다른 API Key를 사용하여 예산 제한 회피
+- Agent ignores Policy and directly calls x402 server
+- Or uses different API Key to circumvent budget limit
 
-**완화 전략**:
+**Mitigation strategy**:
 
-1. **예산은 Agent 주소 기반 추적** (API Key 무관)
+1. **Budget tracked by Agent address** (independent of API Key)
 
    ```typescript
    async function checkBudget(agentAddress: string, amount: bigint) {
@@ -710,7 +711,7 @@ threats:
    }
    ```
 
-2. **On-chain 예산 컨트랙트** (P2 기능):
+2. **On-chain budget contract** (P2 feature):
 
    ```solidity
    contract BudgetController {
@@ -724,20 +725,20 @@ threats:
    }
    ```
 
-3. **x402 서버에 Policy URL 제공** (미래 표준):
-   - x402 서버가 결제 전 Pag0 Policy 확인
-   - 표준화되면 우회 불가능
+3. **Provide Policy URL to x402 server** (future standard):
+   - x402 server confirms Pag0 Policy before payment
+   - Once standardized, bypass becomes impossible
 
-### Threat 2: 캐시 포이즈닝 공격
+### Threat 2: Cache poisoning attack
 
-**시나리오**:
+**Scenario**:
 
-- 공격자가 악의적인 응답을 캐시에 주입
-- 다른 사용자가 잘못된 데이터 수신
+- Attacker injects malicious response into cache
+- Other users receive incorrect data
 
-**완화 전략**:
+**Mitigation strategy**:
 
-1. **캐시 키는 Agent 주소 포함**:
+1. **Cache key includes Agent address**:
 
    ```typescript
    function getCacheKey(agent: string, url: string, body: string): string {
@@ -748,7 +749,7 @@ threats:
    }
    ```
 
-2. **캐시 응답에 서명 추가** (검증 가능):
+2. **Add signature to cached response** (verifiable):
 
    ```typescript
    const cacheEntry = {
@@ -758,23 +759,23 @@ threats:
    };
    ```
 
-3. **TTL 제한** (최대 1시간):
-   - 장기 캐시 방지로 오염 피해 최소화
+3. **TTL limit** (maximum 1 hour):
+   - Prevent long-term cache to minimize poisoning damage
 
-### Threat 3: API Key 유출
+### Threat 3: API Key leak
 
-**시나리오**:
+**Scenario**:
 
-- API Key가 GitHub에 커밋됨
-- 또는 로그 파일에 노출됨
+- API Key is committed to GitHub
+- Or exposed in log files
 
-**완화 전략**:
+**Mitigation strategy**:
 
-1. **GitHub Secret Scanning 등록**:
-   - `pag0_` 패턴 자동 탐지
-   - 발견 시 즉시 무효화 + 사용자 알림
+1. **GitHub Secret Scanning registration**:
+   - Auto-detect `pag0_` pattern
+   - Immediate revocation + user notification on discovery
 
-2. **로그에서 API Key 제거**:
+2. **Remove API Key from logs**:
 
    ```typescript
    function sanitizeLogs(log: string): string {
@@ -782,24 +783,24 @@ threats:
    }
    ```
 
-3. **유출 탐지**:
-   - 비정상적인 지역/IP 접근 시 알림
-   - 급격한 요청 증가 시 자동 일시 정지
+3. **Leak detection**:
+   - Alert on abnormal region/IP access
+   - Automatic temporary suspension on sudden request spike
 
-### Threat 4: DDoS 공격
+### Threat 4: DDoS attack
 
-**시나리오**:
+**Scenario**:
 
-- 대량 요청으로 Proxy 서버 마비
-- 또는 Redis/PostgreSQL 과부하
+- Massive requests paralyze Proxy server
+- Or Redis/PostgreSQL overload
 
-**완화 전략**:
+**Mitigation strategy**:
 
 1. **Cloudflare DDoS Protection**:
-   - L3/L4/L7 공격 자동 차단
+   - Auto-block L3/L4/L7 attacks
    - Rate Limiting at edge
 
-2. **Redis 연결 풀 제한**:
+2. **Redis connection pool limit**:
 
    ```typescript
    const redis = new Redis({
@@ -809,7 +810,7 @@ threats:
    });
    ```
 
-3. **Circuit Breaker 패턴**:
+3. **Circuit Breaker pattern**:
 
    ```typescript
    class CircuitBreaker {
@@ -835,52 +836,52 @@ threats:
        this.failures++;
        if (this.failures >= 5) {
          this.state = 'open';
-         setTimeout(() => { this.state = 'half-open'; }, 30000); // 30초 후 재시도
+         setTimeout(() => { this.state = 'half-open'; }, 30000); // Retry after 30 seconds
        }
      }
    }
    ```
 
-### Threat 5: 프록시 서버 침해 시 영향 범위
+### Threat 5: Impact scope when Proxy server is compromised
 
-**시나리오**:
+**Scenario**:
 
-- 공격자가 Proxy 서버 장악
-- Database/Redis 접근 권한 획득
+- Attacker takes control of Proxy server
+- Gains Database/Redis access privileges
 
-**완화 전략**:
+**Mitigation strategy**:
 
-1. **최소 권한 Database 계정**:
+1. **Minimal privilege Database account**:
 
    ```sql
-   -- Proxy 서버용 계정 (읽기 전용)
+   -- Proxy server account (read-only)
    CREATE USER pag0_proxy WITH PASSWORD 'xxx';
    GRANT SELECT ON policies, projects TO pag0_proxy;
    GRANT INSERT ON request_logs, analytics TO pag0_proxy;
-   -- UPDATE/DELETE 권한 없음
+   -- No UPDATE/DELETE permissions
    ```
 
-2. **민감 데이터 분리**:
-   - API Key Hash는 별도 테이블/DB
-   - Proxy는 검증 API만 호출 (Hash 직접 읽기 불가)
+2. **Separate sensitive data**:
+   - API Key Hash in separate table/DB
+   - Proxy only calls validation API (cannot directly read Hash)
 
-3. **침해 탐지 시스템**:
-   - 비정상 쿼리 패턴 감지
-   - Database 변경 사항 알림
-   - 로그 외부 백업 (Immutable)
+3. **Breach detection system**:
+   - Detect abnormal query patterns
+   - Alert on Database changes
+   - External log backup (Immutable)
 
-4. **핵심: 자금 탈취는 불가능**:
-   - Proxy는 Private Key 보유 안 함
-   - 서명된 Payment만 전달하므로 금액 변조 불가
-   - 최악의 경우: 서비스 중단 (자금 손실 없음)
+4. **Core: Fund theft is impossible**:
+   - Proxy does not hold Private Key
+   - Only relays signed Payments, so amount tampering is impossible
+   - Worst case scenario: Service disruption (no fund loss)
 
 ---
 
-## 7. 감사 로그
+## 7. Audit Logs
 
-### 7.1 정책 변경 이력
+### 7.1 Policy Change History
 
-**스키마**:
+**Schema**:
 
 ```sql
 CREATE TABLE policy_audit_log (
@@ -895,7 +896,7 @@ CREATE TABLE policy_audit_log (
 );
 ```
 
-**자동 기록**:
+**Automatic recording**:
 
 ```typescript
 async function updatePolicy(policyId: string, newConfig: any, user: User) {
@@ -920,9 +921,9 @@ async function updatePolicy(policyId: string, newConfig: any, user: User) {
 }
 ```
 
-### 7.2 결제 이벤트 불변 로그
+### 7.2 Payment Event Immutable Logs
 
-**SKALE Zero Gas 블록체인 기록**:
+**SKALE Zero Gas blockchain recording**:
 
 ```typescript
 import { createPublicClient, createWalletClient, http } from 'viem';
@@ -950,10 +951,10 @@ async function logPaymentOnChain(payment: Payment) {
 }
 ```
 
-**이벤트 검증**:
+**Event verification**:
 
 ```solidity
-// SKALE 감사 컨트랙트
+// SKALE audit contract
 contract PaymentAudit {
   event PaymentLogged(
     address indexed agent,
@@ -984,9 +985,9 @@ contract PaymentAudit {
 }
 ```
 
-### 7.3 이상 탐지 알림 (P2 기능)
+### 7.3 Anomaly Detection Alerts (P2 feature)
 
-**이상 패턴 정의**:
+**Anomaly pattern definition**:
 
 ```typescript
 interface AnomalyRule {
@@ -1003,7 +1004,7 @@ const anomalyRules: AnomalyRule[] = [
     severity: 'high',
     action: async (alert) => {
       await sendWebhook(alert.webhookUrl, {
-        title: '비용 급증 탐지',
+        title: 'Cost spike detected',
         cost: alert.cost,
         avgCost: alert.avgCost,
         deviation: `+${((alert.cost / alert.avgCost - 1) * 100).toFixed(0)}%`
@@ -1033,7 +1034,7 @@ const anomalyRules: AnomalyRule[] = [
 ];
 ```
 
-**실시간 모니터링**:
+**Real-time monitoring**:
 
 ```typescript
 setInterval(async () => {
@@ -1052,69 +1053,69 @@ setInterval(async () => {
 
       if (rule.severity === 'critical') {
         await db.update('policies', metrics.policyId, {
-          enabled: false // 자동 차단
+          enabled: false // Auto-block
         });
       }
     }
   }
-}, 60000); // 1분마다 체크
+}, 60000); // Check every 1 minute
 ```
 
 ---
 
-## 보안 체크리스트
+## Security Checklist
 
-### 배포 전 필수 확인
+### Pre-deployment Mandatory Checks
 
-- [ ] TLS 1.3 인증서 설치 및 검증
-- [ ] API Key 해싱 알고리즘 bcrypt cost=12 이상
-- [ ] Rate Limiting 활성화 (IP + API Key)
-- [ ] Supabase RLS 정책 적용
-- [ ] Redis TLS 연결 설정
-- [ ] 환경 변수 암호화 (Vault/Secrets Manager)
-- [ ] CORS 정책 설정 (허용 도메인만)
-- [ ] CSP 헤더 설정
-- [ ] 로그에서 민감 데이터 제거 확인
-- [ ] Payment Signature 검증 로직 테스트
-- [ ] Nonce 중복 체크 동작 확인
-- [ ] Circuit Breaker 테스트
-- [ ] DDoS 보호 설정 (Cloudflare)
-- [ ] Backup 자동화 (PostgreSQL daily)
-- [ ] 감사 로그 외부 저장 설정
+- [ ] TLS 1.3 certificate installation and verification
+- [ ] API Key hashing algorithm bcrypt cost=12 or higher
+- [ ] Rate Limiting enabled (IP + API Key)
+- [ ] Supabase RLS policies applied
+- [ ] Redis TLS connection configured
+- [ ] Environment variables encrypted (Vault/Secrets Manager)
+- [ ] CORS policy configured (allowed domains only)
+- [ ] CSP headers configured
+- [ ] Sensitive data removal from logs verified
+- [ ] Payment Signature verification logic tested
+- [ ] Nonce duplicate check functionality verified
+- [ ] Circuit Breaker tested
+- [ ] DDoS protection configured (Cloudflare)
+- [ ] Backup automation (PostgreSQL daily)
+- [ ] Audit log external storage configured
 
-### 정기 보안 점검 (월 1회)
+### Regular Security Checks (Monthly)
 
-- [ ] API Key 만료 및 미사용 키 정리
-- [ ] 취약점 스캔 (npm audit, Snyk)
-- [ ] 의존성 업데이트
-- [ ] 액세스 로그 분석 (이상 패턴 탐지)
-- [ ] Policy 변경 이력 검토
-- [ ] Rate Limit 임계값 조정
-- [ ] 보안 패치 적용
+- [ ] API Key expiration and unused key cleanup
+- [ ] Vulnerability scan (npm audit, Snyk)
+- [ ] Dependency updates
+- [ ] Access log analysis (anomaly pattern detection)
+- [ ] Policy change history review
+- [ ] Rate Limit threshold adjustment
+- [ ] Security patch application
 
-### 사고 대응 절차
+### Incident Response Procedures
 
-1. **API Key 유출 의심 시**:
+1. **When API Key leak is suspected**:
 
    ```bash
    pag0 keys revoke --key pag0_xxx...
    pag0 keys rotate --project affected-project --immediate
-   # 영향받은 사용자에게 이메일 발송
+   # Send email to affected users
    ```
 
-2. **서버 침해 의심 시**:
-   - 즉시 서버 격리 (네트워크 차단)
-   - Database 읽기 전용 모드 전환
-   - 감사 로그 백업 및 분석
-   - 포렌식 팀 투입 (또는 Cloudflare 로그 분석)
-   - 영향 범위 파악 후 공지
+2. **When server compromise is suspected**:
+   - Immediately isolate server (network block)
+   - Switch Database to read-only mode
+   - Backup and analyze audit logs
+   - Deploy forensics team (or analyze Cloudflare logs)
+   - Announce after determining impact scope
 
-3. **DDoS 공격 시**:
-   - Cloudflare Rate Limiting 강화
-   - 임시 IP 블랙리스트 적용
-   - Redis/PostgreSQL 연결 제한 축소
-   - 상태 페이지에 공지
+3. **During DDoS attack**:
+   - Strengthen Cloudflare Rate Limiting
+   - Apply temporary IP blacklist
+   - Reduce Redis/PostgreSQL connection limits
+   - Announce on status page
 
 ---
 
-**결론**: Pag0의 핵심 보안 강점은 **"Proxy는 자금을 통제할 수 없다"**는 설계에 있습니다. Agent가 직접 서명한 Payment만 전달하므로, 최악의 침해 시나리오에서도 사용자 자금은 안전합니다. 추가적인 다층 방어로 서비스 가용성과 데이터 무결성을 보호합니다.
+**Conclusion**: Pag0's core security strength lies in the design principle **"Proxy cannot control funds"**. Since only Agent-signed Payments are relayed, user funds remain safe even in worst-case breach scenarios. Additional defense-in-depth layers protect service availability and data integrity.

@@ -1,95 +1,95 @@
 # TASK-04: Cache Layer (Redis)
 
-| 항목 | 내용 |
+| Item | Content |
 |------|------|
-| **패키지** | `packages/proxy` |
-| **예상 시간** | 1시간 |
-| **의존성** | [TASK-01](./TASK-01-db-redis-client.md) |
-| **차단 대상** | [TASK-05](./TASK-05-proxy-core.md) |
+| **Package** | `packages/proxy` |
+| **Estimated Time** | 1 hour |
+| **Dependencies** | [TASK-01](./TASK-01-db-redis-client.md) |
+| **Blocks** | [TASK-05](./TASK-05-proxy-core.md) |
 
-## 목표
+## Objective
 
-Redis 기반 응답 캐싱 레이어를 구현한다. 캐시 키 생성, TTL 관리, 캐시 가능 여부 판단, 무효화를 포함한다.
+Implement a Redis-based response caching layer. Includes cache key generation, TTL management, cacheability determination, and invalidation.
 
-## 구현 파일
+## Implementation Files
 
 ### `packages/proxy/src/cache/layer.ts` — CacheLayer
 
-**핵심 메서드**:
+**Core Methods**:
 
-1. **`generateCacheKey(method, url, body?)`** — SHA-256 해시 기반 캐시 키
+1. **`generateCacheKey(method, url, body?)`** — SHA-256 hash-based cache key
    - GET: `cache:{sha256(method + ":" + url)}`
    - POST/PUT: `cache:{sha256(method + ":" + url + ":" + bodyJSON)}`
 
-2. **`isCacheable(status, method, headers, bodySize)`** — 4가지 조건 모두 충족 시 true
+2. **`isCacheable(status, method, headers, bodySize)`** — Returns true only if all 4 conditions are met
    - HTTP status 2xx
-   - GET 또는 HEAD 또는 OPTIONS (idempotent)
-   - `Cache-Control: no-store` 헤더 없음
-   - 응답 크기 < `maxCacheSizeBytes` (기본 1MB)
+   - GET or HEAD or OPTIONS (idempotent)
+   - No `Cache-Control: no-store` header
+   - Response size < `maxCacheSizeBytes` (default 1MB)
 
 3. **`get(key)`** — Redis GET + JSON.parse
-4. **`set(key, value, url?)`** — Redis SETEX + TTL 결정
-5. **`invalidate(pattern)`** — Redis KEYS + DEL (패턴 매칭)
-6. **`getTTL(url)`** — URL 패턴별 TTL 규칙 적용
+4. **`set(key, value, url?)`** — Redis SETEX + TTL determination
+5. **`invalidate(pattern)`** — Redis KEYS + DEL (pattern matching)
+6. **`getTTL(url)`** — Apply TTL rules per URL pattern
 
-**CacheConfig 인터페이스**:
+**CacheConfig Interface**:
 ```typescript
 interface CacheConfig {
   enabled: boolean;
-  defaultTTLSeconds: number;      // 기본 300 (5분)
-  maxCacheSizeBytes: number;      // 기본 1MB
+  defaultTTLSeconds: number;      // Default 300 (5 minutes)
+  maxCacheSizeBytes: number;      // Default 1MB
   ttlRules?: Array<{ pattern: string; ttlSeconds: number }>;
-  excludePatterns?: string[];     // 절대 캐시하지 않는 패턴
+  excludePatterns?: string[];     // Patterns to never cache
 }
 ```
 
-**기본 TTL 규칙** (참고용):
+**Default TTL Rules** (for reference):
 ```typescript
 const defaultTTLRules = [
-  { pattern: '*/models*', ttlSeconds: 3600 },   // 모델 리스트: 1시간
-  { pattern: '*/realtime*', ttlSeconds: 10 },    // 실시간: 10초
-  { pattern: '*/weather*', ttlSeconds: 600 },    // 날씨: 10분
+  { pattern: '*/models*', ttlSeconds: 3600 },   // Model list: 1 hour
+  { pattern: '*/realtime*', ttlSeconds: 10 },    // Realtime: 10 seconds
+  { pattern: '*/weather*', ttlSeconds: 600 },    // Weather: 10 minutes
 ];
 ```
 
-## 테스트 패턴
+## Test Patterns
 
-`prepare-hackathon/test-business-logic-day1.ts` — **테스트 3**:
-- 동일 URL+method → 동일 키 / 다른 method/body → 다른 키
-- 키 포맷: `cache:` + 64자 hex (SHA-256)
-- isCacheable: 200 GET = true, 200 POST = false, 404 = false, no-store = false, 크기초과 = false
+`prepare-hackathon/test-business-logic-day1.ts` — **Test 3**:
+- Same URL+method → same key / different method/body → different key
+- Key format: `cache:` + 64-char hex (SHA-256)
+- isCacheable: 200 GET = true, 200 POST = false, 404 = false, no-store = false, size exceeded = false
 - Redis round-trip: SETEX → GET → JSON.parse
 
-`prepare-hackathon/test-business-logic-day2.ts` — **테스트 3**:
-- TTL 규칙 매칭 (패턴별 차등 TTL)
-- 제외 패턴 (`*/stream*`, `*/events*`)
-- 캐시 무효화 (선택적 키 삭제)
-- 크기 제한 체크
+`prepare-hackathon/test-business-logic-day2.ts` — **Test 3**:
+- TTL rule matching (differential TTL per pattern)
+- Exclude patterns (`*/stream*`, `*/events*`)
+- Cache invalidation (selective key deletion)
+- Size limit check
 
-## 테스트 방법
+## Test Method
 
 ```bash
-# Redis 연결 필요
+# Requires Redis connection
 pnpm docker:up
 
-# 캐시 키 생성 + round-trip 테스트
+# Cache key generation + round-trip test
 cd prepare-hackathon && bun run test-business-logic-day1.ts
-# → "3. Cache Key Generation + isCacheable" 섹션 확인
+# → Check "3. Cache Key Generation + isCacheable" section
 
 cd prepare-hackathon && bun run test-business-logic-day2.ts
-# → "3. Cache Layer — TTL Rules & Invalidation" 섹션 확인
+# → Check "3. Cache Layer — TTL Rules & Invalidation" section
 ```
 
-## 주의사항
+## Notes
 
-- Redis 키 패턴: `cache:{sha256_hex}` (70자 고정: "cache:" 6자 + SHA-256 64자)
-- `maxCacheSizeBytes`는 직렬화 후 길이로 체크 (`JSON.stringify(value).length`)
-- 무효화 시 `redis.keys(pattern)` → 프로덕션에서는 SCAN 사용 권장 (MVP에서는 KEYS 허용)
+- Redis key pattern: `cache:{sha256_hex}` (70 chars fixed: "cache:" 6 chars + SHA-256 64 chars)
+- `maxCacheSizeBytes` is checked by length after serialization (`JSON.stringify(value).length`)
+- For invalidation, `redis.keys(pattern)` → SCAN recommended for production (KEYS allowed in MVP)
 
-## 완료 기준
+## Completion Criteria
 
-- [x] CacheLayer 클래스 구현 (get, set, invalidate, generateCacheKey, isCacheable)
-- [x] 패턴 기반 TTL 규칙 적용
-- [x] 제외 패턴 처리 (stream, events 등)
-- [x] 크기 제한 체크
-- [x] 로컬 Redis에서 캐시 round-trip 테스트 통과
+- [x] CacheLayer class implementation (get, set, invalidate, generateCacheKey, isCacheable)
+- [x] Pattern-based TTL rule application
+- [x] Exclude pattern handling (stream, events, etc.)
+- [x] Size limit check
+- [x] Cache round-trip test passes on local Redis

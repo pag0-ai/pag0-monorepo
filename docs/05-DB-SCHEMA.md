@@ -1,59 +1,59 @@
-# Pag0 Smart Proxy - 데이터베이스 스키마
+# Pag0 Smart Proxy - Database Schema
 
-> **TL;DR**: PostgreSQL(Supabase) 10개 테이블 + Redis(Upstash) 6개 키 패턴으로 구성됩니다. 핵심 테이블은 users, projects, policies, budgets, requests이며, requests 테이블은 월별 파티셔닝으로 대량 데이터를 처리합니다. 모든 비용은 USDC 6 decimals를 BIGINT로 저장하며, SKALE 블록체인에 불변 감사 기록을 남깁니다.
+> **TL;DR**: Composed of 10 PostgreSQL (Supabase) tables + 6 Redis (Upstash) key patterns. Core tables are users, projects, policies, budgets, requests, with requests table handling large-scale data through monthly partitioning. All costs are stored as BIGINT with USDC 6 decimals, and immutable audit records are maintained on the SKALE blockchain.
 
-## 관련 문서
+## Related Documents
 
-| 문서 | 관련성 |
+| Document | Relevance |
 |------|--------|
-| [03-TECH-SPEC.md](03-TECH-SPEC.md) | 아키텍처 및 데이터 흐름 |
-| [04-API-SPEC.md](04-API-SPEC.md) | API에서 사용하는 데이터 구조 |
-| [06-DEV-TASKS.md](06-DEV-TASKS.md) | DB 생성 태스크 순서 |
-| [00-GLOSSARY.md](00-GLOSSARY.md) | 용어집 |
+| [03-TECH-SPEC.md](03-TECH-SPEC.md) | Architecture and data flow |
+| [04-API-SPEC.md](04-API-SPEC.md) | Data structures used in APIs |
+| [06-DEV-TASKS.md](06-DEV-TASKS.md) | DB creation task sequence |
+| [00-GLOSSARY.md](00-GLOSSARY.md) | Glossary |
 
-## 개요
+## Overview
 
 **Primary Database**: PostgreSQL (Supabase)
 **Cache Layer**: Redis (Upstash)
 **Blockchain**: SKALE (on-chain metrics)
 
 ```yaml
-# 데이터베이스 구조 요약
+# Database Structure Summary
 postgresql:
-  테이블_수: 10
-  핵심_테이블:
-    - "users (사용자 계정)"
-    - "projects (프로젝트)"
-    - "policies (지출 정책)"
-    - "budgets (예산 추적)"
-    - "requests (요청 로그, 월별 파티셔닝)"
-  집계_테이블:
+  table_count: 10
+  core_tables:
+    - "users (user accounts)"
+    - "projects (projects)"
+    - "policies (spending policies)"
+    - "budgets (budget tracking)"
+    - "requests (request logs, monthly partitioning)"
+  aggregation_tables:
     - "endpoint_metrics_hourly"
     - "endpoint_metrics_daily"
     - "endpoint_metrics_monthly"
-  큐레이션_테이블:
+  curation_tables:
     - "endpoint_scores"
     - "categories"
 redis:
-  키_패턴_수: 6
-  패턴:
-    - "cache:{hash} - 응답 캐시"
-    - "budget:{projectId}:{period} - 예산 추적"
+  key_pattern_count: 6
+  patterns:
+    - "cache:{hash} - response cache"
+    - "budget:{projectId}:{period} - budget tracking"
     - "rate:{projectId}:{window} - Rate Limiting"
-    - "score:{endpoint} - 점수 캐시"
-    - "metrics:{projectId}:{endpoint}:hourly - 실시간 카운터"
-    - "nonce:{paymentId} - Replay 방지"
+    - "score:{endpoint} - score cache"
+    - "metrics:{projectId}:{endpoint}:hourly - real-time counters"
+    - "nonce:{paymentId} - Replay prevention"
 skale:
-  용도: "불변 온체인 메트릭 감사 기록"
+  purpose: "Immutable on-chain metrics audit trail"
 ```
 
 ---
 
-## 1. PostgreSQL 스키마
+## 1. PostgreSQL Schema
 
 ### 1.1 users
 
-사용자 계정 정보.
+User account information.
 
 ```sql
 CREATE TABLE users (
@@ -83,7 +83,7 @@ COMMENT ON COLUMN users.subscription_tier IS 'Subscription tier: free (1K req/da
 
 ### 1.2 projects
 
-사용자의 프로젝트 (API Key scope).
+User projects (API Key scope).
 
 ```sql
 CREATE TABLE projects (
@@ -108,7 +108,7 @@ COMMENT ON COLUMN projects.is_active IS 'Soft delete flag';
 
 ### 1.3 policies
 
-지출 정책 설정.
+Spending policy configuration.
 
 ```sql
 CREATE TABLE policies (
@@ -171,7 +171,7 @@ COMMENT ON COLUMN policies.anomaly_detection IS 'Anomaly detection config: { ena
 
 ### 1.4 budgets
 
-일일/월별 예산 추적 (실시간 카운터).
+Daily/monthly budget tracking (real-time counters).
 
 ```sql
 CREATE TABLE budgets (
@@ -236,7 +236,7 @@ CREATE TRIGGER trigger_reset_budgets
 
 ### 1.5 requests
 
-개별 요청 로그 (raw data).
+Individual request logs (raw data).
 
 ```sql
 CREATE TABLE requests (
@@ -303,7 +303,7 @@ CREATE TABLE requests_2026_03 PARTITION OF requests
 
 ### 1.6 endpoint_metrics_hourly
 
-시간별 집계 메트릭.
+Hourly aggregated metrics.
 
 ```sql
 CREATE TABLE endpoint_metrics_hourly (
@@ -359,7 +359,7 @@ COMMENT ON COLUMN endpoint_metrics_hourly.cache_savings IS 'USDC saved by cache 
 
 ### 1.7 endpoint_metrics_daily
 
-일별 집계 메트릭.
+Daily aggregated metrics.
 
 ```sql
 CREATE TABLE endpoint_metrics_daily (
@@ -408,7 +408,7 @@ COMMENT ON TABLE endpoint_metrics_daily IS 'Daily aggregated metrics per endpoin
 
 ### 1.8 endpoint_metrics_monthly
 
-월별 집계 메트릭.
+Monthly aggregated metrics.
 
 ```sql
 CREATE TABLE endpoint_metrics_monthly (
@@ -453,7 +453,7 @@ COMMENT ON TABLE endpoint_metrics_monthly IS 'Monthly aggregated metrics per end
 
 ### 1.9 endpoint_scores
 
-큐레이션 점수 (전체 사용자 데이터 기반).
+Curation scores (based on all user data).
 
 ```sql
 CREATE TABLE endpoint_scores (
@@ -504,7 +504,7 @@ COMMENT ON COLUMN endpoint_scores.evidence IS 'Supporting data: { sampleSize, pe
 
 ### 1.10 categories
 
-카테고리 메타데이터.
+Category metadata.
 
 ```sql
 CREATE TABLE categories (
@@ -534,7 +534,7 @@ COMMENT ON TABLE categories IS 'API categories for curation';
 
 ---
 
-## 2. Redis 키 구조
+## 2. Redis Key Structure
 
 ### 2.1 Cache
 
@@ -545,7 +545,7 @@ TTL: Configurable (default: 300s)
 Example: cache:a1b2c3d4e5f6... → {"status":200,"body":{...}}
 ```
 
-**키 생성 로직**:
+**Key generation logic**:
 
 ```typescript
 const content = method === "GET"
@@ -571,7 +571,7 @@ TTL: Until end of month
 Example: budget:proj_xyz789:monthly → "7850000"
 ```
 
-**리셋 로직**:
+**Reset logic**:
 
 ```typescript
 // Daily reset at midnight UTC
@@ -595,7 +595,7 @@ TTL: 60 seconds
 Example: rate:proj_xyz789:1707580740 → "42"
 ```
 
-**Rate limit 체크**:
+**Rate limit check**:
 
 ```typescript
 const window = Math.floor(Date.now() / 60000); // 1-minute window
@@ -638,7 +638,7 @@ Example:
   HGET metrics:proj_xyz:api.openai.com:hourly requestCount → "150"
 ```
 
-**업데이트 로직**:
+**Update logic**:
 
 ```typescript
 await redis
@@ -663,7 +663,7 @@ TTL: 3600 seconds (1 hour)
 Example: nonce:pay_abc123 → "1"
 ```
 
-**체크 로직**:
+**Check logic**:
 
 ```typescript
 const key = `nonce:${paymentId}`;
@@ -676,44 +676,44 @@ await redis.setex(key, 3600, '1');
 
 ---
 
-## 3. 인덱스 전략
+## 3. Indexing Strategy
 
-### 3.1 기본 인덱스
+### 3.1 Basic Indexes
 
-자주 조회되는 컬럼에 대한 인덱스:
+Indexes on frequently queried columns:
 
-- `users.email`, `users.api_key_hash` → 인증
-- `projects.user_id` → 사용자별 프로젝트 조회
-- `policies.project_id`, `policies.is_active` → 활성 정책 조회
-- `requests.project_id`, `requests.created_at` → 시계열 분석
+- `users.email`, `users.api_key_hash` → authentication
+- `projects.user_id` → project lookup by user
+- `policies.project_id`, `policies.is_active` → active policy lookup
+- `requests.project_id`, `requests.created_at` → time-series analysis
 
-### 3.2 복합 인덱스
+### 3.2 Composite Indexes
 
-복합 쿼리 최적화:
+Optimizing composite queries:
 
-- `requests(project_id, created_at DESC)` → 프로젝트별 최근 요청
-- `requests(endpoint, created_at DESC)` → 엔드포인트별 히스토리
-- `endpoint_scores(category, overall_score DESC)` → 카테고리별 랭킹
+- `requests(project_id, created_at DESC)` → recent requests by project
+- `requests(endpoint, created_at DESC)` → endpoint history
+- `endpoint_scores(category, overall_score DESC)` → category rankings
 
-### 3.3 부분 인덱스
+### 3.3 Partial Indexes
 
-조건부 인덱스로 크기 최적화:
+Size optimization with conditional indexes:
 
-- `policies(is_active)` WHERE `is_active = true` → 활성 정책만
-- `requests(cached)` WHERE `cached = true` → 캐시 히트만
+- `policies(is_active)` WHERE `is_active = true` → active policies only
+- `requests(cached)` WHERE `cached = true` → cache hits only
 
-### 3.4 GIN 인덱스 (JSONB)
+### 3.4 GIN Indexes (JSONB)
 
-JSONB 쿼리 최적화:
+JSONB query optimization:
 
 - `policies.allowed_endpoints` → `WHERE 'api.com' = ANY(allowed_endpoints)`
-- `endpoint_scores.evidence` → JSON 필드 검색
+- `endpoint_scores.evidence` → JSON field search
 
 ---
 
-## 4. 마이그레이션 가이드
+## 4. Migration Guide
 
-### 4.1 초기 설정
+### 4.1 Initial Setup
 
 ```sql
 -- Enable extensions
@@ -741,17 +741,17 @@ SET search_path TO pag0, public;
 -- (categories)
 ```
 
-### 4.2 데이터 보관 정책
+### 4.2 Data Retention Policy
 
 ```yaml
-# 데이터 보관 기간
+# Data retention periods
 data_retention:
-  requests: "90일 (원시 로그)"
-  endpoint_metrics_hourly: "7일"
-  endpoint_metrics_daily: "30일"
-  endpoint_metrics_monthly: "1년"
-  endpoint_scores: "영구 (업데이트)"
-  users_projects_policies: "영구"
+  requests: "90 days (raw logs)"
+  endpoint_metrics_hourly: "7 days"
+  endpoint_metrics_daily: "30 days"
+  endpoint_metrics_monthly: "1 year"
+  endpoint_scores: "permanent (updated)"
+  users_projects_policies: "permanent"
 ```
 
 ```sql
@@ -766,13 +766,13 @@ WHERE hour_bucket < NOW() - INTERVAL '7 days';
 -- Keep daily for 30 days, monthly for 1 year
 ```
 
-### 4.3 백업 전략
+### 4.3 Backup Strategy
 
 - **PostgreSQL**: Daily full backup (Supabase automatic)
 - **Redis**: AOF (Append-Only File) enabled
 - **Critical tables**: `users`, `projects`, `policies`, `budgets`
 
-### 4.4 성능 튜닝
+### 4.4 Performance Tuning
 
 ```sql
 -- Vacuum and analyze regularly
@@ -792,7 +792,7 @@ WHERE idx_scan = 0 AND indexname NOT LIKE '%_pkey';
 
 ---
 
-## 5. 쿼리 예시
+## 5. Query Examples
 
 ### 5.1 Get Active Policy for Project
 
@@ -905,11 +905,11 @@ HAVING COUNT(*) >= 10;  -- Minimum sample size
 
 ---
 
-## 6. 데이터 타입 참조
+## 6. Data Type Reference
 
 ### 6.1 USDC Storage
 
-모든 비용은 **6 decimals** (USDC 표준)을 `BIGINT`로 저장:
+All costs are stored as `BIGINT` with **6 decimals** (USDC standard):
 
 ```
 1 USDC = 1,000,000 (stored value)
@@ -917,7 +917,7 @@ HAVING COUNT(*) >= 10;  -- Minimum sample size
 0.000001 USDC = 1 (minimum unit)
 ```
 
-**TypeScript 변환**:
+**TypeScript conversion**:
 
 ```typescript
 // Store
@@ -929,7 +929,7 @@ const usdc = (storedValue / 1_000_000).toFixed(6);
 
 ### 6.2 Timestamp
 
-모든 timestamp는 `TIMESTAMP WITH TIME ZONE` (UTC 저장):
+All timestamps use `TIMESTAMP WITH TIME ZONE` (stored in UTC):
 
 ```sql
 created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
@@ -937,9 +937,9 @@ created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 
 ---
 
-## 7. 보안 고려사항
+## 7. Security Considerations
 
-### 7.1 API Key 저장
+### 7.1 API Key Storage
 
 - **Never store plain API keys**
 - Store SHA-256 hash only
@@ -953,7 +953,7 @@ api_key_hash = SHA256(api_key)
 password_hash = bcrypt.hash(password, 12)
 ```
 
-### 7.2 행 수준 보안 (RLS)
+### 7.2 Row Level Security (RLS)
 
 ```sql
 -- Enable RLS on sensitive tables
@@ -965,7 +965,7 @@ CREATE POLICY user_projects ON projects
   USING (user_id = current_setting('app.user_id')::uuid);
 ```
 
-### 7.3 데이터 암호화
+### 7.3 Data Encryption
 
 - **At rest**: Supabase default encryption
 - **In transit**: TLS 1.3

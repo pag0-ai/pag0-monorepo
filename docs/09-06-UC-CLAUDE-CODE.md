@@ -1,63 +1,63 @@
-# UC6: Claude Code 멀티에이전트 세션
+# UC6: Claude Code Multi-Agent Sessions
 
-← [UC5: API 큐레이션 자동 최적화](09-05-UC-API-CURATION.md) | [유스케이스 목록](09-00-USE-CASES-INDEX.md)
-
----
-
-> **TL;DR**: Claude Code CLI의 Autopilot/Ralph/Ultrawork 루프에서 다수의 서브에이전트(executor, debugger, researcher, reviewer)가 병렬로 유료 x402 API를 호출할 때, Pag0의 세션 예산($5), 에이전트별 격리 예산, 크로스-에이전트 공유 캐시(40% 히트)로 폭주를 방지하고 중복 비용을 37% 절감하는 사례입니다.
+← [UC5: Automated API Curation Optimization](09-05-UC-API-CURATION.md) | [Use Cases Index](09-00-USE-CASES-INDEX.md)
 
 ---
 
-## 시나리오
+> **TL;DR**: When multiple sub-agents (executor, debugger, researcher, reviewer) in Claude Code CLI's Autopilot/Ralph/Ultrawork loops make parallel paid x402 API calls, Pag0's session budget ($5), per-agent isolated budgets, and cross-agent shared cache (40% hit rate) prevent runaway spending and reduce duplicate costs by 37%.
 
-**배경**:
+---
 
-- 개발자가 Claude Code CLI로 복잡한 코딩 작업 수행
-- Autopilot/Ralph 루프로 에이전트가 자율 실행
-- 세션 중 다수의 서브에이전트 병렬 생성 (executor, debugger, researcher, reviewer 등)
-- 각 에이전트가 유료 x402 API 호출 (LLM 보조, 검색, 번역, 코드 분석 등)
-- 한 세션에 50~500회 이상의 유료 API 호출 발생 가능
+## Scenario
 
-**문제점 (Without Pag0)**:
+**Background**:
+
+- Developer performs complex coding tasks with Claude Code CLI
+- Agents run autonomously via Autopilot/Ralph loops
+- Multiple sub-agents spawned in parallel during session (executor, debugger, researcher, reviewer, etc.)
+- Each agent calls paid x402 APIs (LLM assistance, search, translation, code analysis, etc.)
+- Single session can generate 50-500+ paid API calls
+
+**Problems (Without Pag0)**:
 
 ```yaml
-폭주 위험:
-  - Autopilot 루프가 유료 API 무한 호출
-  - Ralph 루프 (자기참조 반복)에서 비용 제한 없음
-  - 서브에이전트 5개 병렬 실행 → 비용 5배 증가 가능
-  - 한 세션에서 $50+ 발생 사례 (코드 리뷰 + 검색 반복)
+Runaway Risk:
+  - Autopilot loop infinitely calls paid APIs
+  - Ralph loop (self-referential iteration) has no cost limits
+  - 5 parallel sub-agents → 5x cost multiplication possible
+  - Single session $50+ incidents (code review + repeated searches)
 
-가시성 부재:
-  - 세션 종료 전까지 총 비용 모름
-  - 어느 에이전트가 비용을 많이 쓰는지 추적 불가
-  - 도구별/에이전트별 비용 분리 불가
+Visibility Gap:
+  - Total cost unknown until session ends
+  - Cannot track which agent is spending the most
+  - No separation of costs by tool/agent
 
-중복 낭비:
-  - Researcher가 조회한 문서를 Executor가 다시 조회
-  - 같은 API 문서를 Debugger와 Reviewer가 중복 검색
-  - 병렬 에이전트 간 캐시 공유 안 됨
+Duplicate Waste:
+  - Executor re-fetches docs already retrieved by Researcher
+  - Debugger and Reviewer duplicate searches for same API docs
+  - No cache sharing between parallel agents
 
-통제 부재:
-  - 에이전트별 예산 설정 불가
-  - "비싼 API는 승인 후 사용" 같은 정책 불가
-  - 세션 중간에 비용 한도 도달해도 알림 없음
+Control Gap:
+  - Cannot set per-agent budgets
+  - Cannot enforce policies like "expensive APIs require approval"
+  - No alerts when cost limit reached mid-session
 ```
 
-**솔루션 (With Pag0)**:
+**Solution (With Pag0)**:
 
 ```typescript
-// 1. 세션 초기화: 전체 세션 + 에이전트별 예산 설정
+// 1. Session initialization: Overall session + per-agent budget setup
 import { createPag0Client } from "@pag0/sdk";
 
-// 세션 레벨 클라이언트 (전체 예산 관리)
+// Session-level client (overall budget management)
 const sessionPag0 = createPag0Client({
   apiKey: process.env.PAG0_API_KEY,
 
-  // 세션 전체 Spend Firewall
+  // Session-wide Spend Firewall
   policy: {
-    sessionBudget: "5000000",       // 세션당 $5 한도
-    dailyBudget: "20000000",        // 일일 $20 한도
-    maxPerRequest: "500000",        // 요청당 최대 $0.50
+    sessionBudget: "5000000",       // $5 limit per session
+    dailyBudget: "20000000",        // $20 daily limit
+    maxPerRequest: "500000",        // Max $0.50 per request
     allowedEndpoints: [
       "api.openai.com/*",
       "api.anthropic.com/*",
@@ -65,30 +65,30 @@ const sessionPag0 = createPag0Client({
       "api.tavily.com/*",
       "api.exa.ai/*"
     ],
-    alertOnThreshold: 0.7           // 70% 사용 시 알림
+    alertOnThreshold: 0.7           // Alert at 70% usage
   },
 
-  // 에이전트 간 공유 캐시
+  // Cross-agent shared cache
   cache: {
     enabled: true,
-    scope: "session",               // 세션 내 전 에이전트가 캐시 공유
-    defaultTTL: 1800,               // 30분 (세션 내 유효)
+    scope: "session",               // All agents in session share cache
+    defaultTTL: 1800,               // 30min (valid within session)
     ttlRules: [
-      { pattern: ".*docs.*", ttl: 3600 },      // 문서 조회: 1시간
-      { pattern: ".*search.*", ttl: 600 },      // 검색: 10분
-      { pattern: ".*completions.*", ttl: 1800 } // LLM: 30분
+      { pattern: ".*docs.*", ttl: 3600 },      // Doc lookups: 1 hour
+      { pattern: ".*search.*", ttl: 600 },      // Searches: 10 min
+      { pattern: ".*completions.*", ttl: 1800 } // LLM: 30 min
     ]
   },
 
-  // 세션 분석
+  // Session analytics
   analytics: {
     enabled: true,
     groupBy: ["agent", "tool", "endpoint"],
-    realtime: true                  // 실시간 비용 추적
+    realtime: true                  // Real-time cost tracking
   }
 });
 
-// 2. 에이전트별 격리된 클라이언트 생성
+// 2. Create isolated per-agent clients
 function createAgentClient(
   agentName: string,
   agentBudget: string,
@@ -97,53 +97,53 @@ function createAgentClient(
   return sessionPag0.createChildClient({
     agentId: agentName,
 
-    // 에이전트별 예산 격리
+    // Per-agent budget isolation
     policy: {
-      agentBudget: agentBudget,     // 에이전트별 한도
-      allowedEndpoints: allowedAPIs, // 에이전트별 API 제한
-      inheritParentPolicy: true      // 세션 정책 상속
+      agentBudget: agentBudget,     // Per-agent limit
+      allowedEndpoints: allowedAPIs, // Per-agent API restrictions
+      inheritParentPolicy: true      // Inherit session policy
     },
 
-    // 부모 캐시 공유 (읽기/쓰기 모두)
+    // Share parent cache (read/write)
     cache: {
-      inheritParentCache: true       // 다른 에이전트의 캐시 활용
+      inheritParentCache: true       // Leverage other agents' cache
     },
 
-    // 에이전트별 태그
+    // Per-agent tags
     tags: {
       agent: agentName,
       session: sessionPag0.sessionId,
-      role: agentName.split("-")[0]  // executor, debugger 등
+      role: agentName.split("-")[0]  // executor, debugger, etc.
     }
   });
 }
 
-// 에이전트별 클라이언트
+// Per-agent clients
 const executorPag0 = createAgentClient(
   "executor-1",
-  "2000000",                        // Executor: $2 한도
+  "2000000",                        // Executor: $2 limit
   ["api.openai.com/*", "api.anthropic.com/*"]
 );
 
 const researcherPag0 = createAgentClient(
   "researcher-1",
-  "1500000",                        // Researcher: $1.50 한도
+  "1500000",                        // Researcher: $1.50 limit
   ["api.tavily.com/*", "api.exa.ai/*", "api.deepl.com/*"]
 );
 
 const debuggerPag0 = createAgentClient(
   "debugger-1",
-  "1000000",                        // Debugger: $1 한도
+  "1000000",                        // Debugger: $1 limit
   ["api.openai.com/*"]
 );
 
 const reviewerPag0 = createAgentClient(
   "reviewer-1",
-  "500000",                         // Reviewer: $0.50 한도
+  "500000",                         // Reviewer: $0.50 limit
   ["api.openai.com/*"]
 );
 
-// 3. Autopilot 루프에서 사용
+// 3. Use in Autopilot loop
 async function autopilotLoop(task: string) {
   let iteration = 0;
   const maxIterations = 20;
@@ -152,7 +152,7 @@ async function autopilotLoop(task: string) {
     iteration++;
     console.log(`[Autopilot] Iteration ${iteration}/${maxIterations}`);
 
-    // 3.1 Research 단계 (유료 검색 API)
+    // 3.1 Research phase (paid search API)
     const searchResult = await researcherPag0.fetch(
       "https://api.tavily.com/search",
       {
@@ -162,12 +162,12 @@ async function autopilotLoop(task: string) {
     );
 
     console.log("[Researcher] Search:", {
-      cached: searchResult.meta.cached,   // 이전 iteration 캐시 히트 가능
+      cached: searchResult.meta.cached,   // Can hit cache from previous iteration
       cost: searchResult.meta.cost,
       agentBudgetRemaining: searchResult.meta.budgetRemaining
     });
 
-    // 3.2 Execute 단계 (유료 LLM API)
+    // 3.2 Execute phase (paid LLM API)
     const codeResult = await executorPag0.fetch(
       "https://api.openai.com/v1/chat/completions",
       {
@@ -183,7 +183,7 @@ async function autopilotLoop(task: string) {
       }
     );
 
-    // 3.3 Review 단계
+    // 3.3 Review phase
     const reviewResult = await reviewerPag0.fetch(
       "https://api.openai.com/v1/chat/completions",
       {
@@ -201,13 +201,13 @@ async function autopilotLoop(task: string) {
 
     const review = await reviewResult.json();
 
-    // 3.4 완료 판단
+    // 3.4 Completion check
     if (review.approved) {
       console.log("[Autopilot] Task completed!");
       break;
     }
 
-    // 3.5 세션 예산 체크 (자동)
+    // 3.5 Session budget check (automatic)
     const sessionStatus = await sessionPag0.getBudgetStatus("session");
     if (sessionStatus.utilizationRate > 0.9) {
       console.warn("[Pag0] ⚠️ 90% session budget used - stopping autopilot");
@@ -215,15 +215,15 @@ async function autopilotLoop(task: string) {
     }
   }
 
-  // 4. 세션 종료 리포트
+  // 4. Session end report
   return await sessionPag0.getSessionReport();
 }
 
-// 4. Ralph 루프 (자기참조 반복) 보호
+// 4. Ralph loop (self-referential iteration) protection
 async function ralphLoop(goal: string) {
   const ralphPag0 = createAgentClient(
     "ralph-loop",
-    "3000000",                      // Ralph 전용 $3 한도
+    "3000000",                      // Ralph-dedicated $3 limit
     ["api.openai.com/*", "api.tavily.com/*"]
   );
 
@@ -233,7 +233,7 @@ async function ralphLoop(goal: string) {
     attempt++;
 
     try {
-      // Ralph는 goal 달성까지 반복
+      // Ralph repeats until goal achieved
       const result = await ralphPag0.fetch(
         "https://api.openai.com/v1/chat/completions",
         {
@@ -252,11 +252,11 @@ async function ralphLoop(goal: string) {
 
     } catch (error) {
       if (error.code === "AGENT_BUDGET_EXCEEDED") {
-        // Ralph 예산 소진 → 루프 강제 종료
+        // Ralph budget exhausted → force terminate loop
         console.warn("[Pag0] Ralph budget exceeded - loop terminated");
         console.warn(`[Pag0] Spent: $${error.details.spent}, Limit: $3.00`);
 
-        // 세션은 계속 가능 (다른 에이전트 예산은 남아있음)
+        // Session can continue (other agent budgets remain)
         return { status: "budget_exceeded", attempts: attempt };
       }
       throw error;
@@ -264,25 +264,25 @@ async function ralphLoop(goal: string) {
   }
 }
 
-// 5. 병렬 에이전트 실행 (Ultrawork 모드)
+// 5. Parallel agent execution (Ultrawork mode)
 async function ultraworkMode(tasks: string[]) {
-  // 5개 에이전트 병렬 실행
+  // Launch 5 agents in parallel
   const agents = tasks.map((task, i) =>
     createAgentClient(
       `ultrawork-${i}`,
-      "1000000",                    // 각 에이전트 $1 한도
+      "1000000",                    // Each agent $1 limit
       ["api.openai.com/*", "api.tavily.com/*"]
     )
   );
 
   console.log(`[Ultrawork] Launching ${agents.length} parallel agents`);
 
-  // 병렬 실행 (캐시는 공유됨!)
+  // Parallel execution (cache is shared!)
   const results = await Promise.all(
     tasks.map(async (task, i) => {
       const agent = agents[i];
 
-      // 에이전트 A가 조회한 결과를 에이전트 B가 캐시 히트
+      // Agent B can hit cache for results fetched by Agent A
       const research = await agent.fetch(
         "https://api.tavily.com/search",
         {
@@ -313,7 +313,7 @@ async function ultraworkMode(tasks: string[]) {
     })
   );
 
-  // 6. 세션 리포트
+  // 6. Session report
   const report = await sessionPag0.getSessionReport();
 
   console.log("[Ultrawork] Session Report:", {
@@ -339,7 +339,7 @@ async function ultraworkMode(tasks: string[]) {
   //   byAgent: [
   //     { agent: "ultrawork-0", cost: "$0.70", requests: 3, budgetUsed: "70%" },
   //     { agent: "ultrawork-1", cost: "$0.55", requests: 3, budgetUsed: "55%" },
-  //     { agent: "ultrawork-2", cost: "$0.20", requests: 3, budgetUsed: "20%" },  ← 캐시 히트
+  //     { agent: "ultrawork-2", cost: "$0.20", requests: 3, budgetUsed: "20%" },  ← cache hit
   //     { agent: "ultrawork-3", cost: "$0.95", requests: 3, budgetUsed: "95%" },
   //     { agent: "ultrawork-4", cost: "$0.80", requests: 3, budgetUsed: "80%" }
   //   ]
@@ -351,7 +351,7 @@ async function ultraworkMode(tasks: string[]) {
 
 ---
 
-## 아키텍처 다이어그램
+## Architecture Diagram
 
 ```
 ┌──────────────────────────────────────────────────────────┐
@@ -369,7 +369,7 @@ async function ultraworkMode(tasks: string[]) {
 │         │                 │               │              │
 │         └─────────────────┴───────────────┘              │
 └─────────────────────────┬────────────────────────────────┘
-                          │ 모든 에이전트 요청 집중
+                          │ All agent requests converge
                           ▼
 ┌──────────────────────────────────────────────────────────┐
 │            Pag0 Smart Proxy (Session Scope)               │
@@ -383,7 +383,7 @@ async function ultraworkMode(tasks: string[]) {
 │  │ Kill switch      │  │ Session scope│  │ Session RPT │ │
 │  └──────────────────┘  └──────────────┘  └────────────┘ │
 │                                                           │
-│  에이전트 예산 격리:                                        │
+│  Agent budget isolation:                                  │
 │  ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐│
 │  │exec $2 │ │res $1.5│ │dbg  $1 │ │rev $0.5│ │ralph $3││
 │  │██████░░│ │████░░░░│ │████████│ │██░░░░░░│ │██████░░││
@@ -405,116 +405,116 @@ async function ultraworkMode(tasks: string[]) {
 
 ---
 
-## 핵심 시나리오별 방어
+## Defense by Key Scenario
 
-### 시나리오 1: Autopilot 무한 루프
+### Scenario 1: Autopilot Infinite Loop
 
 ```yaml
-상황:
-  - Autopilot이 "리팩토링 완료"를 달성하지 못함
-  - 매 iteration마다 검색 + LLM 호출 = $0.25
-  - 제한 없으면 50 iteration → $12.50 발생
+Situation:
+  - Autopilot fails to achieve "refactoring complete"
+  - Each iteration: search + LLM call = $0.25
+  - Without limits: 50 iterations → $12.50 cost
 
-Pag0 방어:
-  - 세션 예산 $5: 20 iteration 후 자동 중단
-  - 70% 알림: 14 iteration에서 경고
-  - 에이전트별 한도: Researcher $1.50 소진 시 검색만 중단, Executor는 계속
+Pag0 Defense:
+  - Session budget $5: auto-stop after 20 iterations
+  - 70% alert: warning at iteration 14
+  - Per-agent limits: When Researcher exhausts $1.50, only search stops, Executor continues
 
-결과: 최대 $5 지출 (60% 절감)
+Result: Max $5 spend (60% savings)
 ```
 
-### 시나리오 2: 병렬 에이전트 중복 호출
+### Scenario 2: Parallel Agent Duplicate Calls
 
 ```yaml
-상황:
-  - Ultrawork 5개 에이전트 동시 실행
-  - 동일 프레임워크 문서를 5개 에이전트가 각각 검색
-  - 중복 비용: $0.10 × 5 = $0.50
+Situation:
+  - Ultrawork launches 5 agents simultaneously
+  - Same framework docs searched by all 5 agents
+  - Duplicate cost: $0.10 × 5 = $0.50
 
-Pag0 방어:
-  - 공유 캐시: 첫 에이전트 조회 → 나머지 4개 캐시 히트
-  - 실제 비용: $0.10 (80% 절감)
-  - 응답 속도: 캐시 히트 시 <50ms (원본 500ms+)
+Pag0 Defense:
+  - Shared cache: First agent fetches → remaining 4 hit cache
+  - Actual cost: $0.10 (80% savings)
+  - Response speed: <50ms on cache hit (vs 500ms+ original)
 
-결과: 병렬 에이전트 중복 비용 80% 제거
+Result: 80% elimination of parallel agent duplicate costs
 ```
 
-### 시나리오 3: Ralph 루프 비용 폭주
+### Scenario 3: Ralph Loop Runaway Costs
 
 ```yaml
-상황:
-  - Ralph 루프가 goal 미달성으로 계속 반복
-  - 매 시도마다 GPT-4 호출 = $0.15
-  - 30번 반복 시 $4.50
+Situation:
+  - Ralph loop continues repeating on goal failure
+  - Each attempt: GPT-4 call = $0.15
+  - 30 repetitions = $4.50
 
-Pag0 방어:
-  - Ralph 전용 예산 $3: 20번째에서 강제 종료
-  - 세션 전체 예산은 보호 (다른 에이전트 영향 없음)
-  - 종료 사유와 시도 횟수를 리포트로 제공
+Pag0 Defense:
+  - Ralph-dedicated budget $3: force terminate at 20th attempt
+  - Overall session budget protected (other agents unaffected)
+  - Report provides termination reason and attempt count
 
-결과: Ralph 폭주가 다른 에이전트를 방해하지 않음
+Result: Ralph runaway doesn't interfere with other agents
 ```
 
 ---
 
-## 비용 비교표
+## Cost Comparison Table
 
-**일반적 코딩 세션 (2시간, 복잡한 기능 구현)**:
+**Typical Coding Session (2 hours, complex feature implementation)**:
 
-| 항목 | Without Pag0 | With Pag0 | 절감 |
-|------|--------------|-----------|------|
-| **API 호출** |
-| 검색 API (Tavily/Exa, 30회) | $0.60 | $0.30 (50% 캐시) | -$0.30 |
-| LLM API (GPT-4, 25회) | $3.75 | $2.50 (33% 캐시) | -$1.25 |
-| 번역 API (5회) | $0.25 | $0.10 (60% 캐시) | -$0.15 |
-| 합계 | $4.60 | $2.90 | **-$1.70** |
-| **리스크 방지** |
-| Autopilot 폭주 (월 2회) | $25.00 | $10.00 | -$15.00 |
-| Ralph 폭주 (월 1회) | $4.50 | $3.00 | -$1.50 |
-| **월간 비용 (30 세션)** |
-| API 비용 | $138.00 | $87.00 | -$51.00 |
-| 폭주 방지 | $29.50 | $13.00 | -$16.50 |
-| Pag0 비용 (Pro) | $0 | $49.00 | - |
+| Item | Without Pag0 | With Pag0 | Savings |
+|------|--------------|-----------|---------|
+| **API Calls** |
+| Search API (Tavily/Exa, 30 calls) | $0.60 | $0.30 (50% cache) | -$0.30 |
+| LLM API (GPT-4, 25 calls) | $3.75 | $2.50 (33% cache) | -$1.25 |
+| Translation API (5 calls) | $0.25 | $0.10 (60% cache) | -$0.15 |
+| Subtotal | $4.60 | $2.90 | **-$1.70** |
+| **Risk Prevention** |
+| Autopilot runaway (2x/month) | $25.00 | $10.00 | -$15.00 |
+| Ralph runaway (1x/month) | $4.50 | $3.00 | -$1.50 |
+| **Monthly Cost (30 sessions)** |
+| API costs | $138.00 | $87.00 | -$51.00 |
+| Runaway prevention | $29.50 | $13.00 | -$16.50 |
+| Pag0 fee (Pro) | $0 | $49.00 | - |
 | Pag0 Savings Share (15%) | $0 | $7.65 | - |
-| **순 비용** | **$167.50** | **$156.65** | **-$10.85** |
+| **Net Cost** | **$167.50** | **$156.65** | **-$10.85** |
 
-**주의**: 비용 절감보다 **리스크 통제 + 가시성**이 핵심 가치
+**Note**: Core value is **risk control + visibility** over cost savings
 
 ---
 
-## 정량적 효과
+## Quantitative Impact
 
 ```yaml
-비용 절감:
-  캐시 절감: 세션당 $1.70 (37%)
-  폭주 방지: 월 $16.50
-  연간 절감: $130+
+Cost Savings:
+  Cache savings: $1.70 per session (37%)
+  Runaway prevention: $16.50 per month
+  Annual savings: $130+
 
-운영 가시성:
-  세션별 비용 리포트: 자동 생성
-  에이전트별 비용 분석: 어떤 에이전트가 비싼지 즉시 파악
-  도구별 비용 추적: 검색 vs LLM vs 번역 비중 확인
+Operational Visibility:
+  Per-session cost reports: Auto-generated
+  Per-agent cost analysis: Instantly identify expensive agents
+  Per-tool cost tracking: See search vs LLM vs translation breakdown
 
-리스크 관리:
-  세션 예산 한도: 자율 에이전트 폭주 방지
-  에이전트별 격리: 하나의 폭주가 전체 세션에 영향 없음
-  Kill switch: 예산 90% 시 자동 중단 + 알림
+Risk Management:
+  Session budget limits: Prevent autonomous agent runaways
+  Per-agent isolation: One runaway doesn't impact entire session
+  Kill switch: Auto-stop at 90% budget + alert
 
-개발자 경험:
-  비용 투명성: "이 리팩토링에 API 비용 $3.20 사용"
-  예측 가능성: 세션 시작 전 예산 설정으로 안심하고 자율 실행
-  최적화 인사이트: "Researcher 에이전트 캐시 히트율 60% — 효율적"
+Developer Experience:
+  Cost transparency: "This refactoring used $3.20 in API costs"
+  Predictability: Set budget before session start, run autonomously with confidence
+  Optimization insights: "Researcher agent 60% cache hit rate — efficient"
 ```
 
 ---
 
-## 관련 문서
+## Related Documentation
 
-- [03-TECH-SPEC](03-TECH-SPEC.md) - 세션 스코프 캐시, 에이전트별 예산 격리, Child Client 구현 상세
-- [04-API-SPEC](04-API-SPEC.md) - `createChildClient()`, `getBudgetStatus()`, `getSessionReport()` API 레퍼런스
-- [12-SDK-GUIDE](12-SDK-GUIDE.md) - 멀티에이전트 세션 설정 및 예산 관리 가이드
-- [01-PRODUCT-BRIEF](01-PRODUCT-BRIEF.md) - Claude Code / MCP 통합 제품 비전
+- [03-TECH-SPEC](03-TECH-SPEC.md) - Session-scoped cache, per-agent budget isolation, Child Client implementation details
+- [04-API-SPEC](04-API-SPEC.md) - `createChildClient()`, `getBudgetStatus()`, `getSessionReport()` API reference
+- [12-SDK-GUIDE](12-SDK-GUIDE.md) - Multi-agent session setup and budget management guide
+- [01-PRODUCT-BRIEF](01-PRODUCT-BRIEF.md) - Claude Code / MCP integration product vision
 
 ---
 
-← [UC5: API 큐레이션 자동 최적화](09-05-UC-API-CURATION.md) | [유스케이스 목록](09-00-USE-CASES-INDEX.md)
+← [UC5: Automated API Curation Optimization](09-05-UC-API-CURATION.md) | [Use Cases Index](09-00-USE-CASES-INDEX.md)

@@ -1,21 +1,21 @@
-# TASK-14: Policy 관리 UI
+# TASK-14: Policy Management UI
 
-| 항목 | 내용 |
+| Item | Content |
 |------|------|
-| **패키지** | `packages/dashboard` |
-| **예상 시간** | 1시간 |
-| **의존성** | [TASK-12](./TASK-12-dashboard-layout.md), [TASK-07](./TASK-07-policy-routes.md) |
-| **차단 대상** | 없음 |
+| **Package** | `packages/dashboard` |
+| **Estimated Time** | 1 hour |
+| **Dependencies** | [TASK-12](./TASK-12-dashboard-layout.md), [TASK-07](./TASK-07-policy-routes.md) |
+| **Blocks** | None |
 
-## 목표
+## Objective
 
-정책 목록 조회, 생성, 수정, 삭제 UI를 구현한다.
+Implement UI for listing, creating, updating, and deleting policies.
 
-## 구현 파일
+## Implementation Files
 
 ### `app/policies/page.tsx`
 
-**레이아웃**:
+**Layout**:
 ```
 ┌─────────────────────────────────────────┐
 │  Policies        [+ Create Policy]       │
@@ -26,14 +26,14 @@
 └─────────────────────────────────────────┘
 ```
 
-### 기능
+### Features
 
-1. **정책 목록 테이블** — 이름, 일일 예산, 월간 예산, 활성 상태, 수정/삭제 버튼
-2. **정책 생성 모달/폼** — 이름, maxPerRequest, dailyBudget, monthlyBudget, allowedEndpoints, blockedEndpoints
-3. **정책 수정** — 인라인 또는 모달
-4. **정책 삭제** — 확인 다이얼로그 후 soft delete
+1. **Policy List Table** — Name, daily budget, monthly budget, active status, edit/delete buttons
+2. **Policy Creation Modal/Form** — Name, maxPerRequest, dailyBudget, monthlyBudget, allowedEndpoints, blockedEndpoints
+3. **Policy Edit** — Inline or modal
+4. **Policy Delete** — Soft delete after confirmation dialog
 
-### 데이터 소스
+### Data Source
 
 ```typescript
 const { data: policies, refetch } = useQuery({
@@ -47,38 +47,38 @@ const createMutation = useMutation({
 });
 ```
 
-### USDC 입력 처리
+### USDC Input Handling
 
-사용자는 달러 단위로 입력 ($1.00), 내부적으로 BIGINT 변환:
+Users enter dollar amounts ($1.00), internally converted to BIGINT:
 ```typescript
-// 입력: "10" (달러) → 저장: "10000000" (USDC 6 decimals)
+// Input: "10" (dollars) → Store: "10000000" (USDC 6 decimals)
 const toUsdcBigint = (dollars: string) => String(Math.floor(parseFloat(dollars) * 1_000_000));
 const fromUsdcBigint = (usdc: string) => (Number(usdc) / 1_000_000).toFixed(2);
 ```
 
-### 엔드포인트 입력
+### Endpoint Input
 
-Allowed/Blocked endpoints는 쉼표 구분 텍스트 입력:
+Allowed/Blocked endpoints are comma-separated text input:
 ```
 api.openai.com, *.anthropic.com
 ```
 
-## 테스트 방법
+## Testing Method
 
 ```bash
 pnpm dev
 
-# http://localhost:3001/policies 접속
-# → 기존 정책 목록 표시
-# → "Create Policy" 클릭 → 폼 입력 → 저장
-# → 목록에 새 정책 표시
-# → 수정/삭제 동작 확인
+# Navigate to http://localhost:3001/policies
+# → Display existing policy list
+# → Click "Create Policy" → Fill form → Save
+# → New policy appears in list
+# → Verify edit/delete actions
 ```
 
-## 완료 기준
+## Completion Criteria
 
-- [x] 정책 목록 테이블 구현
-- [x] 정책 생성 폼 (USDC 변환 포함)
-- [x] 정책 수정 기능
-- [x] 정책 삭제 기능 (확인 후)
-- [x] 로컬에서 CRUD 전체 플로우 동작 확인
+- [x] Policy list table implemented
+- [x] Policy creation form (with USDC conversion)
+- [x] Policy edit functionality
+- [x] Policy delete functionality (with confirmation)
+- [x] Full CRUD flow verified locally

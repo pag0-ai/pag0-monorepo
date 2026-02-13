@@ -1,32 +1,32 @@
-# TASK-38: Analytics 응답 보강 — topEndpoints cost, endpoints total, costs summary
+# TASK-38: Analytics Response Enrichment — topEndpoints cost, endpoints total, costs summary
 
-**Priority**: P1 (데이터 완전성)
+**Priority**: P1 (Data Integrity)
 **Status**: done
 **Phase**: 10 (Data Contract Alignment)
 **Packages**: proxy
 
-## 문제
+## Problem
 
-Analytics API 응답에 프론트엔드/MCP가 필요로 하는 필드가 누락되어 있었음.
+Analytics API responses were missing fields required by frontend/MCP.
 
-### /analytics/summary — topEndpoints에 cost 누락
-- 기존: `{ endpoint, requestCount }` 만 반환
-- 수정: `{ endpoint, requestCount, cost }` 추가 (SQL에 `COALESCE(SUM(cost), 0) as total_cost` 추가)
+### /analytics/summary — cost missing in topEndpoints
+- Before: Only returned `{ endpoint, requestCount }`
+- After: Added `{ endpoint, requestCount, cost }` (added `COALESCE(SUM(cost), 0) as total_cost` to SQL)
 
-### /analytics/endpoints — total count 누락
-- 기존: `{ endpoints: [...] }`
-- 수정: `{ endpoints: [...], total: N }`
+### /analytics/endpoints — total count missing
+- Before: `{ endpoints: [...] }`
+- After: `{ endpoints: [...], total: N }`
 
-### /analytics/costs — 기간 합계 누락
-- 기존: `{ timeseries: [...] }`
-- 수정: `{ timeseries: [...], total: { spent, saved, requests } }` (BigInt 합산)
+### /analytics/costs — period summary missing
+- Before: `{ timeseries: [...] }`
+- After: `{ timeseries: [...], total: { spent, saved, requests } }` (BigInt sum)
 
-## 수정 파일
+## Modified Files
 
 - `packages/proxy/src/routes/analytics.ts`
 
-## 완료 기준
+## Completion Criteria
 
-- [x] topEndpoints에 cost 필드 포함
-- [x] endpoints 응답에 total count 포함
-- [x] costs 응답에 total 합계 포함 (BigInt 안전 합산)
+- [x] topEndpoints includes cost field
+- [x] endpoints response includes total count
+- [x] costs response includes total summary (BigInt-safe sum)

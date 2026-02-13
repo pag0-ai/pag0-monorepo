@@ -1,21 +1,21 @@
-# TASK-11: index.ts 통합 + 에러 핸들링
+# TASK-11: index.ts Integration + Error Handling
 
-| 항목 | 내용 |
+| Item | Content |
 |------|------|
-| **패키지** | `packages/proxy` |
-| **예상 시간** | 1시간 |
-| **의존성** | [TASK-02](./TASK-02-auth-middleware.md), [TASK-05](./TASK-05-proxy-core.md), [TASK-07~10](./TASK-07-policy-routes.md) |
-| **차단 대상** | [TASK-16](./TASK-16-mcp-integration.md), [TASK-17](./TASK-17-e2e-test.md) |
+| **Package** | `packages/proxy` |
+| **Estimated Time** | 1 hour |
+| **Dependencies** | [TASK-02](./TASK-02-auth-middleware.md), [TASK-05](./TASK-05-proxy-core.md), [TASK-07~10](./TASK-07-policy-routes.md) |
+| **Blocks** | [TASK-16](./TASK-16-mcp-integration.md), [TASK-17](./TASK-17-e2e-test.md) |
 
-## 목표
+## Objective
 
-모든 미들웨어, 라우트, 에러 핸들러를 `index.ts`에 통합하여 완전한 Hono 서버를 완성한다.
+Integrate all middleware, routes, and error handlers into `index.ts` to complete a fully functional Hono server.
 
-## 구현 내용
+## Implementation
 
-### `packages/proxy/src/index.ts` 수정
+### Modify `packages/proxy/src/index.ts`
 
-현재 상태 (스켈레톤):
+Current state (skeleton):
 ```typescript
 // TODO: Add routes
 // app.post('/proxy', proxyHandler)
@@ -23,7 +23,7 @@
 // ...
 ```
 
-목표 상태:
+Target state:
 ```typescript
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
@@ -40,13 +40,13 @@ const app = new Hono();
 // 1. CORS
 app.use('/*', cors({ origin: process.env.CORS_ORIGINS?.split(',') ?? ['http://localhost:3001'] }));
 
-// 2. Health check (인증 불필요)
+// 2. Health check (no auth required)
 app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
-// 3. Auth routes (인증 불필요)
+// 3. Auth routes (no auth required)
 app.route('/api/auth', authRoutes);
 
-// 4. Auth + Rate Limit 미들웨어 (이후 모든 라우트에 적용)
+// 4. Auth + Rate Limit middleware (apply to all subsequent routes)
 app.use('/proxy/*', authMiddleware);
 app.use('/api/*', authMiddleware);
 app.use('/proxy/*', rateLimitMiddleware);
@@ -78,19 +78,19 @@ app.onError((err, c) => {
   if (err instanceof RateLimitError) {
     return c.json({ error: { code: 'RATE_LIMIT_EXCEEDED', message: err.message, details: { resetAt: ... } } }, 429);
   }
-  // 일반 에러
+  // General error
   console.error('Internal error:', err);
   return c.json({ error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } }, 500);
 });
 ```
 
-### 미들웨어 적용 순서
+### Middleware Application Order
 
 ```
-모든 요청 → CORS → 라우트 매칭
-  /health → 바로 응답
-  /api/auth/register, /api/auth/login → 바로 핸들러
-  /proxy/*, /api/* → Auth → Rate Limit → 핸들러
+All requests → CORS → Route matching
+  /health → immediate response
+  /api/auth/register, /api/auth/login → direct handler
+  /proxy/*, /api/* → Auth → Rate Limit → handler
 ```
 
 ## Graceful Shutdown
@@ -103,13 +103,13 @@ process.on('SIGTERM', async () => {
 });
 ```
 
-## 테스트 방법
+## Testing Method
 
 ```bash
 pnpm docker:up
 pnpm dev:proxy
 
-# 전체 서비스 점검
+# Full service check
 curl http://localhost:3000/health                                    # → 200
 curl http://localhost:3000/api/policies                              # → 401
 curl -H "X-Pag0-API-Key: wrong" http://localhost:3000/api/policies  # → 401
@@ -117,12 +117,12 @@ curl -H "X-Pag0-API-Key: {valid}" http://localhost:3000/api/policies # → 200
 curl http://localhost:3000/nonexistent                               # → 404
 ```
 
-## 완료 기준
+## Completion Criteria
 
-- [x] 모든 라우트 마운트 완료
-- [x] Auth 미들웨어 적용 (제외 경로 포함)
-- [x] Rate Limit 미들웨어 적용
+- [x] All routes mounted successfully
+- [x] Auth middleware applied (including excluded paths)
+- [x] Rate Limit middleware applied
 - [x] Global error handler (PolicyViolation, Unauthorized, RateLimit, Internal)
 - [x] 404 handler
-- [x] Graceful shutdown (Redis, PG 연결 종료)
-- [x] 로컬에서 전체 서비스 정상 동작 확인
+- [x] Graceful shutdown (Redis, PG connection termination)
+- [x] Full service verified working locally

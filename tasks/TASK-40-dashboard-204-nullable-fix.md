@@ -1,28 +1,28 @@
-# TASK-40: Dashboard fetchApi 204 처리 + Category nullable 필드
+# TASK-40: Dashboard fetchApi 204 Handling + Category Nullable Fields
 
-**Priority**: P1 (런타임 에러 방지)
+**Priority**: P1 (Runtime Error Prevention)
 **Status**: done
 **Phase**: 10 (Data Contract Alignment)
 **Packages**: dashboard
 
-## 문제
+## Problem
 
-### 1. 204 No Content 미처리
-`fetchApi`가 DELETE 응답(204 No Content)에서 `res.json()` 호출 시 JSON 파싱 에러 발생.
+### 1. 204 No Content Not Handled
+`fetchApi` throws JSON parsing error when calling `res.json()` on DELETE response (204 No Content).
 
-### 2. Category 필드 nullable
-백엔드 `/api/curation/categories` 응답에서 `description`이 null일 수 있고, `avgScore`도 endpoint_scores가 없는 카테고리에서는 null.
+### 2. Category Fields Nullable
+Backend `/api/curation/categories` response has `description` that can be null, and `avgScore` is also null for categories without endpoint_scores.
 
-## 수정 내용
+## Changes
 
-1. `fetchApi`: `res.status === 204` 체크 추가, `undefined as T` 반환
-2. `Category` 인터페이스: `description: string | null`, `avgScore: number | null`
+1. `fetchApi`: Add `res.status === 204` check, return `undefined as T`
+2. `Category` interface: `description: string | null`, `avgScore: number | null`
 
-## 수정 파일
+## Modified Files
 
 - `packages/dashboard/lib/api.ts`
 
-## 완료 기준
+## Completion Criteria
 
-- [x] 204 No Content 응답 시 JSON 파싱 에러 없음
-- [x] Category nullable 필드 TypeScript 타입 정확
+- [x] No JSON parsing error on 204 No Content response
+- [x] Category nullable fields have accurate TypeScript types

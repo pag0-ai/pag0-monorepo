@@ -1,15 +1,15 @@
-# TASK-23: API 응답 언래핑 — 프론트엔드/백엔드 데이터 계약 정렬
+# TASK-23: API Response Unwrapping — Frontend/Backend Data Contract Alignment
 
-**Priority**: HIGH (모든 대시보드 페이지가 깨지는 원인)
-**Status**: ✅ 완료
+**Priority**: HIGH (causing all dashboard pages to break)
+**Status**: ✅ Complete
 **Phase**: 5 (Dashboard with Data)
 
-## 문제
+## Problem
 
-백엔드는 응답을 래퍼 객체로 감싸서 반환하지만, 프론트엔드 `fetchApi<T>`는 응답 자체를 데이터로 기대함.
+The backend returns responses wrapped in wrapper objects, but the frontend `fetchApi<T>` expects the response itself as data.
 
-| 엔드포인트 | 백엔드 반환 | 프론트엔드 기대 |
-|-----------|------------|----------------|
+| Endpoint | Backend Returns | Frontend Expects |
+|----------|----------------|------------------|
 | `GET /api/policies` | `{ policies: [...], total }` | `Policy[]` |
 | `GET /api/analytics/endpoints` | `{ endpoints: [...] }` | `EndpointMetrics[]` |
 | `GET /api/analytics/costs` | `{ timeseries: [...] }` | `CostDataPoint[]` |
@@ -17,9 +17,9 @@
 | `GET /api/curation/rankings` | `{ data: [...] }` | `EndpointScore[]` |
 | `GET /api/curation/categories` | `{ data: [...] }` | `Category[]` |
 
-## 수정 방법
+## Fix Method
 
-`packages/dashboard/lib/api.ts`의 각 fetch 함수에서 응답 언래핑:
+Unwrap responses in each fetch function in `packages/dashboard/lib/api.ts`:
 
 ```typescript
 // Before
@@ -34,7 +34,7 @@ export async function fetchPolicies(apiKey?: string): Promise<Policy[]> {
 }
 ```
 
-## 영향 범위
+## Impact Scope
 
-- `packages/dashboard/lib/api.ts` — 6개 함수 수정
-- 대시보드, 정책, 랭킹 페이지 모두 영향
+- `packages/dashboard/lib/api.ts` — 6 functions modified
+- All dashboard, policies, and rankings pages affected

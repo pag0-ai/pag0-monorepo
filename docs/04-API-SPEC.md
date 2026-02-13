@@ -1,20 +1,20 @@
-# Pag0 Smart Proxy - API 명세서
+# Pag0 Smart Proxy - API Specification
 
-> **TL;DR**: Pag0 API는 5개 주요 영역으로 구성됩니다: (1) Proxy - x402 요청 중계, (2) Policy - 지출 정책 CRUD, (3) Analytics - 사용량/비용/캐시 통계, (4) Curation - API 추천/비교/랭킹, (5) Auth - 사용자 등록/로그인. 모든 요청은 `X-Pag0-API-Key` 헤더로 인증하며, Free 티어 60 req/min, Pro 티어 1,000 req/min입니다.
+> **TL;DR**: The Pag0 API consists of 5 main areas: (1) Proxy - x402 request relay, (2) Policy - spending policy CRUD, (3) Analytics - usage/cost/cache statistics, (4) Curation - API recommendations/comparison/rankings, (5) Auth - user registration/login. All requests are authenticated with the `X-Pag0-API-Key` header, with Free tier at 60 req/min and Pro tier at 1,000 req/min.
 
-## 관련 문서
+## Related Documents
 
-| 문서 | 관련성 |
+| Document | Relevance |
 |------|--------|
-| [03-TECH-SPEC.md](03-TECH-SPEC.md) | 아키텍처 및 컴포넌트 상세 |
-| [05-DB-SCHEMA.md](05-DB-SCHEMA.md) | 데이터베이스 스키마 |
-| [12-SDK-GUIDE.md](12-SDK-GUIDE.md) | SDK 사용 가이드 |
-| [00-GLOSSARY.md](00-GLOSSARY.md) | 용어집 |
+| [03-TECH-SPEC.md](03-TECH-SPEC.md) | Architecture and component details |
+| [05-DB-SCHEMA.md](05-DB-SCHEMA.md) | Database schema |
+| [12-SDK-GUIDE.md](12-SDK-GUIDE.md) | SDK usage guide |
+| [00-GLOSSARY.md](00-GLOSSARY.md) | Glossary |
 
-## API 개요
+## API Overview
 
-**Base URL**: `https://api.pag0.dev` (프로덕션)
-**Base URL**: `http://localhost:3000` (로컬 개발)
+**Base URL**: `https://api.pag0.dev` (production)
+**Base URL**: `http://localhost:3000` (local development)
 
 **Authentication**: API Key (Header: `X-Pag0-API-Key`)
 **Content-Type**: `application/json`
@@ -22,26 +22,26 @@
 
 ---
 
-## 인증 (Authentication)
+## Authentication
 
-모든 API 요청은 `X-Pag0-API-Key` 헤더를 포함해야 합니다.
+All API requests must include the `X-Pag0-API-Key` header.
 
 ```http
 X-Pag0-API-Key: pag0_live_a1b2c3d4e5f6...
 ```
 
-### API Key 형식
+### API Key Format
 
 - **Production**: `pag0_live_{32_char_random}`
 - **Test**: `pag0_test_{32_char_random}`
 
 ---
 
-## 1. 프록시 엔드포인트
+## 1. Proxy Endpoints
 
 ### 1.1 POST /proxy
 
-x402 요청을 프록시하여 정책 검증, 캐싱, 분석을 제공합니다.
+Proxies x402 requests with policy validation, caching, and analytics.
 
 #### Request
 
@@ -133,7 +133,7 @@ interface ProxyResponse {
 
 **Status**: `402 Payment Required`
 
-프록시가 x402 서버로부터 402 응답을 받았을 때, Agent에게 결제 요청을 relay합니다.
+When the proxy receives a 402 response from the x402 server, it relays the payment request to the Agent.
 
 ```typescript
 interface PaymentRequiredResponse {
@@ -191,7 +191,7 @@ interface PaymentRequiredResponse {
 }
 ```
 
-**Agent Action**: Agent는 payment를 서명하고, `signedPayment` 필드와 함께 요청을 재시도합니다.
+**Agent Action**: The Agent signs the payment and retries the request with the `signedPayment` field.
 
 #### Request (With Signed Payment)
 
@@ -254,11 +254,11 @@ interface PolicyViolationError {
 
 ---
 
-## 2. 정책 관리
+## 2. Policy Management
 
 ### 2.1 GET /api/policies
 
-프로젝트의 모든 정책 목록을 조회합니다.
+Retrieves all policies for a project.
 
 #### Request
 
@@ -270,7 +270,7 @@ X-Pag0-API-Key: pag0_live_xxx
 
 **Query Parameters**:
 
-- `projectId` (optional): 특정 프로젝트 ID
+- `projectId` (optional): Specific project ID
 
 #### Response
 
@@ -334,7 +334,7 @@ interface SpendPolicy {
 
 ### 2.2 POST /api/policies
 
-새로운 정책을 생성합니다.
+Creates a new policy.
 
 #### Request
 
@@ -397,7 +397,7 @@ interface CreatePolicyResponse {
 
 ### 2.3 GET /api/policies/:id
 
-특정 정책 상세 조회.
+Retrieves details of a specific policy.
 
 #### Request
 
@@ -421,7 +421,7 @@ interface PolicyResponse {
 
 ### 2.4 PUT /api/policies/:id
 
-정책 업데이트.
+Updates a policy.
 
 #### Request
 
@@ -432,7 +432,7 @@ X-Pag0-API-Key: pag0_live_xxx
 Content-Type: application/json
 ```
 
-**Body**: Same as `CreatePolicyRequest` (partial update 지원)
+**Body**: Same as `CreatePolicyRequest` (supports partial updates)
 
 ```json
 {
@@ -455,7 +455,7 @@ interface UpdatePolicyResponse {
 
 ### 2.5 DELETE /api/policies/:id
 
-정책 삭제 (soft delete).
+Deletes a policy (soft delete).
 
 #### Request
 
@@ -471,11 +471,11 @@ X-Pag0-API-Key: pag0_live_xxx
 
 ---
 
-## 3. 분석 (Analytics)
+## 3. Analytics
 
 ### 3.1 GET /api/analytics/summary
 
-프로젝트의 전체 요약 통계.
+Retrieves overall summary statistics for a project.
 
 #### Request
 
@@ -488,7 +488,7 @@ X-Pag0-API-Key: pag0_live_xxx
 **Query Parameters**:
 
 - `period`: `1h`, `24h`, `7d`, `30d` (default: `7d`)
-- `projectId` (optional): 특정 프로젝트
+- `projectId` (optional): Specific project
 
 #### Response
 
@@ -569,7 +569,7 @@ interface AnalyticsSummary {
 
 ### 3.2 GET /api/analytics/endpoints
 
-엔드포인트별 상세 메트릭.
+Retrieves detailed metrics by endpoint.
 
 #### Request
 
@@ -582,7 +582,7 @@ X-Pag0-API-Key: pag0_live_xxx
 **Query Parameters**:
 
 - `period`: `1h`, `24h`, `7d`, `30d`
-- `limit`: 반환할 엔드포인트 수 (default: 20)
+- `limit`: Number of endpoints to return (default: 20)
 - `orderBy`: `requestCount`, `cost`, `latency`, `errorRate` (default: `requestCount`)
 
 #### Response
@@ -639,7 +639,7 @@ interface EndpointMetrics {
 
 ### 3.3 GET /api/analytics/costs
 
-비용 시계열 데이터.
+Retrieves cost time series data.
 
 #### Request
 
@@ -704,7 +704,7 @@ interface CostAnalytics {
 
 ### 3.4 GET /api/analytics/cache
 
-캐시 성능 분석.
+Retrieves cache performance analysis.
 
 #### Request
 
@@ -756,11 +756,11 @@ interface CacheAnalytics {
 
 ---
 
-## 4. 큐레이션 (API 추천/비교)
+## 4. Curation (API Recommendations/Comparison)
 
 ### 4.1 GET /api/curation/recommend
 
-카테고리별 추천 API 목록.
+Retrieves recommended APIs by category.
 
 #### Request
 
@@ -773,8 +773,8 @@ X-Pag0-API-Key: pag0_live_xxx
 **Query Parameters**:
 
 - `category`: `AI`, `Data`, `Blockchain`, `IoT`, `Finance` (required)
-- `limit`: 추천 개수 (default: 5, max: 20)
-- `weights`: 가중치 조정 (optional) - `cost:0.5,latency:0.3,reliability:0.2`
+- `limit`: Number of recommendations (default: 5, max: 20)
+- `weights`: Weight adjustment (optional) - `cost:0.5,latency:0.3,reliability:0.2`
 
 #### Response
 
@@ -842,7 +842,7 @@ interface EndpointScore {
 
 ### 4.2 GET /api/curation/compare
 
-여러 API 비교.
+Compares multiple APIs.
 
 #### Request
 
@@ -854,7 +854,7 @@ X-Pag0-API-Key: pag0_live_xxx
 
 **Query Parameters**:
 
-- `endpoints`: 쉼표로 구분된 엔드포인트 목록 (2-5개)
+- `endpoints`: Comma-separated list of endpoints (2-5)
 
 #### Response
 
@@ -933,7 +933,7 @@ interface ComparisonResponse {
 
 ### 4.3 GET /api/curation/rankings
 
-카테고리별 전체 랭킹.
+Retrieves overall rankings by category.
 
 #### Request
 
@@ -945,8 +945,8 @@ X-Pag0-API-Key: pag0_live_xxx
 
 **Query Parameters**:
 
-- `category`: 카테고리 (optional, 미지정시 전체)
-- `limit`: 반환 개수 (default: 20)
+- `category`: Category (optional, all if not specified)
+- `limit`: Number to return (default: 20)
 - `orderBy`: `overall`, `cost`, `latency`, `reliability` (default: `overall`)
 
 #### Response
@@ -965,7 +965,7 @@ interface RankingsResponse {
 
 ### 4.4 GET /api/curation/categories
 
-사용 가능한 카테고리 목록.
+Retrieves available category list.
 
 #### Request
 
@@ -1005,7 +1005,7 @@ interface CategoriesResponse {
 
 ### 4.5 GET /api/curation/score/:endpoint
 
-특정 엔드포인트 점수 조회.
+Retrieves score for a specific endpoint.
 
 #### Request
 
@@ -1031,11 +1031,11 @@ interface ScoreResponse {
 
 ---
 
-## 5. 인증 (Authentication)
+## 5. Authentication
 
 ### 5.1 POST /api/auth/register
 
-새 사용자 등록 및 API Key 발급.
+Registers a new user and issues an API Key.
 
 #### Request
 
@@ -1101,13 +1101,13 @@ interface RegisterResponse {
 }
 ```
 
-**Important**: API Key는 **한 번만 표시**됩니다. 안전하게 저장하세요.
+**Important**: API Key is **shown only once**. Store it securely.
 
 ---
 
 ### 5.2 POST /api/auth/login
 
-로그인 및 세션 토큰 발급 (Dashboard 용).
+Logs in and issues a session token (for Dashboard).
 
 #### Request
 
@@ -1144,7 +1144,7 @@ interface LoginResponse {
 
 ### 5.3 GET /api/auth/me
 
-현재 사용자 정보 조회.
+Retrieves current user information.
 
 #### Request
 
@@ -1208,9 +1208,9 @@ interface UserResponse {
 
 ---
 
-## 에러 응답 형식
+## Error Response Format
 
-모든 에러는 다음 형식을 따릅니다:
+All errors follow this format:
 
 ```typescript
 interface ErrorResponse {
@@ -1222,24 +1222,24 @@ interface ErrorResponse {
 }
 ```
 
-### 공통 에러 코드
+### Common Error Codes
 
 | HTTP Status | Error Code | Description |
 |-------------|------------|-------------|
-| 400 | `INVALID_REQUEST` | 잘못된 요청 파라미터 |
-| 401 | `UNAUTHORIZED` | 인증 실패 (API Key 없음/잘못됨) |
-| 403 | `POLICY_VIOLATION` | 정책 위반 |
-| 404 | `NOT_FOUND` | 리소스 없음 |
-| 429 | `RATE_LIMIT_EXCEEDED` | Rate limit 초과 |
-| 500 | `INTERNAL_ERROR` | 서버 내부 오류 |
-| 502 | `UPSTREAM_ERROR` | x402 서버 오류 |
-| 504 | `UPSTREAM_TIMEOUT` | x402 서버 타임아웃 |
+| 400 | `INVALID_REQUEST` | Invalid request parameters |
+| 401 | `UNAUTHORIZED` | Authentication failed (missing/invalid API Key) |
+| 403 | `POLICY_VIOLATION` | Policy violation |
+| 404 | `NOT_FOUND` | Resource not found |
+| 429 | `RATE_LIMIT_EXCEEDED` | Rate limit exceeded |
+| 500 | `INTERNAL_ERROR` | Internal server error |
+| 502 | `UPSTREAM_ERROR` | x402 server error |
+| 504 | `UPSTREAM_TIMEOUT` | x402 server timeout |
 
 ---
 
-## Rate Limiting (요청 제한)
+## Rate Limiting
 
-### 제한
+### Limits
 
 | Tier | Requests/Minute | Requests/Day |
 |------|-----------------|--------------|
@@ -1248,7 +1248,7 @@ interface ErrorResponse {
 
 ### Rate Limit Headers
 
-모든 응답에 포함됩니다:
+Included in all responses:
 
 ```http
 X-RateLimit-Limit: 60
@@ -1256,7 +1256,7 @@ X-RateLimit-Remaining: 42
 X-RateLimit-Reset: 1707580800
 ```
 
-### Rate Limit 초과 시
+### On Rate Limit Exceeded
 
 **Status**: `429 Too Many Requests`
 
@@ -1275,11 +1275,11 @@ X-RateLimit-Reset: 1707580800
 
 ---
 
-## Webhooks (Pro 티어 전용)
+## Webhooks (Pro Tier Only)
 
 ### Approval Workflow Webhook
 
-정책에서 `requireApproval` 설정 시, 임계값 초과 요청에 대해 webhook을 호출합니다.
+When `requireApproval` is configured in a policy, a webhook is called for requests exceeding the threshold.
 
 #### Webhook Payload
 
@@ -1321,7 +1321,7 @@ interface ApprovalResponse {
 
 ### Anomaly Detection Webhook
 
-비정상 지출 패턴 탐지 시 알림.
+Alerts when abnormal spending patterns are detected.
 
 #### Webhook Payload
 
@@ -1341,7 +1341,7 @@ interface AnomalyWebhook {
 
 ---
 
-## SDK 사용 예시 (TypeScript)
+## SDK Usage Example (TypeScript)
 
 ```typescript
 import { Pag0Client } from '@pag0/sdk';

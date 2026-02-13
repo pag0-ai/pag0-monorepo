@@ -1,34 +1,34 @@
 # TASK-08: Analytics API Routes
 
-| 항목 | 내용 |
+| Item | Content |
 |------|------|
-| **패키지** | `packages/proxy` |
-| **예상 시간** | 1.5시간 |
-| **의존성** | [TASK-01](./TASK-01-db-redis-client.md), [TASK-06](./TASK-06-analytics-collector.md) |
-| **차단 대상** | [TASK-11](./TASK-11-integration.md), [TASK-13](./TASK-13-dashboard-metrics.md) |
+| **Package** | `packages/proxy` |
+| **Estimated Time** | 1.5 hours |
+| **Dependencies** | [TASK-01](./TASK-01-db-redis-client.md), [TASK-06](./TASK-06-analytics-collector.md) |
+| **Blocks** | [TASK-11](./TASK-11-integration.md), [TASK-13](./TASK-13-dashboard-metrics.md) |
 
-## 목표
+## Goal
 
-Analytics API 4개 엔드포인트를 구현하여 Dashboard에서 사용할 통계 데이터를 제공한다.
+Implement 4 Analytics API endpoints to provide statistical data for the Dashboard.
 
-## 구현 파일
+## Implementation Files
 
 ### `packages/proxy/src/routes/analytics.ts`
 
-### 엔드포인트 목록
+### Endpoint List
 
-| Method | Path | 설명 |
+| Method | Path | Description |
 |--------|------|------|
-| GET | `/summary` | 전체 요약 통계 |
-| GET | `/endpoints` | 엔드포인트별 상세 메트릭 |
-| GET | `/costs` | 비용 시계열 데이터 |
-| GET | `/cache` | 캐시 성능 분석 |
+| GET | `/summary` | Overall summary statistics |
+| GET | `/endpoints` | Detailed metrics per endpoint |
+| GET | `/costs` | Cost time series data |
+| GET | `/cache` | Cache performance analysis |
 
-### GET `/summary` — 전체 요약
+### GET `/summary` — Overall Summary
 
-**쿼리 파라미터**: `period` (`1h`, `24h`, `7d`, `30d`, 기본 `7d`)
+**Query Parameters**: `period` (`1h`, `24h`, `7d`, `30d`, default `7d`)
 
-**응답 구조** (`docs/04-API-SPEC.md` 섹션 3.1):
+**Response Structure** (`docs/04-API-SPEC.md` Section 3.1):
 ```typescript
 {
   period: string;
@@ -46,7 +46,7 @@ Analytics API 4개 엔드포인트를 구현하여 Dashboard에서 사용할 통
 }
 ```
 
-**핵심 SQL** (`docs/05-DB-SCHEMA.md` 쿼리 5.3):
+**Core SQL** (`docs/05-DB-SCHEMA.md` Query 5.3):
 ```sql
 SELECT
   COUNT(*) as total_requests,
@@ -59,13 +59,13 @@ FROM requests
 WHERE project_id = $1 AND created_at >= NOW() - INTERVAL $2
 ```
 
-**period → SQL interval 변환**: `1h` → `'1 hour'`, `24h` → `'24 hours'`, `7d` → `'7 days'`, `30d` → `'30 days'`
+**period → SQL interval conversion**: `1h` → `'1 hour'`, `24h` → `'24 hours'`, `7d` → `'7 days'`, `30d` → `'30 days'`
 
-### GET `/endpoints` — 엔드포인트별 메트릭
+### GET `/endpoints` — Metrics Per Endpoint
 
-**쿼리 파라미터**: `period`, `limit` (기본 20), `orderBy` (기본 `requestCount`)
+**Query Parameters**: `period`, `limit` (default 20), `orderBy` (default `requestCount`)
 
-**핵심 SQL** (`docs/05-DB-SCHEMA.md` 쿼리 5.5):
+**Core SQL** (`docs/05-DB-SCHEMA.md` Query 5.5):
 ```sql
 SELECT endpoint, COUNT(*) as request_count,
   SUM(CASE WHEN cached THEN 1 ELSE 0 END) as cache_hit_count,
@@ -76,9 +76,9 @@ FROM requests WHERE project_id = $1 AND created_at >= ...
 GROUP BY endpoint ORDER BY request_count DESC LIMIT $2
 ```
 
-### GET `/costs` — 비용 시계열
+### GET `/costs` — Cost Time Series
 
-**쿼리 파라미터**: `period`, `granularity` (`hourly`, `daily`, `monthly`)
+**Query Parameters**: `period`, `granularity` (`hourly`, `daily`, `monthly`)
 
 ```sql
 SELECT DATE_TRUNC($1, created_at) as timestamp,
@@ -90,7 +90,7 @@ GROUP BY DATE_TRUNC($1, created_at)
 ORDER BY timestamp DESC
 ```
 
-### GET `/cache` — 캐시 성능
+### GET `/cache` — Cache Performance
 
 ```sql
 SELECT
@@ -100,12 +100,12 @@ SELECT
 FROM requests WHERE project_id = $1 AND created_at >= ...
 ```
 
-## 테스트 패턴
+## Test Patterns
 
-`prepare-hackathon/test-business-logic-day2.ts` — **테스트 5**: PG summary/endpoint 쿼리
-`prepare-hackathon/test-business-logic-day3.ts` — **테스트 3, 4, 5**: Dashboard summary, cost timeseries, cache analytics
+`prepare-hackathon/test-business-logic-day2.ts` — **Test 5**: PG summary/endpoint queries
+`prepare-hackathon/test-business-logic-day3.ts` — **Tests 3, 4, 5**: Dashboard summary, cost timeseries, cache analytics
 
-## 테스트 방법
+## Test Method
 
 ```bash
 pnpm dev:proxy
@@ -123,15 +123,15 @@ curl -H "X-Pag0-API-Key: {key}" "http://localhost:3000/api/analytics/costs?perio
 curl -H "X-Pag0-API-Key: {key}" "http://localhost:3000/api/analytics/cache?period=7d"
 ```
 
-## 완료 기준
+## Completion Criteria
 
-- [x] 4개 analytics 엔드포인트 구현
-- [x] period 파라미터 → SQL interval 변환
-- [x] budgetUsage 포함 (summary)
-- [x] topEndpoints 포함 (summary)
-- [x] 로컬에서 curl 테스트 통과 (seed 데이터 기반)
+- [x] 4 analytics endpoints implemented
+- [x] period parameter → SQL interval conversion
+- [x] budgetUsage included (summary)
+- [x] topEndpoints included (summary)
+- [x] Local curl tests pass (based on seed data)
 
-## 버그 수정 이력
+## Bug Fix History
 
-- **SQL interval 버그 수정**: `${sql(interval)}::interval` → `${interval}::interval` (6개소). `sql()` 함수는 SQL 식별자(컬럼명)를 생성하여 `"24 hours"`처럼 따옴표가 붙어 `column "24 hours" does not exist` 에러 발생. 문자열 파라미터로 변경하여 `'24 hours'::interval`로 정상 캐스팅.
-- **budget 쿼리 수정**: `budgets` 테이블에 `daily_limit`/`monthly_limit` 컬럼이 없으므로, `policies` 테이블과 LEFT JOIN하여 한도 값을 가져오도록 수정.
+- **SQL interval bug fix**: `${sql(interval)}::interval` → `${interval}::interval` (6 locations). The `sql()` function generates SQL identifiers (column names), resulting in quotes like `"24 hours"` which causes `column "24 hours" does not exist` error. Changed to string parameter for proper `'24 hours'::interval` casting.
+- **budget query fix**: Since `budgets` table lacks `daily_limit`/`monthly_limit` columns, modified to LEFT JOIN with `policies` table to fetch limit values.

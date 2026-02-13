@@ -1,18 +1,18 @@
-# TASK-28: 빈 대시보드 UX — 첫 방문 CTA 및 빈 차트 처리
+# TASK-28: Empty Dashboard UX — First Visit CTA and Empty Chart Handling
 
 **Priority**: MEDIUM
-**Status**: ✅ 완료
+**Status**: ✅ Completed
 **Phase**: 2 (Empty Dashboard)
 
-## 문제
+## Problem
 
-1. 첫 방문 유저가 모든 메트릭 0인 대시보드를 보면 뭘 해야 할지 모름
-2. 빈 cost 차트가 축만 보이고 "데이터 없음" 메시지 없음
-3. 활성 정책 정보가 대시보드에 표시되지 않음
+1. First-time users seeing all-zero metrics don't know what to do next
+2. Empty cost chart shows only axes without "no data" message
+3. Active policy information not displayed on dashboard
 
-## 수정
+## Fix
 
-### 1. Welcome CTA (totalRequests === 0일 때)
+### 1. Welcome CTA (when totalRequests === 0)
 ```
 ┌─────────────────────────────────────────────┐
 │ 🚀 Welcome to Pag0!                         │
@@ -24,11 +24,11 @@
 └─────────────────────────────────────────────┘
 ```
 
-### 2. 빈 차트 → "No data yet" placeholder
+### 2. Empty Chart → "No data yet" placeholder
 
-### 3. Active Policy 배지 (선택)
+### 3. Active Policy Badge (optional)
 - "Active: Default Policy — $10/day, $100/month"
 
-## 수정 파일
+## Files to Modify
 
 - `packages/dashboard/app/dashboard/page.tsx`

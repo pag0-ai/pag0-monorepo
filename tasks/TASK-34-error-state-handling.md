@@ -1,38 +1,38 @@
-# TASK-34: 전체 페이지 에러 상태 처리
+# TASK-34: Handle error states across all pages
 
 **Priority**: P1 (UX)
-**Status**: ✅ 완료 (커밋 `1333ada`)
+**Status**: ✅ Complete (commit `1333ada`)
 **Phase**: 9 (Demo Polish)
 
-## 문제
+## Problem
 
-Dashboard, Rankings, Policies 페이지에서 `useQuery`의 `isError`/`error` 상태를 처리하지 않음. API 서버 다운/네트워크 에러 시 빈 화면만 표시.
+Dashboard, Rankings, Policies pages don't handle `useQuery` `isError`/`error` states. Only blank screen displays when API server is down or network error occurs.
 
-추가로 Policies의 `deleteMutation`에 `onError` 콜백이 없어 삭제 실패 시 사용자 피드백 없음.
+Additionally, Policies `deleteMutation` lacks `onError` callback, providing no user feedback on deletion failure.
 
-## 수정
+## Fix
 
-1. 각 페이지에 에러 상태 UI 추가 ("Something went wrong" + retry 버튼)
-2. Policies deleteMutation에 onError 콜백 추가
+1. Add error state UI to each page ("Something went wrong" + retry button)
+2. Add onError callback to Policies deleteMutation
 
-## 완료 기준
+## Completion Criteria
 
-- [ ] Dashboard 페이지: API 에러 시 에러 배너 + Retry 버튼 표시
-- [ ] Rankings 페이지: API 에러 시 에러 배너 + Retry 버튼 표시
-- [ ] Policies 페이지: API 에러 시 에러 배너 + Retry 버튼 표시
-- [ ] Policies deleteMutation에 `onError` 콜백 → 삭제 실패 시 에러 메시지 표시
-- [ ] 에러 상태에서 Retry 클릭 시 데이터 재요청
+- [ ] Dashboard page: Display error banner + Retry button on API error
+- [ ] Rankings page: Display error banner + Retry button on API error
+- [ ] Policies page: Display error banner + Retry button on API error
+- [ ] Policies deleteMutation has `onError` callback → display error message on deletion failure
+- [ ] Clicking Retry in error state re-requests data
 
-## 검증 결과
+## Verification Results
 
 - [x] Dashboard: `summaryError || costsError || endpointsError` → AlertCircle + RefreshCw Retry ✅
 - [x] Rankings: `rankingsError` → AlertCircle + RefreshCw Retry ✅
 - [x] Policies: `policiesError` → AlertCircle + RefreshCw Retry ✅
-- [x] deleteMutation `onError`: `setDeleteError(error.message)` → 삭제 다이얼로그 내 에러 표시 ✅
-- [x] Retry: `summaryRefetch()`, `rankingsRefetch()`, `policiesRefetch()` 연결 ✅
-- [x] `next build` 성공 ✅
+- [x] deleteMutation `onError`: `setDeleteError(error.message)` → error display in delete dialog ✅
+- [x] Retry: `summaryRefetch()`, `rankingsRefetch()`, `policiesRefetch()` connected ✅
+- [x] `next build` success ✅
 
-## 수정 파일
+## Modified Files
 
 - `packages/dashboard/app/dashboard/page.tsx`
 - `packages/dashboard/app/rankings/page.tsx`

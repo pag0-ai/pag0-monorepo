@@ -1,20 +1,20 @@
-# Pag0 Smart Proxy - 기술 명세서
+# Pag0 Smart Proxy - Technical Specification
 
-> **TL;DR**: Hono + Bun 런타임 기반의 Edge-first 아키텍처로, Proxy Core / Policy Engine / Curation Engine / Cache Layer / Analytics Collector 5개 핵심 컴포넌트로 구성됩니다. Redis(Upstash) 캐싱으로 40%+ 비용 절감, PostgreSQL(Supabase) 분석 저장, SKALE 온체인 메트릭을 지원하며, P95 API 응답 목표는 300ms 이내입니다.
+> **TL;DR**: An Edge-first architecture based on Hono + Bun runtime, composed of 5 core components: Proxy Core / Policy Engine / Curation Engine / Cache Layer / Analytics Collector. Supports 40%+ cost savings through Redis (Upstash) caching, PostgreSQL (Supabase) analytics storage, and SKALE on-chain metrics, with a P95 API response target of under 300ms.
 
-## 관련 문서
+## Related Documents
 
-| 문서 | 관련성 |
-|------|--------|
-| [04-API-SPEC.md](04-API-SPEC.md) | API 엔드포인트 정의 |
-| [05-DB-SCHEMA.md](05-DB-SCHEMA.md) | 데이터베이스 스키마 상세 |
-| [06-DEV-TASKS.md](06-DEV-TASKS.md) | 개발 태스크 및 구현 순서 |
-| [10-SECURITY-DESIGN.md](10-SECURITY-DESIGN.md) | 보안 설계 상세 |
-| [00-GLOSSARY.md](00-GLOSSARY.md) | 용어집 |
+| Document | Relevance |
+|----------|-----------|
+| [04-API-SPEC.md](04-API-SPEC.md) | API endpoint definitions |
+| [05-DB-SCHEMA.md](05-DB-SCHEMA.md) | Database schema details |
+| [06-DEV-TASKS.md](06-DEV-TASKS.md) | Development tasks and implementation order |
+| [10-SECURITY-DESIGN.md](10-SECURITY-DESIGN.md) | Security design details |
+| [00-GLOSSARY.md](00-GLOSSARY.md) | Glossary |
 
-## 1. 시스템 아키텍처
+## 1. System Architecture
 
-### 1.1 고수준 아키텍처
+### 1.1 High-Level Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -113,7 +113,7 @@
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-### 1.2 배포 아키텍처
+### 1.2 Deployment Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -142,11 +142,11 @@
 
 ---
 
-## 2. 컴포넌트 상세
+## 2. Component Details
 
 ### 2.1 Proxy Core
 
-**책임**: x402 요청 중계 및 결제 프로세스 오케스트레이션
+**Responsibility**: x402 request relay and payment process orchestration
 
 #### 2.1.1 Request Flow
 
@@ -311,7 +311,7 @@ class X402Integration {
 
 ### 2.2 Policy Engine (Spend Firewall)
 
-**책임**: 예산 한도, whitelist/blacklist, 승인 워크플로우 검증
+**Responsibility**: Validation of budget limits, whitelists/blacklists, and approval workflows
 
 #### 2.2.1 Policy Schema
 
@@ -457,7 +457,7 @@ class PolicyEngine {
 
 ### 2.3 Cache Layer
 
-**책임**: Redis 기반 응답 캐싱, TTL 관리
+**Responsibility**: Redis-based response caching and TTL management
 
 #### 2.3.1 Cache Configuration
 
@@ -549,7 +549,7 @@ class CacheLayer {
 
 ### 2.4 Analytics Collector
 
-**책임**: 요청 메트릭 수집, 집계, 저장
+**Responsibility**: Request metric collection, aggregation, and storage
 
 #### 2.4.1 Analytics Schema
 
@@ -650,7 +650,7 @@ class AnalyticsCollector {
 
 ### 2.5 Curation Engine
 
-**책임**: 엔드포인트 점수 계산, 추천, 비교
+**Responsibility**: Endpoint score calculation, recommendations, and comparisons
 
 #### 2.5.1 Scoring Schema
 
@@ -803,7 +803,7 @@ class CurationEngine {
 
 ---
 
-## 3. 외부 서비스 연동
+## 3. External Service Integrations
 
 ### 3.1 x402 SDK Integration
 
@@ -849,9 +849,9 @@ class Pag0Client {
 
 ### 3.2 CDP Wallet Integration (Coinbase Developer Platform)
 
-**책임**: Agent의 x402 결제 서명을 위한 지갑 인프라 제공
+**Responsibility**: Providing wallet infrastructure for Agent x402 payment signing
 
-**방식**: Coinbase CDP Server Wallet — Coinbase 인프라에서 키 관리, Pag0는 API 호출만 수행
+**Method**: Coinbase CDP Server Wallet — Keys managed on Coinbase infrastructure, Pag0 only makes API calls
 
 ```typescript
 import { CoinbaseSDK } from '@coinbase/sdk';
@@ -872,14 +872,14 @@ class CDPWalletManager {
   }
 
   /**
-   * 프로젝트별 Server Wallet 생성 또는 로드
+   * Create or load a Server Wallet per project
    */
   async getOrCreateWallet(projectId: string): Promise<Wallet> {
     if (this.wallets.has(projectId)) {
       return this.wallets.get(projectId)!;
     }
 
-    // 기존 지갑 조회 또는 신규 생성
+    // Look up existing wallet or create a new one
     let wallet = await this.sdk.wallets.get(projectId).catch(() => null);
     if (!wallet) {
       wallet = await this.sdk.wallets.create({
@@ -893,15 +893,15 @@ class CDPWalletManager {
   }
 
   /**
-   * x402 Payment Request에 대한 서명 생성
-   * - pag0-mcp에서 402 응답 수신 시 호출
-   * - Server Wallet이 결제 페이로드를 서명
+   * Generate signature for x402 Payment Request
+   * - Called when pag0-mcp receives a 402 response
+   * - Server Wallet signs the payment payload
    */
   async signPayment(projectId: string, paymentRequest: X402PaymentRequest): Promise<SignedPayment> {
     const wallet = await this.getOrCreateWallet(projectId);
     const address = await wallet.getDefaultAddress();
 
-    // x402 결제 페이로드 서명 (Coinbase 서버에서 키 관리)
+    // Sign x402 payment payload (keys managed on Coinbase servers)
     const signedPayload = await address.signPayload({
       to: paymentRequest.recipient,
       value: paymentRequest.amount,
@@ -916,7 +916,7 @@ class CDPWalletManager {
   }
 
   /**
-   * 지갑 잔고 조회
+   * Query wallet balance
    */
   async getBalance(projectId: string): Promise<WalletBalance> {
     const wallet = await this.getOrCreateWallet(projectId);
@@ -930,7 +930,7 @@ class CDPWalletManager {
   }
 
   /**
-   * 테스트넷 펀딩 (Base Sepolia 전용)
+   * Testnet funding (Base Sepolia only)
    */
   async fundTestnet(projectId: string): Promise<FaucetTransaction> {
     const wallet = await this.getOrCreateWallet(projectId);
@@ -945,33 +945,33 @@ interface WalletBalance {
 }
 ```
 
-**pag0-mcp에서의 CDP Wallet 활용 흐름:**
+**CDP Wallet usage flow in pag0-mcp:**
 
 ```
 pag0-mcp (MCP Server)
   │
-  ├─ pag0_fetch tool 호출
-  │   ├─ 1. Pag0 Proxy로 요청 전달
-  │   ├─ 2. 402 응답 수신 (PaymentRequest)
-  │   ├─ 3. Policy Engine 검증 (예산, allowlist)
-  │   ├─ 4. CDPWalletManager.signPayment() ← CDP Server Wallet이 서명
-  │   ├─ 5. 서명된 결제를 Facilitator에 전달
-  │   └─ 6. 200 응답 + 메타데이터 반환
+  ├─ pag0_fetch tool call
+  │   ├─ 1. Forward request to Pag0 Proxy
+  │   ├─ 2. Receive 402 response (PaymentRequest)
+  │   ├─ 3. Policy Engine validation (budget, allowlist)
+  │   ├─ 4. CDPWalletManager.signPayment() ← CDP Server Wallet signs
+  │   ├─ 5. Forward signed payment to Facilitator
+  │   └─ 6. Return 200 response + metadata
   │
   ├─ pag0_wallet_balance tool → CDPWalletManager.getBalance()
   └─ pag0_wallet_fund tool    → CDPWalletManager.fundTestnet()
 ```
 
-**보안 고려사항:**
+**Security Considerations:**
 
-| 항목 | 설계 |
-|------|------|
-| 키 관리 | Coinbase Server Wallet — 키는 Coinbase 인프라에서 관리, Pag0는 API Key만 보유 |
-| 서명 권한 | pag0-mcp만 서명 요청 가능, AI Agent 자체에 키 노출 없음 |
-| 지출 한도 | Policy Engine의 예산 검증을 통과한 요청만 서명 진행 |
-| 감사 추적 | 모든 서명/결제를 Analytics Collector에 기록 + SKALE 온체인 로그 |
+| Item | Design |
+|------|--------|
+| Key Management | Coinbase Server Wallet — keys managed on Coinbase infrastructure, Pag0 only holds the API Key |
+| Signing Authority | Only pag0-mcp can request signatures; no key exposure to AI Agents |
+| Spending Limits | Only requests that pass Policy Engine budget validation proceed to signing |
+| Audit Trail | All signatures/payments recorded in Analytics Collector + SKALE on-chain logs |
 
-### 3.3 Facilitator Client (x402 결제 검증)
+### 3.3 Facilitator Client (x402 Payment Verification)
 
 ```typescript
 class FacilitatorClient {
@@ -1048,9 +1048,9 @@ import { ethers } from 'ethers';
 
 ### 3.4 ERC-8004 Audit Trail Integration
 
-**책임**: x402 결제 완료 후 ERC-8004 ReputationRegistry에 온체인 감사 기록 작성
+**Responsibility**: Writing on-chain audit records to the ERC-8004 ReputationRegistry after x402 payment completion
 
-**방식**: Post-Processing Pipeline에서 비동기적으로 실행 — 결제 성공 → IPFS 메타데이터 업로드 → giveFeedback() 호출
+**Method**: Executed asynchronously in the Post-Processing Pipeline — payment success → IPFS metadata upload → giveFeedback() call
 
 ```typescript
 import { ethers } from 'ethers';
@@ -1082,9 +1082,9 @@ class ERC8004AuditTrail {
   }
 
   /**
-   * x402 결제 완료 후 ERC-8004 ReputationRegistry에 피드백 기록
-   * - Post-Processing Pipeline에서 비동기 호출
-   * - feedbackURI에 proofOfPayment (x402 tx hash) 포함
+   * Record feedback to ERC-8004 ReputationRegistry after x402 payment completion
+   * - Called asynchronously from the Post-Processing Pipeline
+   * - feedbackURI includes proofOfPayment (x402 tx hash)
    */
   async recordPaymentFeedback(params: {
     agentId: string;
@@ -1092,11 +1092,11 @@ class ERC8004AuditTrail {
     cost: string;
     latencyMs: number;
     statusCode: number;
-    txHash: string;        // x402 결제 트랜잭션 해시
-    sender: string;        // CDP Wallet 주소
-    receiver: string;      // x402 서버 주소
+    txHash: string;        // x402 payment transaction hash
+    sender: string;        // CDP Wallet address
+    receiver: string;      // x402 server address
   }): Promise<string> {
-    // 1. feedbackURI JSON 생성 (IPFS에 업로드)
+    // 1. Create feedbackURI JSON (upload to IPFS)
     const feedbackData = {
       version: '1.0',
       type: 'x402-payment-audit',
@@ -1115,31 +1115,31 @@ class ERC8004AuditTrail {
       },
     };
 
-    // 2. IPFS에 메타데이터 업로드
+    // 2. Upload metadata to IPFS
     const ipfsResult = await this.ipfs.add(JSON.stringify(feedbackData));
     const feedbackURI = `ipfs://${ipfsResult.path}`;
 
-    // 3. feedbackHash 생성 (무결성 검증용)
+    // 3. Generate feedbackHash (for integrity verification)
     const feedbackHash = ethers.keccak256(
       ethers.toUtf8Bytes(JSON.stringify(feedbackData))
     );
 
-    // 4. ReputationRegistry.giveFeedback() 호출
-    //    - value: 서비스 품질 점수 (latency + statusCode 기반)
-    //    - tag1: 'x402-payment' (결제 유형)
-    //    - tag2: endpoint 카테고리
+    // 4. Call ReputationRegistry.giveFeedback()
+    //    - value: service quality score (based on latency + statusCode)
+    //    - tag1: 'x402-payment' (payment type)
+    //    - tag2: endpoint category
     const qualityScore = this.calculateQualityScore(
       params.latencyMs, params.statusCode
     );
 
     const tx = await this.reputationRegistry.giveFeedback(
-      params.agentId,           // agentId (x402 서버의 ERC-8004 ID)
-      qualityScore,             // value (서비스 품질 0-100)
+      params.agentId,           // agentId (x402 server's ERC-8004 ID)
+      qualityScore,             // value (service quality 0-100)
       2,                        // valueDecimals
       ethers.encodeBytes32String('x402-payment'),  // tag1
       ethers.encodeBytes32String('api-call'),       // tag2
-      feedbackURI,              // IPFS URI (proofOfPayment 포함)
-      feedbackHash              // 무결성 해시
+      feedbackURI,              // IPFS URI (includes proofOfPayment)
+      feedbackHash              // integrity hash
     );
 
     await tx.wait();
@@ -1147,8 +1147,8 @@ class ERC8004AuditTrail {
   }
 
   /**
-   * 고액 결제 시 ValidationRegistry를 통한 사전 검증 요청
-   * - Policy Engine의 requireApproval 임계값 초과 시 호출
+   * Pre-validation request via ValidationRegistry for high-value payments
+   * - Called when Policy Engine's requireApproval threshold is exceeded
    */
   async requestValidation(params: {
     agentId: string;
@@ -1171,7 +1171,7 @@ class ERC8004AuditTrail {
   }
 
   private calculateQualityScore(latencyMs: number, statusCode: number): number {
-    // 성공 (2xx): latency 기반 점수 (0-100)
+    // Success (2xx): latency-based score (0-100)
     if (statusCode >= 200 && statusCode < 300) {
       if (latencyMs < 200) return 100;
       if (latencyMs < 500) return 85;
@@ -1179,24 +1179,24 @@ class ERC8004AuditTrail {
       if (latencyMs < 3000) return 50;
       return 30;
     }
-    // 실패: 낮은 점수
+    // Failure: low score
     return 10;
   }
 }
 ```
 
-**Post-Processing Pipeline 연동:**
+**Post-Processing Pipeline Integration:**
 
 ```typescript
-// ProxyCore의 Post-Processing에 ERC-8004 피드백 추가
+// Adding ERC-8004 feedback to ProxyCore's Post-Processing
 class PostProcessor {
   async process(req: ProxyRequest, response: ProxyResponse, txHash: string) {
-    // 기존 파이프라인 (병렬 실행)
+    // Existing pipeline (parallel execution)
     await Promise.all([
       this.cacheStore(req, response),
       this.analyticsLog(req, response),
       this.budgetUpdate(req, response),
-      // ERC-8004 감사 기록 (비동기, 실패해도 응답에 영향 없음)
+      // ERC-8004 audit record (async, failure does not affect the response)
       this.erc8004Audit.recordPaymentFeedback({
         agentId: this.resolveAgentId(req.targetUrl),
         endpoint: req.targetUrl,
@@ -1212,16 +1212,16 @@ class PostProcessor {
 }
 ```
 
-**ERC-8004 감사 데이터 구조:**
+**ERC-8004 Audit Data Structure:**
 
-| 필드 | 값 | 설명 |
-|------|------|------|
-| `agentId` | x402 서버의 ERC-8004 ID | Identity Registry에 등록된 서비스 식별자 |
-| `value` | 0-100 | latency + statusCode 기반 서비스 품질 점수 |
-| `tag1` | `x402-payment` | 피드백 유형 태그 |
-| `tag2` | `api-call` | 서비스 카테고리 태그 |
+| Field | Value | Description |
+|-------|-------|-------------|
+| `agentId` | x402 server's ERC-8004 ID | Service identifier registered in the Identity Registry |
+| `value` | 0-100 | Service quality score based on latency + statusCode |
+| `tag1` | `x402-payment` | Feedback type tag |
+| `tag2` | `api-call` | Service category tag |
 | `feedbackURI` | `ipfs://Qm...` | proofOfPayment + serviceMetrics JSON |
-| `feedbackHash` | `0x...` | feedbackURI 콘텐츠의 keccak256 해시 |
+| `feedbackHash` | `0x...` | keccak256 hash of feedbackURI content |
 
 ### 3.5 The Graph Integration (Subgraph)
 
@@ -1343,9 +1343,9 @@ class GraphClient {
 
 ---
 
-## 4. 데이터 저장소 설계
+## 4. Data Storage Design
 
-### 4.1 PostgreSQL Tables (상세 설계는 05-DB-SCHEMA.md 참조)
+### 4.1 PostgreSQL Tables (see 05-DB-SCHEMA.md for detailed design)
 
 ```sql
 -- Core tables
@@ -1384,7 +1384,7 @@ metrics:{projectId}:{endpoint}:hourly → hash (requestCount, cacheHitCount, etc
 
 ---
 
-## 5. 보안 고려사항
+## 5. Security Considerations
 
 ### 5.1 API Key Authentication
 
@@ -1472,10 +1472,10 @@ app.use('*', async (c, next) => {
 
 ---
 
-## 6. 성능 목표
+## 6. Performance Targets
 
 ```yaml
-# 성능 목표 요약
+# Performance Targets Summary
 performance_targets:
   latency:
     cache_hit: "<10ms (P95)"
@@ -1494,36 +1494,36 @@ performance_targets:
     cache_hit_rate: ">40%"
 ```
 
-### 6.1 지연 시간 목표
+### 6.1 Latency Targets
 
-| 작업 | 목표 | 측정 기준 |
-|------|------|-----------|
+| Operation | Target | Measurement Basis |
+|-----------|--------|-------------------|
 | Cache Hit | <10ms | P95 |
 | Cache Miss (proxy) | <200ms | P95 |
 | Policy Check | <5ms | P95 |
 | Analytics Write | <50ms | Async |
 | API Response | <300ms | P95 (total) |
 
-### 6.2 처리량 목표
+### 6.2 Throughput Targets
 
-| 지표 | 목표 |
-|------|------|
-| Requests/sec (인스턴스당) | 1,000+ |
-| 동시 요청 수 | 10,000+ |
-| Database 커넥션 | 100 (pooled) |
-| Redis 커넥션 | 50 (pooled) |
+| Metric | Target |
+|--------|--------|
+| Requests/sec (per instance) | 1,000+ |
+| Concurrent requests | 10,000+ |
+| Database connections | 100 (pooled) |
+| Redis connections | 50 (pooled) |
 
-### 6.3 가용성 목표
+### 6.3 Availability Targets
 
-| SLA | 목표 |
-|-----|------|
+| SLA | Target |
+|-----|--------|
 | Uptime | 99.9% |
 | Error rate | <0.1% |
 | Cache hit rate | >40% |
 
 ---
 
-## 7. TypeScript 인터페이스 (전체)
+## 7. TypeScript Interfaces (Complete)
 
 ```typescript
 // See 04-API-SPEC.md for complete API interfaces

@@ -1,28 +1,28 @@
 # TASK-03: Policy Engine + Budget Tracker
 
-| 항목 | 내용 |
+| Item | Content |
 |------|------|
-| **패키지** | `packages/proxy` |
-| **예상 시간** | 1.5시간 |
-| **의존성** | [TASK-01](./TASK-01-db-redis-client.md) |
-| **차단 대상** | [TASK-05](./TASK-05-proxy-core.md), [TASK-07](./TASK-07-policy-routes.md) |
+| **Package** | `packages/proxy` |
+| **Estimated Time** | 1.5 hours |
+| **Dependencies** | [TASK-01](./TASK-01-db-redis-client.md) |
+| **Blocks** | [TASK-05](./TASK-05-proxy-core.md), [TASK-07](./TASK-07-policy-routes.md) |
 
-## 목표
+## Objective
 
-프록시 요청 전 정책 검증을 수행하는 PolicyEngine과, 일일/월별 예산을 추적하는 BudgetTracker를 구현한다.
+Implement PolicyEngine that performs policy validation before proxy requests, and BudgetTracker that tracks daily/monthly budgets.
 
-## 구현 파일
+## Implementation Files
 
 ### 1. `packages/proxy/src/policy/engine.ts` — PolicyEngine
 
-**evaluate(req) 검증 순서** (5단계):
-1. **Blocked endpoint 체크** — `blockedEndpoints` 배열에 포함 시 거부
-2. **Allowed endpoint 체크** — 빈 배열이면 전체 허용, 아니면 화이트리스트 매칭
-3. **Per-request 한도** — `cost > maxPerRequest` 시 거부
-4. **Daily 예산** — `dailySpent + cost > dailyBudget` 시 거부
-5. **Monthly 예산** — `monthlySpent + cost > monthlyBudget` 시 거부
+**evaluate(req) validation order** (5 steps):
+1. **Blocked endpoint check** — Reject if included in `blockedEndpoints` array
+2. **Allowed endpoint check** — Allow all if empty array, otherwise match against whitelist
+3. **Per-request limit** — Reject if `cost > maxPerRequest`
+4. **Daily budget** — Reject if `dailySpent + cost > dailyBudget`
+5. **Monthly budget** — Reject if `monthlySpent + cost > monthlyBudget`
 
-**엔드포인트 매칭**: 와일드카드 패턴 지원 (`*.openai.com`)
+**Endpoint matching**: Supports wildcard patterns (`*.openai.com`)
 ```typescript
 private matchPattern(hostname: string, pattern: string): boolean {
   const regex = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$');
@@ -30,7 +30,7 @@ private matchPattern(hostname: string, pattern: string): boolean {
 }
 ```
 
-**반환 타입**:
+**Return type**:
 ```typescript
 interface PolicyEvaluation {
   allowed: boolean;
@@ -43,50 +43,50 @@ interface PolicyEvaluation {
 
 ### 2. `packages/proxy/src/policy/budget.ts` — BudgetTracker
 
-**Redis 기반 예산 추적**:
-- 키: `budget:{projectId}:daily`, `budget:{projectId}:monthly`
-- INCRBY로 원자적 증가
-- TTL: daily = 자정 UTC까지, monthly = 월말까지
-- `getDailySpent()`, `getMonthlySpent()`, `deduct()` 메서드
+**Redis-based budget tracking**:
+- Keys: `budget:{projectId}:daily`, `budget:{projectId}:monthly`
+- Atomic increment via INCRBY
+- TTL: daily = until midnight UTC, monthly = until end of month
+- Methods: `getDailySpent()`, `getMonthlySpent()`, `deduct()`
 
-**PostgreSQL 동기화**:
-- 결제 성공 시 `budgets` 테이블도 업데이트 (atomic UPDATE ... RETURNING)
-- Redis는 캐시, PG가 source of truth
+**PostgreSQL synchronization**:
+- Update `budgets` table on payment success (atomic UPDATE ... RETURNING)
+- Redis is cache, PG is source of truth
 
-## 테스트 패턴
+## Test Patterns
 
-`prepare-hackathon/test-business-logic-day1.ts` 참조:
-- **테스트 2 (Policy Engine)**: 6가지 시나리오 — 허용, 블록, 비허가, 한도초과, 일일초과, 월간초과
-- **테스트 4 (Budget Tracker)**: Redis INCRBY, TTL 설정, 누적 추적
+Reference `prepare-hackathon/test-business-logic-day1.ts`:
+- **Test 2 (Policy Engine)**: 6 scenarios — allowed, blocked, not whitelisted, limit exceeded, daily exceeded, monthly exceeded
+- **Test 4 (Budget Tracker)**: Redis INCRBY, TTL setup, cumulative tracking
 
-## USDC 금액 처리 규칙
+## USDC Amount Handling Rules
 
-- **항상 BigInt 비교**: `BigInt(cost) > BigInt(policy.maxPerRequest)`
-- **절대 parseFloat 금지**: 1 USDC = `"1000000"` (string BIGINT)
-- DB 저장: BIGINT 컬럼, Redis 저장: string
+- **Always use BigInt comparison**: `BigInt(cost) > BigInt(policy.maxPerRequest)`
+- **Never use parseFloat**: 1 USDC = `"1000000"` (string BIGINT)
+- DB storage: BIGINT column, Redis storage: string
 
-## 테스트 방법
+## Test Method
 
 ```bash
-# 단위 테스트 (budget tracker)
-# Docker 로컬 Redis 필요
+# Unit tests (budget tracker)
+# Requires Docker local Redis
 bun test src/policy/
 
-# 또는 prepare-hackathon 테스트 활용
+# Or use prepare-hackathon tests
 cd prepare-hackathon && bun run test-business-logic-day1.ts
 ```
 
-## 완료 기준
+## Completion Criteria
 
-- [x] PolicyEngine 클래스 구현 (5단계 검증)
-- [x] BudgetTracker 클래스 구현 (Redis + PG)
-- [x] 와일드카드 패턴 매칭 (`*.openai.com`)
-- [x] BigInt 기반 금액 비교 (parseFloat 미사용)
-- [x] 로컬에서 정책 검증 로직 테스트 통과
-- [x] PolicyEngine 단위 테스트 작성 (20개 테스트, `engine.test.ts`)
+- [x] PolicyEngine class implementation (5-step validation)
+- [x] BudgetTracker class implementation (Redis + PG)
+- [x] Wildcard pattern matching (`*.openai.com`)
+- [x] BigInt-based amount comparison (no parseFloat)
+- [x] Local policy validation logic tests passed
+- [x] PolicyEngine unit tests written (20 tests, `engine.test.ts`)
 
-## 버그 수정 이력
+## Bug Fix History
 
-- **engine.ts SQL 컬럼명 수정**: `daily_limit`/`monthly_limit` → `daily_budget`/`monthly_budget`. DB 스키마(`policies` 테이블)의 실제 컬럼명과 불일치 수정.
-- **budget.ts checkBudget() 수정**: `budgets` 테이블에는 `daily_limit`/`monthly_limit` 컬럼이 없음. `policies` 테이블과 LEFT JOIN하여 한도 값을 가져오도록 수정.
-- **budget.ts recordSpend() 수정**: INSERT 쿼리에서 존재하지 않는 `daily_limit`/`monthly_limit` 컬럼 제거.
+- **engine.ts SQL column name fix**: `daily_limit`/`monthly_limit` → `daily_budget`/`monthly_budget`. Fixed mismatch with actual column names in DB schema (`policies` table).
+- **budget.ts checkBudget() fix**: `budgets` table doesn't have `daily_limit`/`monthly_limit` columns. Modified to LEFT JOIN with `policies` table to fetch limit values.
+- **budget.ts recordSpend() fix**: Removed non-existent `daily_limit`/`monthly_limit` columns from INSERT query.

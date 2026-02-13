@@ -1,40 +1,40 @@
-# TASK-33: Rankings Compare 기능에 winner 정보 표시
+# TASK-33: Display winner information in Rankings Compare feature
 
-**Priority**: P1 (기능 완성)
-**Status**: ✅ 완료 (커밋 `1333ada`)
+**Priority**: P1 (feature completion)
+**Status**: ✅ Complete (commit `1333ada`)
 **Phase**: 9 (Demo Polish)
 
-## 문제
+## Problem
 
-백엔드 `/api/curation/compare`가 `{ endpoints: [...], winner: { overall, cost, latency, reliability } }`를 반환하지만, 프론트엔드 `ComparisonData` 타입에 `winner` 필드가 없어 완전히 무시됨.
+Backend `/api/curation/compare` returns `{ endpoints: [...], winner: { overall, cost, latency, reliability } }`, but frontend `ComparisonData` type lacks `winner` field, completely ignoring it.
 
-## 영향
+## Impact
 
-"어느 API가 이겼는가?"를 보여주는 것이 Curation 데모의 핵심 스토리인데, 현재 비교 결과에 winner badge/highlight가 없음.
+Showing "which API won?" is the core story of the Curation demo, but currently comparison results have no winner badge/highlight.
 
-## 수정
+## Fix
 
-1. `ComparisonData` 인터페이스에 `winner` 필드 추가
-2. 비교 결과 카드에서 overall winner에 crown/trophy 아이콘 표시
-3. 각 차원(cost, latency, reliability)별 winner에도 작은 배지 표시
+1. Add `winner` field to `ComparisonData` interface
+2. Display crown/trophy icon on overall winner card in comparison results
+3. Display small badge on each dimension (cost, latency, reliability) winner
 
-## 완료 기준
+## Completion Criteria
 
-- [ ] `ComparisonData` 인터페이스에 `winner?: ComparisonWinner` 필드 추가
-- [ ] Overall winner 카드에 Crown 아이콘 + 골드 링 하이라이트
-- [ ] Overall Winner 배너 표시 (endpoint URL)
-- [ ] 각 차원(cost, latency, reliability)별 winner에 "BEST" 배지 표시
-- [ ] winner 없는 경우 (비교 2개 미만 등) 에러 없이 동작
+- [ ] `ComparisonData` interface has `winner?: ComparisonWinner` field
+- [ ] Overall winner card shows Crown icon + gold ring highlight
+- [ ] Overall Winner banner displayed (endpoint URL)
+- [ ] Each dimension (cost, latency, reliability) winner shows "BEST" badge
+- [ ] Works without errors when no winner (less than 2 comparisons, etc.)
 
-## 검증 결과
+## Verification Results
 
-- [x] `ComparisonWinner { overall, cost, latency, reliability }` 인터페이스 추가 ✅
-- [x] `comparison.winner?.overall === ep.endpoint` → Crown 아이콘 + `ring-2 ring-yellow-500/60` ✅
-- [x] 배너: `<Crown /> Overall Winner: {comparison.winner.overall}` ✅
-- [x] 각 차원별: `isDimWinner` → `<span>BEST</span>` 배지 ✅
-- [x] `winner?` optional chaining으로 null-safe ✅
-- [x] `next build` 성공 ✅
+- [x] `ComparisonWinner { overall, cost, latency, reliability }` interface added ✅
+- [x] `comparison.winner?.overall === ep.endpoint` → Crown icon + `ring-2 ring-yellow-500/60` ✅
+- [x] Banner: `<Crown /> Overall Winner: {comparison.winner.overall}` ✅
+- [x] Each dimension: `isDimWinner` → `<span>BEST</span>` badge ✅
+- [x] `winner?` optional chaining for null-safety ✅
+- [x] `next build` success ✅
 
-## 수정 파일
+## Modified Files
 
-- `packages/dashboard/app/rankings/page.tsx` — ComparisonData 타입 + UI
+- `packages/dashboard/app/rankings/page.tsx` — ComparisonData type + UI

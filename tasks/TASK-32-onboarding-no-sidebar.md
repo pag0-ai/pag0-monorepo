@@ -1,38 +1,38 @@
-# TASK-32: Onboarding/Login 페이지에서 사이드바 제거
+# TASK-32: Remove sidebar from Onboarding/Login pages
 
 **Priority**: P1 (UX)
-**Status**: ✅ 완료 (커밋 `1333ada`)
+**Status**: ✅ Complete (commit `1333ada`)
 **Phase**: 9 (Demo Polish)
 
-## 문제
+## Problem
 
-`app/layout.tsx`의 RootLayout에서 모든 페이지에 `<Sidebar />`를 렌더링. 온보딩 페이지는 `min-h-screen flex items-center justify-center`로 풀스크린을 의도했지만, 왼쪽에 사이드바가 함께 표시됨. 로그인 페이지도 동일.
+RootLayout in `app/layout.tsx` renders `<Sidebar />` on all pages. Onboarding page intends fullscreen with `min-h-screen flex items-center justify-center`, but sidebar displays on the left. Same for login page.
 
-## 영향
+## Impact
 
-온보딩/로그인 시 사이드바가 보이면 미완성 인상.
+Sidebar visibility during onboarding/login gives an unfinished impression.
 
-## 수정 방안
+## Fix Options
 
-1. `app/layout.tsx`에서 pathname 기반 조건부 사이드바 렌더링
-2. 또는 `app/(auth)/` route group에 별도 layout 적용 (사이드바 없음)
-3. 또는 `app/(dashboard)/` route group에 사이드바 포함 layout 적용
+1. Conditional sidebar rendering based on pathname in `app/layout.tsx`
+2. Or apply separate layout to `app/(auth)/` route group (without sidebar)
+3. Or apply layout with sidebar to `app/(dashboard)/` route group
 
-## 완료 기준
+## Completion Criteria
 
-- [ ] `/onboarding` 페이지에서 사이드바가 렌더링되지 않음
-- [ ] `/login` 페이지에서 사이드바가 렌더링되지 않음
-- [ ] `/dashboard`, `/policies`, `/rankings` 등 일반 페이지에서는 사이드바 정상 표시
-- [ ] Next.js 빌드 성공
+- [ ] Sidebar not rendered on `/onboarding` page
+- [ ] Sidebar not rendered on `/login` page
+- [ ] Sidebar displays normally on regular pages like `/dashboard`, `/policies`, `/rankings`
+- [ ] Next.js build succeeds
 
-## 검증 결과
+## Verification Results
 
-- [x] `LayoutShell` 클라이언트 컴포넌트: `NO_SIDEBAR_PATHS = ['/onboarding', '/login', '/register']` ✅
-- [x] `usePathname().startsWith()` 기반 조건부 렌더링 ✅
-- [x] `layout.tsx`에서 `<Sidebar />` 직접 렌더 → `<LayoutShell>` 래퍼로 교체 ✅
-- [x] `next build` 성공 확인 ✅
+- [x] `LayoutShell` client component: `NO_SIDEBAR_PATHS = ['/onboarding', '/login', '/register']` ✅
+- [x] Conditional rendering based on `usePathname().startsWith()` ✅
+- [x] Direct `<Sidebar />` render in `layout.tsx` → replaced with `<LayoutShell>` wrapper ✅
+- [x] `next build` success confirmed ✅
 
-## 수정 파일
+## Modified Files
 
 - `packages/dashboard/app/layout.tsx`
-- `packages/dashboard/components/layout-shell.tsx` (신규)
+- `packages/dashboard/components/layout-shell.tsx` (new)

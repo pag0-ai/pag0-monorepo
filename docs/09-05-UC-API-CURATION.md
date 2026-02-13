@@ -1,50 +1,50 @@
-# UC5: API 큐레이션 자동 최적화
+# UC5: Automatic API Curation Optimization
 
-← [UC4: MCP 서버 오케스트레이션](09-04-UC-MCP-ORCHESTRATION.md) | [유스케이스 목록](09-00-USE-CASES-INDEX.md) | [다음: UC6 →](09-06-UC-CLAUDE-CODE.md)
-
----
-
-> **TL;DR**: 다국어 챗봇 "MultiLingualBot"이 5개 번역 API(DeepL, OpenAI, Google, Azure, AWS) 중 상황별 최적 API를 Pag0 큐레이션 엔진의 실사용 데이터 기반 추천으로 자동 선택하여, 비용 36% 절감 + 속도 23% 개선 + A/B 테스트 비용 100% 제거를 달성하는 사례입니다.
+← [UC4: MCP Server Orchestration](09-04-UC-MCP-ORCHESTRATION.md) | [Use Cases Index](09-00-USE-CASES-INDEX.md) | [Next: UC6 →](09-06-UC-CLAUDE-CODE.md)
 
 ---
 
-## 시나리오
+> **TL;DR**: A multilingual chatbot "MultiLingualBot" automatically selects the optimal API among 5 translation APIs (DeepL, OpenAI, Google, Azure, AWS) based on Pag0's curation engine recommendations from real usage data, achieving 36% cost reduction + 23% speed improvement + 100% A/B testing cost elimination.
 
-**배경**:
+---
 
-- 다국어 챗봇 "MultiLingualBot"
-- 번역 API 선택: DeepL, OpenAI, Google, Azure, AWS
-- 각 API의 비용, 속도, 품질이 다름
-- 에이전트가 상황에 맞게 최적 API 자동 선택 필요
+## Scenario
 
-**문제점 (Without Pag0)**:
+**Background**:
+
+- Multilingual chatbot "MultiLingualBot"
+- Translation API options: DeepL, OpenAI, Google, Azure, AWS
+- Each API has different cost, speed, and quality
+- Agent needs to automatically select the optimal API for each situation
+
+**Problems (Without Pag0)**:
 
 ```yaml
-선택 근거 부재:
-  - 마케팅 자료만 보고 선택
-  - 실제 사용 데이터 없음
-  - A/B 테스트 비용 부담
+No selection criteria:
+  - Selection based only on marketing materials
+  - No actual usage data
+  - A/B testing cost burden
 
-수동 관리:
-  - 개발자가 직접 성능 모니터링
-  - 수동으로 API 전환
-  - 시간 소모 많음
+Manual management:
+  - Developers manually monitor performance
+  - Manual API switching
+  - Time-consuming
 
-최적화 불가:
-  - 언어별 최적 API 모름
-  - 비용/속도 트레이드오프 판단 어려움
+Optimization impossible:
+  - Unknown optimal API per language
+  - Difficult to judge cost/speed tradeoffs
 ```
 
-**솔루션 (With Pag0 Curation)**:
+**Solution (With Pag0 Curation)**:
 
 ```typescript
-// 1. 초기 설정: 여러 API 등록
+// 1. Initial setup: Register multiple APIs
 import { createPag0Client } from "@pag0/sdk";
 
 const chatbot = createPag0Client({
   apiKey: process.env.PAG0_API_KEY,
 
-  // 5개 번역 API 모두 허용
+  // Allow all 5 translation APIs
   policy: {
     allowedEndpoints: [
       "api.deepl.com",
@@ -55,28 +55,28 @@ const chatbot = createPag0Client({
     ]
   },
 
-  // 캐싱 활성화
+  // Enable caching
   cache: {
     enabled: true,
     defaultTTL: 3600
   },
 
-  // 큐레이션 활성화
+  // Enable curation
   curation: {
     enabled: true,
-    autoOptimize: true,           // 자동 최적화
-    collectMetrics: true,          // 메트릭 수집
-    minDataPoints: 100             // 최소 100회 데이터 수집 후 추천
+    autoOptimize: true,           // Auto-optimization
+    collectMetrics: true,          // Metrics collection
+    minDataPoints: 100             // Recommend after collecting min 100 data points
   }
 });
 
-// 2. 초기 단계: 모든 API 골고루 사용 (데이터 수집)
+// 2. Initial phase: Use all APIs evenly (data collection)
 async function translateWithDataCollection(
   text: string,
   sourceLang: string,
   targetLang: string
 ) {
-  // Pag0에게 추천 요청 (데이터 부족 시 랜덤 선택)
+  // Request recommendation from Pag0 (random selection if insufficient data)
   const recommendation = await chatbot.recommend({
     category: "translation",
     context: {
@@ -84,13 +84,13 @@ async function translateWithDataCollection(
       targetLang,
       textLength: text.length
     },
-    optimize: "balanced",  // 비용/속도/품질 균형
-    fallbackStrategy: "round_robin"  // 데이터 부족 시 순환 선택
+    optimize: "balanced",  // Balance cost/speed/quality
+    fallbackStrategy: "round_robin"  // Round-robin selection if insufficient data
   });
 
   console.log("[Pag0] Recommended API:", recommendation.endpoint);
 
-  // 추천 API로 번역
+  // Translate using recommended API
   const response = await chatbot.fetch(
     recommendation.endpoint,
     {
@@ -101,7 +101,7 @@ async function translateWithDataCollection(
         target_lang: targetLang
       }),
 
-      // 메타 정보 (분석용)
+      // Meta information (for analysis)
       pag0Meta: {
         sourceLang,
         targetLang,
@@ -113,11 +113,11 @@ async function translateWithDataCollection(
 
   const result = await response.json();
 
-  // Pag0가 자동으로 수집하는 메트릭:
-  // - 비용: response.meta.cost
-  // - 속도: response.meta.latency
-  // - 성공률: response.status === 200
-  // - 컨텍스트: sourceLang, targetLang, textLength
+  // Metrics automatically collected by Pag0:
+  // - Cost: response.meta.cost
+  // - Speed: response.meta.latency
+  // - Success rate: response.status === 200
+  // - Context: sourceLang, targetLang, textLength
 
   return {
     translatedText: result.text,
@@ -131,11 +131,11 @@ async function translateWithDataCollection(
   };
 }
 
-// 3. 충분한 데이터 수집 후: 스마트 추천
+// 3. After sufficient data collection: Smart recommendations
 async function getSmartRecommendation(scenario: string) {
   switch (scenario) {
     case "cost_sensitive":
-      // 비용 최적화 (정확도 90% 이상 유지)
+      // Cost optimization (maintain 90%+ accuracy)
       return await chatbot.recommend({
         category: "translation",
         optimize: "cost",
@@ -147,16 +147,16 @@ async function getSmartRecommendation(scenario: string) {
       });
 
     case "speed_critical":
-      // 속도 최적화 (정확도 95% 이상)
+      // Speed optimization (95%+ accuracy)
       return await chatbot.recommend({
         category: "translation",
         optimize: "latency",
         minReliability: 0.95,
-        maxLatency: 200  // 200ms 이내
+        maxLatency: 200  // Within 200ms
       });
 
     case "quality_first":
-      // 품질 최우선 (비용 무관)
+      // Quality priority (cost irrelevant)
       return await chatbot.recommend({
         category: "translation",
         optimize: "reliability",
@@ -164,7 +164,7 @@ async function getSmartRecommendation(scenario: string) {
       });
 
     case "balanced":
-      // 균형 (종합 점수)
+      // Balanced (overall score)
       return await chatbot.recommend({
         category: "translation",
         optimize: "balanced",
@@ -177,22 +177,22 @@ async function getSmartRecommendation(scenario: string) {
   }
 }
 
-// 4. 실제 사용 예시
+// 4. Real usage example
 async function handleUserMessage(message: string, userLang: string) {
-  // 시나리오별 최적 API 자동 선택
+  // Auto-select optimal API per scenario
   const timeOfDay = new Date().getHours();
   const isRushHour = timeOfDay >= 9 && timeOfDay <= 17;
 
   let scenario: string;
 
   if (isRushHour) {
-    // 러시아워: 속도 우선
+    // Rush hour: prioritize speed
     scenario = "speed_critical";
   } else if (message.length > 1000) {
-    // 긴 텍스트: 비용 우선 (비싸니까)
+    // Long text: prioritize cost (because it's expensive)
     scenario = "cost_sensitive";
   } else {
-    // 일반: 균형
+    // Normal: balanced
     scenario = "balanced";
   }
 
@@ -205,7 +205,7 @@ async function handleUserMessage(message: string, userLang: string) {
   //   avgCost: "$0.04/request",
   //   avgLatency: "234ms",
   //   reliability: 98.2%,
-  //   totalRequests: 1500,  // Pag0를 통한 실사용 데이터
+  //   totalRequests: 1500,  // Real usage data through Pag0
   //   cacheHitRate: 45%,
   //   performanceByContext: {
   //     "EN-KO": { latency: 198ms, reliability: 99% },
@@ -213,7 +213,7 @@ async function handleUserMessage(message: string, userLang: string) {
   //   }
   // }
 
-  // 번역 실행
+  // Execute translation
   const translation = await translateWithDataCollection(
     message,
     "EN",
@@ -223,7 +223,7 @@ async function handleUserMessage(message: string, userLang: string) {
   return translation;
 }
 
-// 5. 비교 분석 대시보드
+// 5. Comparison analysis dashboard
 async function showAPIComparison() {
   const comparison = await chatbot.compare([
     "api.deepl.com",
@@ -232,7 +232,7 @@ async function showAPIComparison() {
     "api.cognitive.microsofttranslator.com",
     "translate.amazonaws.com"
   ], {
-    groupBy: ["targetLang"],  // 언어별 비교
+    groupBy: ["targetLang"],  // Compare by language
     metrics: ["cost", "latency", "reliability", "cacheHitRate"]
   });
 
@@ -249,11 +249,11 @@ async function showAPIComparison() {
 
   console.log("\nBy Language Pair:");
   console.table(comparison.byContext["EN-KO"]);
-  // EN-KO 번역:
+  // EN-KO translation:
   // ┌────────────────┬─────────┬─────────────┐
   // │ API            │ Latency │ Reliability │
   // ├────────────────┼─────────┼─────────────┤
-  // │ DeepL          │  198ms  │    99.0%    │ ← 최고
+  // │ DeepL          │  198ms  │    99.0%    │ ← Best
   // │ OpenAI         │  201ms  │    98.8%    │
   // │ Google         │  289ms  │    97.1%    │
   // └────────────────┴─────────┴─────────────┘
@@ -269,30 +269,30 @@ async function showAPIComparison() {
   // Output: { api: "DeepL", reason: "99.0% reliability, best for EN-KO" }
 }
 
-// 6. 자동 최적화 (선택적)
+// 6. Auto-optimization (optional)
 async function enableAutoOptimization() {
   await chatbot.curation.configure({
     autoSwitch: {
       enabled: true,
 
-      // 조건: API 점수가 10% 이상 차이나면 자동 전환
+      // Condition: Auto-switch if API score differs by 10%+
       threshold: 0.10,
 
-      // 안전장치: 최소 200회 데이터 수집 후
+      // Safety measure: After collecting min 200 data points
       minDataPoints: 200,
 
-      // 알림: 전환 시 알림
+      // Notification: Notify on switch
       notifyOnSwitch: true
     }
   });
 
-  // 이후 모든 요청은 실시간으로 최적 API 자동 선택
+  // After this, all requests automatically select optimal API in real-time
 }
 ```
 
 ---
 
-## 큐레이션 데이터 흐름
+## Curation Data Flow
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -347,41 +347,41 @@ async function enableAutoOptimization() {
 
 ---
 
-## 효과 분석
+## Impact Analysis
 
-**월간 10,000 번역 요청 기준**:
+**Based on 10,000 monthly translation requests**:
 
-| 시나리오 | Manual (개발자 선택) | Pag0 Auto-Optimize | 개선 |
+| Scenario | Manual (Developer selection) | Pag0 Auto-Optimize | Improvement |
 |---------|---------------------|-------------------|------|
-| **비용** |
-| DeepL 고정 | $400 (항상) | $320 (상황별 최적) | **-20%** |
-| OpenAI 고정 | $700 (항상) | $320 (상황별 최적) | **-54%** |
-| Random 선택 | $500 (평균) | $320 (상황별 최적) | **-36%** |
-| **속도** |
-| 평균 latency | 278ms (랜덤) | 215ms (최적화) | **-23%** |
+| **Cost** |
+| Fixed DeepL | $400 (always) | $320 (context-optimal) | **-20%** |
+| Fixed OpenAI | $700 (always) | $320 (context-optimal) | **-54%** |
+| Random selection | $500 (average) | $320 (context-optimal) | **-36%** |
+| **Speed** |
+| Avg latency | 278ms (random) | 215ms (optimized) | **-23%** |
 | P95 latency | 450ms | 320ms | **-29%** |
-| **품질** |
-| 성공률 | 96.5% (랜덤) | 98.2% (최적) | **+1.7%** |
-| **운영** |
-| A/B 테스트 비용 | $2,000 (1회) | $0 (자동) | **-100%** |
-| 모니터링 시간 | 주 5시간 | 0시간 (자동) | **-20시간/월** |
+| **Quality** |
+| Success rate | 96.5% (random) | 98.2% (optimal) | **+1.7%** |
+| **Operations** |
+| A/B testing cost | $2,000 (one-time) | $0 (automatic) | **-100%** |
+| Monitoring time | 5 hours/week | 0 hours (automatic) | **-20 hours/month** |
 
-**정성적 가치**:
+**Qualitative value**:
 
-- **의사결정 자동화**: 에이전트가 스스로 최적 API 선택
-- **데이터 기반**: 실사용 데이터로 객관적 비교
-- **상황 인식**: 시간/언어/텍스트 길이별 최적화
-- **지속 개선**: 사용할수록 추천 정확도 향상
-
----
-
-## 관련 문서
-
-- [03-TECH-SPEC](03-TECH-SPEC.md) - Curation Engine 스코어링 알고리즘, 데이터 수집 파이프라인 상세
-- [04-API-SPEC](04-API-SPEC.md) - `chatbot.recommend()`, `chatbot.compare()`, `curation.configure()` API 레퍼런스
-- [12-SDK-GUIDE](12-SDK-GUIDE.md) - 큐레이션 활성화 및 자동 최적화 설정 가이드
-- [01-PRODUCT-BRIEF](01-PRODUCT-BRIEF.md) - Data-Driven Curation 제품 비전
+- **Automated decision-making**: Agent autonomously selects optimal API
+- **Data-driven**: Objective comparison based on real usage data
+- **Context-aware**: Optimization by time/language/text length
+- **Continuous improvement**: Recommendation accuracy improves with usage
 
 ---
 
-← [UC4: MCP 서버 오케스트레이션](09-04-UC-MCP-ORCHESTRATION.md) | [유스케이스 목록](09-00-USE-CASES-INDEX.md) | [다음: UC6 →](09-06-UC-CLAUDE-CODE.md)
+## Related Documents
+
+- [03-TECH-SPEC](03-TECH-SPEC.md) - Curation Engine scoring algorithm, data collection pipeline details
+- [04-API-SPEC](04-API-SPEC.md) - `chatbot.recommend()`, `chatbot.compare()`, `curation.configure()` API reference
+- [12-SDK-GUIDE](12-SDK-GUIDE.md) - Curation activation and auto-optimization configuration guide
+- [01-PRODUCT-BRIEF](01-PRODUCT-BRIEF.md) - Data-Driven Curation product vision
+
+---
+
+← [UC4: MCP Server Orchestration](09-04-UC-MCP-ORCHESTRATION.md) | [Use Cases Index](09-00-USE-CASES-INDEX.md) | [Next: UC6 →](09-06-UC-CLAUDE-CODE.md)

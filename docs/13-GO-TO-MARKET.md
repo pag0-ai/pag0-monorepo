@@ -1,179 +1,179 @@
-# Pag0 Go-to-Market 전략
+# Pag0 Go-to-Market Strategy
 
-> **TL;DR**: x402 해커톤 커뮤니티에서 출발하여 개발자 커뮤니티 확장 -> 엔터프라이즈 파일럿 -> 에코시스템 통합 4단계로 성장합니다. North Star Metric은 "총 캐시 절감액"이며, 12개월 내 MAU 3,000+, ARR $100K+를 목표합니다.
+> **TL;DR**: Starting from the x402 hackathon community, we will grow through 4 phases: developer community expansion -> enterprise pilots -> ecosystem integration. Our North Star Metric is "Total Cache Savings", with targets of MAU 3,000+ and ARR $100K+ within 12 months.
 
-## 관련 문서
+## Related Documents
 
-| 문서 | 관련성 |
+| Document | Relevance |
 |------|--------|
-| [01-PRODUCT-BRIEF.md](01-PRODUCT-BRIEF.md) | 제품 정의 및 핵심 가치 제안 |
-| [02-COMPETITOR-ANALYSIS.md](02-COMPETITOR-ANALYSIS.md) | 경쟁 환경 및 차별화 포인트 |
-| [08-BUSINESS-MODEL.md](08-BUSINESS-MODEL.md) | 수익 모델 및 가격 정책 |
-| [14-INVESTOR-ONE-PAGER.md](14-INVESTOR-ONE-PAGER.md) | 투자자 대상 핵심 요약 |
-| [00-GLOSSARY.md](00-GLOSSARY.md) | 핵심 용어 및 약어 정리 |
+| [01-PRODUCT-BRIEF.md](01-PRODUCT-BRIEF.md) | Product definition and core value proposition |
+| [02-COMPETITOR-ANALYSIS.md](02-COMPETITOR-ANALYSIS.md) | Competitive landscape and differentiation points |
+| [08-BUSINESS-MODEL.md](08-BUSINESS-MODEL.md) | Revenue model and pricing strategy |
+| [14-INVESTOR-ONE-PAGER.md](14-INVESTOR-ONE-PAGER.md) | Core summary for investors |
+| [00-GLOSSARY.md](00-GLOSSARY.md) | Key terms and abbreviations |
 
 ---
 
-## 1. 시장 진입 전략
+## 1. Market Entry Strategy
 
-### Phase 1: x402 해커톤 커뮤니티 (0-3개월)
+### Phase 1: x402 Hackathon Community (0-3 months)
 
-**목표**: 얼리 어답터 50명 확보, Product-Market Fit 검증
+**Goal**: Acquire 50 early adopters, validate Product-Market Fit
 
-**핵심 활동**:
+**Core Activities**:
 
-1. **해커톤 데모 Day 최적화**
-   - 5분 피칭: "x402 비용 40% 절감" 메시지 집중
-   - 라이브 데모: 캐시 히트율 실시간 시연
-   - 개발자 스왑: GitHub 저장소 + 1분 Quick Start
+1. **Hackathon Demo Day Optimization**
+   - 5-minute pitch: Focus on "40% x402 cost reduction" message
+   - Live demo: Real-time cache hit rate demonstration
+   - Developer swap: GitHub repository + 1-minute Quick Start
 
-2. **해커톤 참가자 전환**
-   - 무료 티어 무제한 제공 (3개월)
-   - 1:1 온보딩 세션 (30분)
-   - x402 Discord에서 #pag0-users 채널 운영
+2. **Hackathon Participant Conversion**
+   - Unlimited free tier (3 months)
+   - 1:1 onboarding sessions (30 min)
+   - Run #pag0-users channel on x402 Discord
 
-3. **Sponsor Tech 통합 강조**
-   - Coinbase CDP: x402 공식 도구 포지셔닝
-   - SKALE: Zero Gas 감사 로그 (비용 우위)
-   - Upstash: 엣지 캐싱 (속도 우위)
+3. **Sponsor Tech Integration Emphasis**
+   - Coinbase CDP: Position as official x402 tool
+   - SKALE: Zero Gas audit logs (cost advantage)
+   - Upstash: Edge caching (speed advantage)
 
-4. **피드백 루프**
-   - 주간 사용자 인터뷰 (최소 5명)
+4. **Feedback Loop**
+   - Weekly user interviews (minimum 5 people)
    - Feature Request Board (GitHub Discussions)
-   - 버그 바운티 프로그램 ($50-500 USDC)
+   - Bug bounty program ($50-500 USDC)
 
-**성공 지표**:
+**Success Metrics**:
 
-- 50+ 가입자
-- 10+ 활성 프로젝트 (주간 100+ 요청)
+- 50+ sign-ups
+- 10+ active projects (100+ requests/week)
 - NPS > 40
-- 최소 3개 사용 사례 검증
+- Minimum 3 use cases validated
 
 ---
 
-### Phase 2: 개발자 커뮤니티 성장 (3-6개월)
+### Phase 2: Developer Community Growth (3-6 months)
 
-**목표**: MAU 500명, 유료 전환 50명
+**Goal**: MAU 500, paid conversions 50
 
-**핵심 활동**:
+**Core Activities**:
 
 #### 2.1 DevRel (Developer Relations)
 
-- **기술 블로그 시리즈** (월 2회)
-  - "x402 비용 40% 절감하는 법"
-  - "AI 에이전트 예산 관리 Best Practices"
-  - "x402 vs REST API: 언제 무엇을 쓸 것인가"
-  - "Pag0로 DeFi 봇 비용 최적화하기"
+- **Technical Blog Series** (bi-weekly)
+  - "How to Save 40% on x402 Costs"
+  - "AI Agent Budget Management Best Practices"
+  - "x402 vs REST API: When to Use What"
+  - "Optimizing DeFi Bot Costs with Pag0"
 
-- **오픈소스 기여**
-  - x402 SDK에 Pag0 예제 추가 (PR)
-  - LangChain/CrewAI 공식 통합
-  - Awesome-x402 리스트 등재
+- **Open Source Contributions**
+  - Add Pag0 examples to x402 SDK (PR)
+  - Official LangChain/CrewAI integration
+  - List on Awesome-x402
 
-- **개발자 이벤트**
-  - ETHGlobal 해커톤 스폰서 (Bounty $5K)
-  - Coinbase Developer Conference 부스
-  - 온라인 워크샵 (월 1회, YouTube 라이브)
+- **Developer Events**
+  - ETHGlobal hackathon sponsor (Bounty $5K)
+  - Coinbase Developer Conference booth
+  - Online workshops (monthly, YouTube Live)
 
-#### 2.2 콘텐츠 마케팅
+#### 2.2 Content Marketing
 
-- **튜토리얼 시리즈** (비디오 + 글)
-  - "5분 만에 Pag0 연동하기"
-  - "리서치 에이전트 만들기 (처음부터 끝까지)"
-  - "x402 비용 분석 대시보드 만들기"
+- **Tutorial Series** (video + text)
+  - "Integrate Pag0 in 5 Minutes"
+  - "Build a Research Agent (End-to-End)"
+  - "Create x402 Cost Analysis Dashboard"
 
-- **유스케이스 스토리**
-  - "DeFi 트레이딩 봇이 월 $500 절약한 방법"
-  - "번역 에이전트 월 1M 요청 처리 비용"
-  - "MCP 서버 운영 비용 80% 절감 사례"
+- **Use Case Stories**
+  - "How a DeFi Trading Bot Saved $500/Month"
+  - "Translation Agent Handling 1M Requests/Month"
+  - "MCP Server Operating Cost Reduced by 80%"
 
-- **비교 콘텐츠**
-  - "x402 직접 사용 vs Pag0 프록시 (비용/시간/복잡도)"
-  - "타 블록체인 결제 vs x402+Pag0"
+- **Comparison Content**
+  - "Direct x402 Use vs Pag0 Proxy (Cost/Time/Complexity)"
+  - "Other Blockchain Payments vs x402+Pag0"
   - "Web2 API Gateway vs Pag0"
 
-#### 2.3 커뮤니티 구축
+#### 2.3 Community Building
 
-- **Discord 서버**
-  - #general: 일반 토론
-  - #help: 기술 지원 (응답 < 4시간)
-  - #showcase: 사용자 프로젝트 공유
-  - #api-reviews: x402 API 리뷰/평가
+- **Discord Server**
+  - #general: General discussion
+  - #help: Technical support (response < 4 hours)
+  - #showcase: User project sharing
+  - #api-reviews: x402 API reviews/ratings
 
-- **Developer Champions 프로그램**
-  - 월 5-10개 프로젝트 선정
-  - $100-500 USDC 크레딧 지원
-  - 공식 블로그/Twitter 소개
-  - 기술 자문 제공
+- **Developer Champions Program**
+  - Select 5-10 projects monthly
+  - $100-500 USDC credit support
+  - Official blog/Twitter features
+  - Technical advisory provided
 
-**성공 지표**:
+**Success Metrics**:
 
 - MAU 500+
 - Paid users 50+ ($49-299/mo)
 - Discord 1000+ members
 - GitHub stars 500+
-- 블로그 조회수 10K+/mo
+- Blog views 10K+/mo
 
 ---
 
-### Phase 3: 엔터프라이즈 파일럿 (6-12개월)
+### Phase 3: Enterprise Pilots (6-12 months)
 
-**목표**: 엔터프라이즈 계약 10개, ARR $50K
+**Goal**: 10 enterprise contracts, ARR $50K
 
-**핵심 활동**:
+**Core Activities**:
 
-#### 3.1 B2B 영업
+#### 3.1 B2B Sales
 
-- **타겟 리스트**
-  - AI/ML 스타트업 (100-500명)
-  - 크립토 트레이딩 회사
-  - Web3 인프라 회사
-  - 엔터프라이즈 IT 부서 (Fortune 500)
+- **Target List**
+  - AI/ML startups (100-500 employees)
+  - Crypto trading companies
+  - Web3 infrastructure companies
+  - Enterprise IT departments (Fortune 500)
 
-- **영업 프로세스**
-  1. Outbound: LinkedIn/Email (주 50개)
-  2. 데모 세션 (30분): ROI 계산 포함
-  3. 파일럿 제안 (1개월 무료)
-  4. 계약 (연간 선결제 할인)
+- **Sales Process**
+  1. Outbound: LinkedIn/Email (50 per week)
+  2. Demo session (30 min): Include ROI calculation
+  3. Pilot proposal (1 month free)
+  4. Contract (annual prepayment discount)
 
-- **세일즈 자료**
+- **Sales Materials**
   - ROI Calculator (Excel/Web)
-  - Case Study Deck (3-5개)
+  - Case Study Deck (3-5 cases)
   - Security Whitepaper
   - Compliance Checklist (SOC2, GDPR)
 
-#### 3.2 엔터프라이즈 기능
+#### 3.2 Enterprise Features
 
-- **필수 기능**
+- **Essential Features**
   - SSO (SAML/OAuth)
   - RBAC (Role-Based Access Control)
   - Audit Logs (on-chain)
-  - SLA 보장 (99.9% uptime)
+  - SLA guarantee (99.9% uptime)
   - Dedicated support (Slack Connect)
 
-- **추가 기능**
+- **Additional Features**
   - Private Deployment (VPC)
-  - Custom Policies (승인 워크플로우)
-  - Advanced Analytics (Tableau/Looker 연동)
+  - Custom Policies (approval workflows)
+  - Advanced Analytics (Tableau/Looker integration)
   - Multi-project management
 
-#### 3.3 파트너십
+#### 3.3 Partnerships
 
 - **Coinbase CDP**
-  - x402 공식 도구 등재
-  - Co-marketing (블로그, 웨비나)
+  - List as official x402 tool
+  - Co-marketing (blogs, webinars)
   - Partner Program (Revenue Share)
 
 - **SKALE**
-  - Zero Gas 활용 사례 공동 마케팅
+  - Co-market Zero Gas use cases
   - SKALE Ecosystem Grant
 
 - **Cloud Providers**
-  - AWS Marketplace 등재
+  - AWS Marketplace listing
   - Google Cloud Partner
   - Azure App Source
 
-**성공 지표**:
+**Success Metrics**:
 
 - Enterprise deals 10+
 - ARR $50K+
@@ -182,324 +182,324 @@
 
 ---
 
-### Phase 4: 파트너십 및 에코시스템 통합 (12-24개월)
+### Phase 4: Partnerships and Ecosystem Integration (12-24 months)
 
-**목표**: 시장 리더십 확립, x402 표준 프록시 레이어
+**Goal**: Establish market leadership, become standard x402 proxy layer
 
-**핵심 활동**:
+**Core Activities**:
 
-#### 4.1 에코시스템 통합
+#### 4.1 Ecosystem Integration
 
-- **AI Agent 프레임워크**
-  - LangChain: 공식 통합 (langchain-pag0 패키지)
-  - CrewAI: 공식 툴킷
-  - AutoGPT: Pag0 플러그인
+- **AI Agent Frameworks**
+  - LangChain: Official integration (langchain-pag0 package)
+  - CrewAI: Official toolkit
+  - AutoGPT: Pag0 plugin
   - Semantic Kernel: Connector
 
-- **x402 서버 제공자**
-  - 주요 x402 API 제공자와 협력
-  - Pag0 사용 시 할인 (10-20%)
-  - 공동 마케팅 (Win-Win)
+- **x402 Server Providers**
+  - Collaborate with major x402 API providers
+  - Discounts for Pag0 users (10-20%)
+  - Co-marketing (Win-Win)
 
 - **Blockchain Infra**
-  - Base/Optimism: L2 파트너십
-  - Chainlink: Oracle 데이터 통합
-  - The Graph: Analytics 활용
+  - Base/Optimism: L2 partnerships
+  - Chainlink: Oracle data integration
+  - The Graph: Analytics utilization
 
-#### 4.2 개발자 플랫폼
+#### 4.2 Developer Platform
 
 - **Marketplace**
-  - x402 API 디렉토리 (Yelp for APIs)
-  - 사용자 리뷰/평점
-  - API 제공자 직접 등록
+  - x402 API directory (Yelp for APIs)
+  - User reviews/ratings
+  - Direct API provider registration
 
 - **No-Code Tools**
   - Zapier Integration
   - Make.com Integration
   - Low-code workflow builder
 
-#### 4.3 표준화 주도
+#### 4.3 Standards Leadership
 
 - **x402 Enhancement Proposals**
-  - Policy URL 표준 (EIP 스타일)
-  - Cache Header 표준
-  - Analytics 포맷 표준
+  - Policy URL standards (EIP-style)
+  - Cache Header standards
+  - Analytics format standards
 
-- **오픈소스 기여**
-  - x402 reference implementation에 Pag0 예제
-  - 커뮤니티 거버넌스 참여
+- **Open Source Contributions**
+  - Pag0 examples in x402 reference implementation
+  - Community governance participation
 
-**성공 지표**:
+**Success Metrics**:
 
 - MAU 10K+
 - Paid users 1K+
 - Enterprise clients 50+
 - ARR $500K+
-- x402 트래픽 점유율 30%+
+- 30%+ share of x402 traffic
 
 ---
 
-## 2. 타겟 세그먼트
+## 2. Target Segments
 
-### Segment 1: x402 SDK 사용 중인 개발자
+### Segment 1: Developers Using x402 SDK
 
-**프로필**:
+**Profile**:
 
-- 이미 x402 통합 경험 보유
-- 비용/복잡도에 불만
-- 기술적 이해도 높음
+- Already have x402 integration experience
+- Dissatisfied with cost/complexity
+- High technical understanding
 
 **Pain Points**:
 
-1. **예산 통제 불가**: 에이전트가 예산 초과 가능
-2. **중복 결제**: 동일 요청 반복 시 비용 낭비
-3. **API 선택 어려움**: 어떤 x402 API가 최적인지 모름
+1. **No budget control**: Agents can exceed budget
+2. **Duplicate payments**: Cost waste on repeated requests
+3. **API selection difficulty**: Don't know which x402 API is optimal
 
-**메시징**:
+**Messaging**:
 
-- "x402 비용 40% 절감"
-- "3줄 코드로 예산 관리"
-- "실사용 데이터 기반 API 추천"
+- "40% x402 cost reduction"
+- "Budget management in 3 lines of code"
+- "Real usage data-based API recommendations"
 
-**채널**:
+**Channels**:
 
 - x402 Discord/Telegram
 - Coinbase Developer Forum
 - GitHub (x402 SDK issues/discussions)
 
-**전환 전략**:
+**Conversion Strategy**:
 
-- Quick Start 가이드 (5분)
-- 무료 티어 충분히 제공 (1K req/day)
-- 마이그레이션 지원 (1:1 세션)
+- Quick Start guide (5 minutes)
+- Generous free tier (1K req/day)
+- Migration support (1:1 sessions)
 
 ---
 
-### Segment 2: AI Agent 프레임워크 사용자
+### Segment 2: AI Agent Framework Users
 
-**프로필**:
+**Profile**:
 
-- LangChain, CrewAI, AutoGPT 사용
-- x402는 모를 수 있음
-- AI/LLM 비용 민감
+- Use LangChain, CrewAI, AutoGPT
+- May not know x402
+- AI/LLM cost-sensitive
 
 **Pain Points**:
 
-1. **LLM API 비용 높음**: OpenAI/Anthropic 월 $100-1000
-2. **비용 추적 어려움**: 어디서 얼마나 쓰는지 모름
-3. **최적 API 모름**: GPT-4 vs Claude vs 저렴한 대안?
+1. **High LLM API costs**: OpenAI/Anthropic $100-1000/month
+2. **Cost tracking difficulty**: Don't know where/how much spent
+3. **Optimal API unknown**: GPT-4 vs Claude vs cheaper alternatives?
 
-**메시징**:
+**Messaging**:
 
-- "AI 에이전트 API 비용 자동 관리"
-- "LangChain/CrewAI에 3줄 추가로 예산 통제"
-- "가장 저렴한 LLM API 자동 추천"
+- "Automatic AI Agent API Cost Management"
+- "Budget control with 3-line addition to LangChain/CrewAI"
+- "Auto-recommend cheapest LLM API"
 
-**채널**:
+**Channels**:
 
 - LangChain/CrewAI Discord
 - AI Dev Twitter (#buildinpublic)
-- Dev.to, Hashnode (AI 관련 태그)
+- Dev.to, Hashnode (AI-related tags)
 
-**전환 전략**:
+**Conversion Strategy**:
 
-- LangChain Adapter 제공
-- "Before/After" 비용 비교 (대시보드)
-- AI 에이전트 템플릿 제공
+- Provide LangChain Adapter
+- "Before/After" cost comparison (dashboard)
+- AI agent templates
 
 ---
 
-### Segment 3: 기업 AI 팀
+### Segment 3: Enterprise AI Teams
 
-**프로필**:
+**Profile**:
 
-- 10-500명 규모 회사
-- AI/ML 프로덕션 운영
-- 재무/IT 승인 프로세스 필요
+- 10-500 employee companies
+- Operating AI/ML in production
+- Finance/IT approval process needed
 
 **Pain Points**:
 
-1. **비용 폭발 위험**: 에이전트가 예산 초과 시 문제
-2. **승인 워크플로우 없음**: 고액 결제 통제 불가
-3. **보안/컴플라이언스**: 감사 로그, 정책 필요
+1. **Cost explosion risk**: Problems when agents exceed budget
+2. **No approval workflow**: Can't control high-value payments
+3. **Security/Compliance**: Need audit logs, policies
 
-**메시징**:
+**Messaging**:
 
-- "엔터프라이즈급 AI API 거버넌스"
-- "CFO가 신뢰하는 예산 통제"
-- "SOC2/GDPR 준수 감사 로그"
+- "Enterprise-grade AI API Governance"
+- "Budget control CFOs trust"
+- "SOC2/GDPR-compliant audit logs"
 
-**채널**:
+**Channels**:
 
-- LinkedIn (CTO, VP Engineering 타게팅)
-- G2, Capterra 리뷰 사이트
+- LinkedIn (targeting CTOs, VP Engineering)
+- G2, Capterra review sites
 - Conferences (AWS re:Invent, Google Next)
 
-**전환 전략**:
+**Conversion Strategy**:
 
 - ROI Calculator (Excel)
-- Free Pilot (1개월)
-- Case Study (유사 회사)
-- Security Audit 제공
+- Free Pilot (1 month)
+- Case Study (similar companies)
+- Security Audit provided
 
 ---
 
-## 3. 채널 전략
+## 3. Channel Strategy
 
-### 개발자 채널
+### Developer Channels
 
 #### GitHub
 
-- **pag0/pag0**: 메인 저장소 (오픈소스)
-- **README.md**: 1분 Quick Start 강조
-- **Examples/**: 10+ 실전 예제
+- **pag0/pag0**: Main repository (open source)
+- **README.md**: Emphasize 1-minute Quick Start
+- **Examples/**: 10+ practical examples
 - **Discussions**: Feature requests, Q&A
-- **Releases**: 명확한 Changelog
+- **Releases**: Clear Changelog
 
-**활동**:
+**Activities**:
 
-- 주간 릴리스 (Changelog 공유)
-- Issue 24시간 내 응답
-- Good First Issue 라벨 (기여자 유치)
+- Weekly releases (share Changelog)
+- Respond to issues within 24 hours
+- Good First Issue label (attract contributors)
 
 #### npm / PyPI
 
 - **@pag0/sdk**: TypeScript/JavaScript
 - **pag0-python**: Python SDK
-- **Weekly Downloads 추적**: Growth metric
+- **Track Weekly Downloads**: Growth metric
 
-**최적화**:
+**Optimization**:
 
-- README에 Badge 추가 (version, downloads, stars)
-- 키워드: x402, api-gateway, cost-management
-- 예제 코드 충실
+- Add badges to README (version, downloads, stars)
+- Keywords: x402, api-gateway, cost-management
+- Substantial example code
 
 #### Dev.to / Hashnode
 
-- **주간 기술 블로그** (매주 화요일)
-- **태그**: #x402, #blockchain, #ai, #api
-- **시리즈**: "x402 마스터하기" (10편)
+- **Weekly technical blog** (every Tuesday)
+- **Tags**: #x402, #blockchain, #ai, #api
+- **Series**: "Mastering x402" (10 posts)
 
-**성공 지표**:
+**Success Metrics**:
 
-- 조회수 1K+/post
-- 댓글 10+/post
-- Follower 500+ (6개월)
+- 1K+ views/post
+- 10+ comments/post
+- 500+ followers (6 months)
 
 #### Twitter/X
 
-- **@pag0_io**: 공식 계정
-- **콘텐츠 믹스**:
-  - 40% 기술 팁 (코드 스니펫)
-  - 30% 사용자 쇼케이스 (리트윗)
-  - 20% 업데이트 (새 기능)
-  - 10% 인게이지먼트 (질문, 투표)
+- **@pag0_io**: Official account
+- **Content Mix**:
+  - 40% technical tips (code snippets)
+  - 30% user showcases (retweets)
+  - 20% updates (new features)
+  - 10% engagement (questions, polls)
 
-**해시태그**:
+**Hashtags**:
 
 - #x402 #Web3Dev #AIAgents #CostOptimization
 
 #### Discord
 
-- **초대 링크**: discord.gg/pag0
-- **채널 구조**:
-  - #announcements (공지)
-  - #general (일반 토론)
-  - #help (기술 지원)
-  - #showcase (프로젝트 공유)
-  - #api-reviews (x402 API 리뷰)
-  - #feedback (피드백)
+- **Invite link**: discord.gg/pag0
+- **Channel Structure**:
+  - #announcements
+  - #general (general discussion)
+  - #help (technical support)
+  - #showcase (project sharing)
+  - #api-reviews (x402 API reviews)
+  - #feedback
 
-**운영**:
+**Operations**:
 
-- 24시간 내 #help 응답 (팀 + 커뮤니티)
-- 주간 Office Hours (AMA)
-- 월간 Showcase (우수 프로젝트 시상)
+- Respond to #help within 24 hours (team + community)
+- Weekly Office Hours (AMA)
+- Monthly Showcase (award excellent projects)
 
 ---
 
-### 엔터프라이즈 채널
+### Enterprise Channels
 
 #### LinkedIn
 
-- **타겟팅**:
+- **Targeting**:
   - Job Title: CTO, VP Engineering, Head of AI
   - Company Size: 100-10000
   - Industry: Tech, Finance, Crypto
 
-- **콘텐츠**:
-  - Case Studies (성공 사례)
+- **Content**:
+  - Case Studies (success stories)
   - ROI Infographic
-  - Webinar 초대
+  - Webinar invitations
 
-- **InMail 캠페인**:
-  - 주 50개 발송
-  - 개인화된 메시지
-  - 연결 요청 수락률 >30% 목표
+- **InMail Campaign**:
+  - Send 50 per week
+  - Personalized messages
+  - Target >30% connection acceptance rate
 
-#### 직접 영업
+#### Direct Sales
 
-- **프로세스**:
+- **Process**:
   1. Outbound → 2. Demo Call → 3. Pilot → 4. Contract
 
-- **세일즈 덱**:
-  - 문제 정의 (3 slides)
-  - Pag0 솔루션 (5 slides)
-  - ROI 계산 (2 slides)
+- **Sales Deck**:
+  - Problem definition (3 slides)
+  - Pag0 solution (5 slides)
+  - ROI calculation (2 slides)
   - Case Study (3 slides)
   - Next Steps (1 slide)
 
-- **도구**:
+- **Tools**:
   - HubSpot CRM
-  - Calendly (데모 예약)
-  - Loom (비디오 데모)
+  - Calendly (demo booking)
+  - Loom (video demos)
 
-#### 파트너십 채널
+#### Partnership Channels
 
 - **Coinbase CDP**:
-  - Co-marketing (블로그 교환)
-  - Webinar 공동 주최
-  - Partner Directory 등재
+  - Co-marketing (blog exchanges)
+  - Co-host webinars
+  - Partner Directory listing
 
 - **Cloud Providers**:
-  - AWS Marketplace (프로비저닝 간소화)
-  - Google Cloud Build (원클릭 배포)
-  - Azure 파트너 프로그램
+  - AWS Marketplace (simplified provisioning)
+  - Google Cloud Build (one-click deployment)
+  - Azure partner program
 
 ---
 
-### 커뮤니티 채널
+### Community Channels
 
-#### 해커톤 스폰서십
+#### Hackathon Sponsorships
 
-- **스폰서십**:
+- **Sponsorships**:
   - ETHGlobal: $5K bounty
   - Devpost: $3K bounty
-  - 대학 해커톤: $1K bounty
+  - University hackathons: $1K bounty
 
-- **Bounty 조건**:
-  - "Best use of Pag0" 카테고리
-  - Pag0 SDK 사용 필수
-  - 캐시 히트율 40%+ 달성 시 보너스
+- **Bounty Conditions**:
+  - "Best use of Pag0" category
+  - Pag0 SDK usage required
+  - Bonus for achieving 40%+ cache hit rate
 
-- **부스 운영**:
-  - Quick Start 워크샵 (30분)
-  - 1:1 멘토링
-  - 스티커/굿즈 배포
+- **Booth Operations**:
+  - Quick Start workshop (30 min)
+  - 1:1 mentoring
+  - Stickers/swag distribution
 
-#### 그랜트 프로그램
+#### Grant Program
 
-- **Pag0 Grant Program** (분기별 $10K)
-  - 오픈소스 프로젝트 지원
-  - x402 에코시스템 기여
-  - 신규 유스케이스 발굴
+- **Pag0 Grant Program** (quarterly $10K)
+  - Support open source projects
+  - Contribute to x402 ecosystem
+  - Discover new use cases
 
-- **신청 조건**:
+- **Application Requirements**:
   - GitHub public repository
-  - Pag0 SDK 통합
-  - 3개월 로드맵
+  - Pag0 SDK integration
+  - 3-month roadmap
 
-#### 바운티 프로그램
+#### Bounty Program
 
 - **Bug Bounty**:
   - Critical: $500 USDC
@@ -507,165 +507,165 @@
   - Medium: $50 USDC
 
 - **Feature Bounty**:
-  - SDK 다른 언어 포팅: $1000
-  - 공식 통합 (LangChain 등): $500
-  - 튜토리얼 작성: $100
+  - SDK porting to other languages: $1000
+  - Official integrations (LangChain etc): $500
+  - Tutorial writing: $100
 
 ---
 
-## 4. 콘텐츠 전략
+## 4. Content Strategy
 
-### 기술 블로그 시리즈
+### Technical Blog Series
 
-#### 시리즈 1: "x402 비용 최적화"
+#### Series 1: "x402 Cost Optimization"
 
-1. **x402 비용 40% 절감하는 법**
-   - 캐싱 전략
-   - 정책 설정
-   - 실제 사례
+1. **How to Save 40% on x402 Costs**
+   - Caching strategies
+   - Policy settings
+   - Real cases
 
-2. **x402 API 선택 가이드**
-   - 카테고리별 추천
-   - 비용/속도/신뢰성 비교
-   - Pag0 큐레이션 활용법
+2. **x402 API Selection Guide**
+   - Category-based recommendations
+   - Cost/speed/reliability comparison
+   - Using Pag0 curation
 
-3. **x402 예산 폭발 방지하기**
-   - 예산 제한 설정
-   - 이상 탐지
-   - 승인 워크플로우
+3. **Preventing x402 Budget Explosions**
+   - Budget limit settings
+   - Anomaly detection
+   - Approval workflows
 
-#### 시리즈 2: "Pag0 SDK 튜토리얼"
+#### Series 2: "Pag0 SDK Tutorials"
 
-1. **5분 만에 Pag0 연동하기**
-   - 설치부터 첫 요청까지
-   - 코드 예제 (TypeScript)
-   - 트러블슈팅
+1. **Integrate Pag0 in 5 Minutes**
+   - Installation to first request
+   - Code examples (TypeScript)
+   - Troubleshooting
 
-2. **LangChain + Pag0 통합**
-   - LangChain Adapter 사용법
-   - AI 에이전트 비용 관리
-   - 캐시 최적화
+2. **LangChain + Pag0 Integration**
+   - Using LangChain Adapter
+   - AI agent cost management
+   - Cache optimization
 
-3. **엔터프라이즈 설정 가이드**
-   - 승인 워크플로우 구현
-   - RBAC 설정
-   - 감사 로그 활용
+3. **Enterprise Setup Guide**
+   - Implementing approval workflows
+   - RBAC setup
+   - Using audit logs
 
-#### 시리즈 3: "유스케이스 심층 분석"
+#### Series 3: "Use Case Deep Dives"
 
-1. **DeFi 에이전트 예산 관리**
-   - 트레이딩 봇 사례
-   - 가격/라우팅 API 최적화
-   - 월 비용 $500 → $200 사례
+1. **DeFi Agent Budget Management**
+   - Trading bot case
+   - Price/routing API optimization
+   - $500 → $200 monthly cost case
 
-2. **리서치 에이전트 구축**
-   - 검색/번역/분석 파이프라인
-   - 캐시로 80% 절감
-   - 코드 전체 공개
+2. **Building Research Agents**
+   - Search/translation/analysis pipeline
+   - 80% savings with cache
+   - Full code disclosure
 
-3. **MCP 서버 비용 관리**
-   - 유료 MCP 서버 프록시
-   - Pag0 브릿지 구현
-   - 사용량 추적
+3. **MCP Server Cost Management**
+   - Paid MCP server proxy
+   - Pag0 bridge implementation
+   - Usage tracking
 
 ---
 
-### 비교 콘텐츠
+### Comparison Content
 
-#### "x402 직접 사용 vs Pag0 프록시"
+#### "Direct x402 Use vs Pag0 Proxy"
 
-**포맷**: 비교 표 + 코드 예제
+**Format**: Comparison table + code examples
 
-| 항목 | x402 직접 사용 | Pag0 프록시 |
+| Item | Direct x402 Use | Pag0 Proxy |
 |------|----------------|-------------|
-| **예산 관리** | 수동 구현 (100+ lines) | 3줄 설정 |
-| **캐싱** | 직접 구현 (Redis 필요) | 자동 (40% 절감) |
-| **API 선택** | 수동 리서치 | 자동 추천 (실사용 데이터) |
-| **감사 로그** | 직접 구현 | On-chain (SKALE Zero Gas) |
-| **개발 시간** | 2-4주 | 1시간 |
-| **유지보수** | 지속적 필요 | Pag0 팀이 관리 |
+| **Budget Management** | Manual implementation (100+ lines) | 3-line setup |
+| **Caching** | Self-implementation (Redis needed) | Automatic (40% savings) |
+| **API Selection** | Manual research | Auto-recommend (real usage data) |
+| **Audit Logs** | Self-implementation | On-chain (SKALE Zero Gas) |
+| **Development Time** | 2-4 weeks | 1 hour |
+| **Maintenance** | Continuous needed | Managed by Pag0 team |
 
-**결론**: "OAuth에 Auth0가 있듯이, x402에 Pag0"
+**Conclusion**: "Just as Auth0 is to OAuth, Pag0 is to x402"
 
 ---
 
-### 비디오 콘텐츠 (YouTube)
+### Video Content (YouTube)
 
-#### Quick Start 시리즈 (각 5분)
+#### Quick Start Series (5 minutes each)
 
-1. **Pag0 5분 Quick Start**
-   - 설치 → API Key → 첫 요청
-   - 실시간 코딩
-   - 캐시 히트 시연
+1. **Pag0 5-Minute Quick Start**
+   - Install → API Key → First request
+   - Real-time coding
+   - Cache hit demonstration
 
-2. **x402 비용 대시보드 만들기**
+2. **Building x402 Cost Dashboard**
    - Pag0 Analytics API
-   - React 대시보드
-   - 실시간 차트
+   - React dashboard
+   - Real-time charts
 
-3. **AI 에이전트 예산 설정**
-   - LangChain 통합
-   - 정책 설정
-   - 비용 절감 확인
+3. **AI Agent Budget Setup**
+   - LangChain integration
+   - Policy settings
+   - Cost savings confirmation
 
-#### 심층 튜토리얼 (각 15-30분)
+#### Deep Dive Tutorials (15-30 minutes each)
 
-1. **DeFi 트레이딩 봇 만들기** (처음부터 끝까지)
-2. **리서치 에이전트 구축** (검색+번역+분석)
-3. **엔터프라이즈 배포** (승인 워크플로우+RBAC)
+1. **Building DeFi Trading Bot** (end-to-end)
+2. **Building Research Agent** (search+translation+analysis)
+3. **Enterprise Deployment** (approval workflows+RBAC)
 
 ---
 
-## 5. 파트너십
+## 5. Partnerships
 
 ### Coinbase CDP (Critical)
 
-**목표**: x402 공식 도구 등재
+**Goal**: List as official x402 tool
 
-**협력 방안**:
+**Collaboration Plans**:
 
 1. **Technical Partnership**
-   - x402 SDK 문서에 Pag0 예제 추가
-   - CDP Developer Portal에 통합 가이드
-   - Facilitator와 최적화 협력
+   - Add Pag0 examples to x402 SDK documentation
+   - Integration guide on CDP Developer Portal
+   - Optimization collaboration with Facilitator
 
 2. **Co-Marketing**
-   - 공동 블로그 포스트 (분기별)
-   - 웨비나 공동 주최 (월간)
-   - 컨퍼런스 부스 공유
+   - Joint blog posts (quarterly)
+   - Co-host webinars (monthly)
+   - Shared conference booths
 
-3. **Revenue Share** (제안)
-   - Pag0 사용 시 x402 수수료 할인
-   - 또는 Pag0 매출의 10% 공유
-   - Win-Win 구조
+3. **Revenue Share** (proposal)
+   - x402 fee discount when using Pag0
+   - Or share 10% of Pag0 revenue
+   - Win-Win structure
 
-**접근 방법**:
+**Approach**:
 
-- CDP Partner Program 신청
-- 해커톤 데모 성과 공유
-- Traction 데이터 제시 (사용자, 거래량)
+- Apply to CDP Partner Program
+- Share hackathon demo results
+- Present traction data (users, transaction volume)
 
 ---
 
 ### SKALE (Zero Gas)
 
-**목표**: Zero Gas 활용 사례 공동 마케팅
+**Goal**: Co-market Zero Gas use cases
 
-**협력 방안**:
+**Collaboration Plans**:
 
 1. **Technical**
-   - SKALE 체인에 감사 로그 저장
-   - Zero Gas = 추가 비용 없음 강조
-   - SKALE RPC 최적화 협력
+   - Store audit logs on SKALE chain
+   - Emphasize Zero Gas = no additional costs
+   - Collaborate on SKALE RPC optimization
 
 2. **Marketing**
-   - "Zero Cost Audit Logs" 공동 캠페인
-   - SKALE Blog/Twitter 소개
-   - SKALE Ecosystem Grant 신청
+   - "Zero Cost Audit Logs" joint campaign
+   - Feature on SKALE Blog/Twitter
+   - Apply for SKALE Ecosystem Grant
 
 3. **Ecosystem**
-   - SKALE Hackathon 스폰서
-   - SKALE Discord에 Pag0 채널
+   - Sponsor SKALE Hackathons
+   - Pag0 channel on SKALE Discord
 
 ---
 
@@ -673,36 +673,36 @@
 
 #### LangChain
 
-**목표**: 공식 통합 (langchain-pag0)
+**Goal**: Official integration (langchain-pag0)
 
-**구현**:
+**Implementation**:
 
 - LangChain Integration PR
-- 공식 문서 추가
-- 예제 노트북 제공
+- Add to official documentation
+- Provide example notebooks
 
-**마케팅**:
+**Marketing**:
 
-- LangChain Blog 게스트 포스트
-- Twitter 공동 발표
-- Discord 공지
+- Guest post on LangChain Blog
+- Joint Twitter announcement
+- Discord announcement
 
 #### CrewAI
 
-**목표**: 공식 툴킷
+**Goal**: Official toolkit
 
-**구현**:
+**Implementation**:
 
-- CrewAI Tool 구현
-- crewai-tools 패키지 등록
-- 예제 에이전트 제공
+- Implement CrewAI Tool
+- Register crewai-tools package
+- Provide example agents
 
 ---
 
-## 6. 성장 지표
+## 6. Growth Metrics
 
 ```yaml
-# 성장 마일스톤 요약
+# Growth milestone summary
 milestones:
   m3:
     mau: 200
@@ -713,207 +713,207 @@ milestones:
     mau: 750
     paid_users: 80
     mrr: "$4,000"
-    milestone: "첫 엔터프라이즈 계약"
+    milestone: "First Enterprise Contract"
   m12:
     mau: 3000
     paid_users: 300
     mrr: "$20,000"
-    milestone: "Series A 준비"
+    milestone: "Series A Preparation"
 
 north_star_metric:
-  name: "총 캐시 절감액 (Total Cache Savings)"
+  name: "Total Cache Savings"
   m3: "$10K"
   m6: "$100K"
   m12: "$1M"
 ```
 
-### 월별 타겟
+### Monthly Targets
 
-| 월 | MAU | Paid Users | MRR | 주요 마일스톤 |
+| Month | MAU | Paid Users | MRR | Key Milestone |
 |----|-----|------------|-----|--------------|
-| **M1** | 50 | 0 | $0 | 해커톤 런칭 |
-| **M2** | 100 | 5 | $250 | 첫 유료 전환 |
+| **M1** | 50 | 0 | $0 | Hackathon launch |
+| **M2** | 100 | 5 | $250 | First paid conversion |
 | **M3** | 200 | 15 | $750 | Product-Market Fit |
 | **M4** | 350 | 30 | $1,500 | Discord 500 members |
-| **M5** | 500 | 50 | $2,500 | LangChain 통합 |
-| **M6** | 750 | 80 | $4,000 | 첫 엔터프라이즈 계약 |
+| **M5** | 500 | 50 | $2,500 | LangChain integration |
+| **M6** | 750 | 80 | $4,000 | First enterprise contract |
 | **M9** | 1,500 | 150 | $8,000 | AWS Marketplace |
-| **M12** | 3,000 | 300 | $20,000 | Series A 준비 |
+| **M12** | 3,000 | 300 | $20,000 | Series A preparation |
 
-### 분기별 마일스톤
+### Quarterly Milestones
 
-#### Q1 (해커톤 직후)
+#### Q1 (Post-Hackathon)
 
-- [ ] 50+ 가입자
-- [ ] 10+ 활성 프로젝트
+- [ ] 50+ sign-ups
+- [ ] 10+ active projects
 - [ ] NPS > 40
 - [ ] GitHub 100 stars
 - [ ] Discord 200 members
 
-#### Q2 (커뮤니티 확장)
+#### Q2 (Community Expansion)
 
 - [ ] MAU 500+
 - [ ] Paid users 50+
 - [ ] MRR $2,500+
-- [ ] LangChain/CrewAI 통합
-- [ ] 블로그 조회수 10K/mo
+- [ ] LangChain/CrewAI integration
+- [ ] Blog views 10K/mo
 
-#### Q3 (엔터프라이즈 진입)
+#### Q3 (Enterprise Entry)
 
 - [ ] MAU 1,500+
 - [ ] Enterprise deals 5+
 - [ ] ARR $30K+
-- [ ] AWS Marketplace 등재
-- [ ] SOC2 준비 시작
+- [ ] AWS Marketplace listing
+- [ ] SOC2 preparation start
 
-#### Q4 (시장 확대)
+#### Q4 (Market Expansion)
 
 - [ ] MAU 3,000+
 - [ ] Enterprise deals 10+
 - [ ] ARR $100K+
-- [ ] x402 트래픽 10% 점유
-- [ ] Series A 펀드레이징
+- [ ] 10% of x402 traffic share
+- [ ] Series A fundraising
 
 ---
 
-### North Star Metric: 총 캐시 절감액 (Total Cache Savings)
+### North Star Metric: Total Cache Savings
 
-**정의**: 모든 Pag0 사용자가 캐시로 절약한 총 금액 (USDC)
+**Definition**: Total amount saved by all Pag0 users through caching (USDC)
 
-**측정**:
+**Measurement**:
 
 ```typescript
 totalCacheSavings = Σ (cacheCost × cacheHits)
 ```
 
-**타겟**:
+**Targets**:
 
 - M3: $10K
 - M6: $100K
 - M12: $1M
 
-**이유**:
+**Rationale**:
 
-- 사용자 가치 직접 반영
-- 바이럴 효과 (공유하고 싶은 지표)
-- 비즈니스 모델과 정렬 (Cache Savings Share)
+- Directly reflects user value
+- Viral effect (metric worth sharing)
+- Aligned with business model (Cache Savings Share)
 
-**추적**:
+**Tracking**:
 
-- Dashboard에 실시간 표시
-- 월간 리포트 발행
-- Twitter/Blog에 마일스톤 공유
-
----
-
-## 7. 마케팅 예산 (부트스트랩)
-
-### $0 예산 전략
-
-#### 오가닉 채널
-
-1. **콘텐츠 마케팅**
-   - 기술 블로그 (주 1회)
-   - YouTube 튜토리얼 (월 2회)
-   - Twitter 일일 포스팅
-
-2. **커뮤니티 활동**
-   - x402 Discord 적극 참여
-   - GitHub Issues/Discussions 응답
-   - Stack Overflow 답변
-
-3. **SEO 최적화**
-   - "x402 cost optimization" 키워드 타겟
-   - "ai agent api management" 롱테일
-   - Open Graph 메타데이터 최적화
-
-#### 직접 투입 (Sweat Equity)
-
-- 창업자가 직접 DevRel
-- 사용자 1:1 온보딩 (첫 100명)
-- 컨퍼런스 네트워킹 (비용 최소화)
+- Display real-time on dashboard
+- Publish monthly reports
+- Share milestones on Twitter/Blog
 
 ---
 
-### 부트스트랩 예산 ($5K/월)
+## 7. Marketing Budget (Bootstrap)
 
-| 항목 | 월 예산 | 용도 |
+### $0 Budget Strategy
+
+#### Organic Channels
+
+1. **Content Marketing**
+   - Technical blog (weekly)
+   - YouTube tutorials (bi-monthly)
+   - Daily Twitter posts
+
+2. **Community Activities**
+   - Active participation in x402 Discord
+   - Respond to GitHub Issues/Discussions
+   - Answer Stack Overflow questions
+
+3. **SEO Optimization**
+   - Target "x402 cost optimization" keyword
+   - Long-tail "ai agent api management"
+   - Optimize Open Graph metadata
+
+#### Direct Investment (Sweat Equity)
+
+- Founders do DevRel directly
+- 1:1 user onboarding (first 100)
+- Conference networking (minimize costs)
+
+---
+
+### Bootstrap Budget ($5K/month)
+
+| Item | Monthly Budget | Purpose |
 |------|---------|------|
-| **Hackathon Bounties** | $2,000 | ETHGlobal, Devpost 스폰서 |
+| **Hackathon Bounties** | $2,000 | ETHGlobal, Devpost sponsors |
 | **Cloud Infra** | $500 | Fly.io, Upstash, Supabase |
 | **Tools** | $300 | HubSpot, Axiom, Zapier |
-| **Content** | $1,000 | 프리랜서 작가/디자이너 |
+| **Content** | $1,000 | Freelance writers/designers |
 | **Ads (Test)** | $500 | Google Ads, Twitter Ads (A/B) |
-| **Swag** | $300 | 스티커, 티셔츠 (해커톤용) |
-| **Buffer** | $400 | 기타 |
+| **Swag** | $300 | Stickers, T-shirts (for hackathons) |
+| **Buffer** | $400 | Miscellaneous |
 | **Total** | **$5,000** | |
 
 ---
 
-### 성장 해킹 전략
+### Growth Hacking Strategies
 
 #### 1. "Cache Savings Calculator"
 
-- 웹사이트에 계산기 위젯
-- 사용자가 URL + 월 요청 수 입력
-- 예상 절감액 표시 → 가입 유도
+- Calculator widget on website
+- Users input URL + monthly request count
+- Display estimated savings → drive sign-ups
 
 #### 2. "x402 API Leaderboard"
 
-- 카테고리별 API 순위 공개
-- SEO 효과 + 바이럴 효과
-- API 제공자가 자발적으로 홍보
+- Public category-based API rankings
+- SEO effect + viral effect
+- API providers promote voluntarily
 
-#### 3. "Refer-a-Friend" (추천 프로그램)
+#### 3. "Refer-a-Friend" Program
 
-- 추천인: $10 크레딧
-- 신규 가입자: $10 크레딧
-- 100명 추천 시 자동으로 Pro 플랜 무료
+- Referrer: $10 credit
+- New sign-up: $10 credit
+- Pro plan free after 100 referrals
 
-#### 4. "Open Startup" 운동
+#### 4. "Open Startup" Movement
 
-- 실시간 지표 공개 (MRR, MAU)
-- 투명성으로 신뢰 구축
-- Twitter/Blog에 월간 리포트
+- Public real-time metrics (MRR, MAU)
+- Build trust through transparency
+- Monthly reports on Twitter/Blog
 
-#### 5. "GitHub Badge" 캠페인
+#### 5. "GitHub Badge" Campaign
 
 ```markdown
 [![Powered by Pag0](https://img.shields.io/badge/Powered%20by-Pag0-blue)](https://pag0.io)
 ```
 
-- README에 배지 추가 권장
-- 배지 클릭 → Pag0 홈페이지
-- 1000+ 저장소 목표 (M6)
+- Encourage adding badge to README
+- Badge click → Pag0 homepage
+- Target 1000+ repositories (M6)
 
 ---
 
-## 8. 요약
+## 8. Summary
 
-### 핵심 GTM 전략
+### Core GTM Strategy
 
-1. **x402 해커톤 커뮤니티에서 시작**: 얼리 어답터 확보
-2. **개발자 우선**: DevRel, 콘텐츠, 커뮤니티 집중
-3. **오픈소스 + 투명성**: GitHub, Open Startup
-4. **파트너십**: Coinbase, SKALE, AI 프레임워크
-5. **North Star**: 총 캐시 절감액 (사용자 가치)
+1. **Start with x402 hackathon community**: Acquire early adopters
+2. **Developer-first**: Focus on DevRel, content, community
+3. **Open source + transparency**: GitHub, Open Startup
+4. **Partnerships**: Coinbase, SKALE, AI frameworks
+5. **North Star**: Total Cache Savings (user value)
 
-### 6개월 목표
+### 6-Month Goals
 
 - MAU 500+
 - Paid users 50+
 - MRR $2,500+
 - Discord 1K members
-- LangChain/CrewAI 통합
+- LangChain/CrewAI integration
 
-### 12개월 목표
+### 12-Month Goals
 
 - MAU 3,000+
 - Enterprise deals 10+
 - ARR $100K+
-- x402 트래픽 10% 점유
-- Series A 준비
+- 10% of x402 traffic share
+- Series A preparation
 
 ---
 
-**다음 단계**: GTM 실행과 병행하여 [14-INVESTOR-ONE-PAGER.md](14-INVESTOR-ONE-PAGER.md)로 투자자/파트너 피칭 자료를 준비하세요.
+**Next Steps**: In parallel with GTM execution, prepare investor/partner pitching materials at [14-INVESTOR-ONE-PAGER.md](14-INVESTOR-ONE-PAGER.md).

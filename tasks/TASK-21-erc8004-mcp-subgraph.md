@@ -1,21 +1,21 @@
 # TASK-21: ERC-8004 MCP Tools + The Graph Subgraph
 
-| 항목 | 내용 |
-|------|------|
-| **패키지** | `packages/mcp` (MCP tools), 신규 `subgraph/` (The Graph) |
-| **예상 시간** | 2~3시간 |
-| **의존성** | [TASK-20](./TASK-20-erc8004-audit.md) (온체인 감사 데이터 존재), [TASK-16](./TASK-16-mcp-integration.md) |
-| **차단 대상** | 없음 (최종 기능) |
-| **참조 문서** | `docs/03-TECH-SPEC.md` §3.5 (subgraph schema), `docs/12-SDK-GUIDE.md` §1.6 (MCP tool 목록) |
+| Item | Content |
+|------|---------|
+| **Package** | `packages/mcp` (MCP tools), new `subgraph/` (The Graph) |
+| **Estimated Time** | 2~3 hours |
+| **Dependencies** | [TASK-20](./TASK-20-erc8004-audit.md) (on-chain audit data exists), [TASK-16](./TASK-16-mcp-integration.md) |
+| **Blocks** | None (final feature) |
+| **Reference Docs** | `docs/03-TECH-SPEC.md` §3.5 (subgraph schema), `docs/12-SDK-GUIDE.md` §1.6 (MCP tool list) |
 
-## 목표
+## Goal
 
-1. ERC-8004 온체인 감사 데이터를 조회하는 **MCP Tool 2개** 추가
-2. ERC-8004 이벤트를 인덱싱하는 **The Graph Subgraph** 스키마 및 매핑 구현
+1. Add **2 MCP Tools** to query ERC-8004 on-chain audit data
+2. Implement **The Graph Subgraph** schema and mappings to index ERC-8004 events
 
 ## Part A: MCP Tools
 
-### 1. `pag0_audit_trail` — 온체인 감사 기록 조회
+### 1. `pag0_audit_trail` — Query on-chain audit records
 
 ```typescript
 // packages/mcp/src/tools/audit.ts
@@ -23,12 +23,12 @@ server.tool("pag0_audit_trail", {
   endpoint: z.string().optional(),
   period: z.enum(["today", "week", "month"]).optional(),
 }, async (args) => {
-  // The Graph 서브그래프에서 FeedbackEvent 조회
-  // → endpoint, txHash, qualityScore, feedbackURI, timestamp 반환
+  // Query FeedbackEvent from The Graph subgraph
+  // → return endpoint, txHash, qualityScore, feedbackURI, timestamp
 });
 ```
 
-**출력 예시:**
+**Output example:**
 ```json
 [
   {
@@ -41,18 +41,18 @@ server.tool("pag0_audit_trail", {
 ]
 ```
 
-### 2. `pag0_reputation` — 서비스 평판 점수 조회
+### 2. `pag0_reputation` — Query service reputation score
 
 ```typescript
 server.tool("pag0_reputation", {
   endpoint: z.string(),
 }, async (args) => {
-  // ReputationRegistry에서 giveFeedback 집계 데이터 반환
+  // Return aggregated giveFeedback data from ReputationRegistry
   // → avgScore, totalFeedbacks, recentTrend
 });
 ```
 
-**출력 예시:**
+**Output example:**
 ```json
 {
   "endpoint": "api.openai.com",
@@ -63,23 +63,23 @@ server.tool("pag0_reputation", {
 }
 ```
 
-### 3. MCP client.ts 업데이트
+### 3. Update MCP client.ts
 
 ```typescript
-// packages/mcp/src/client.ts에 추가
+// Add to packages/mcp/src/client.ts
 async getAuditTrail(params: { endpoint?: string; period?: string }): Promise<...>;
 async getReputation(endpoint: string): Promise<...>;
 ```
 
 ## Part B: The Graph Subgraph
 
-### 1. 스키마 정의 (`subgraph/schema.graphql`)
+### 1. Schema definition (`subgraph/schema.graphql`)
 
 ```graphql
 # ERC-8004 Audit Events
 type Agent @entity {
   id: ID!
-  name: String!           # agentIdRaw — 사람이 읽을 수 있는 hostname
+  name: String!           # agentIdRaw — human-readable hostname
   feedbacks: [FeedbackEvent!]! @derivedFrom(field: "agent")
   eventCount: Int!
   firstSeen: BigInt!
@@ -90,7 +90,7 @@ type FeedbackEvent @entity {
   id: ID!
   agent: Agent!
   agentId: String!
-  agentName: String!      # agentIdRaw — 원본 hostname 문자열
+  agentName: String!      # agentIdRaw — original hostname string
   value: Int!
   tag1: String!
   tag2: String!
@@ -118,30 +118,30 @@ type ValidationResponseEvent @entity {
 }
 ```
 
-### 2. 이벤트 매핑 (`subgraph/src/mapping.ts`)
+### 2. Event mappings (`subgraph/src/mapping.ts`)
 
-- `handleFeedbackGiven` — `event.params.agentIdRaw`에서 원본 hostname 추출 → `Agent.name` + `FeedbackEvent.agentName` 저장
-- `handleValidationRequested` — ValidationRequestEvent 생성
-- `handleValidationResponded` — ValidationResponseEvent 생성
+- `handleFeedbackGiven` — extract original hostname from `event.params.agentIdRaw` → store in `Agent.name` + `FeedbackEvent.agentName`
+- `handleValidationRequested` — create ValidationRequestEvent
+- `handleValidationResponded` — create ValidationResponseEvent
 
-### 3. 서브그래프 설정 (`subgraph/subgraph.yaml`)
+### 3. Subgraph configuration (`subgraph/subgraph.yaml`)
 
 - Network: SKALE (bite-v2-sandbox)
 - DataSource: ReputationRegistry (`0xCC46EFB2118C323D5E1543115C4b4DfA3bc02131`) + ValidationRegistry (`0x05bf80675DcFD3fdD1F7889685CB925C9c56c308`)
-- Event signature: `FeedbackGiven(indexed string,string,uint256,bytes32,bytes32,string,bytes32)` — 두 번째 `string`이 `agentIdRaw`
+- Event signature: `FeedbackGiven(indexed string,string,uint256,bytes32,bytes32,string,bytes32)` — second `string` is `agentIdRaw`
 - Subgraph: `pag0-erc8004/v1.1.0` on Goldsky
 
-## 폴백 전략
+## Fallback Strategy
 
-- The Graph 미배포 시: 직접 RPC 호출로 이벤트 로그 조회 (느리지만 동작)
-- 서브그래프 싱크 지연: 캐시된 최근 데이터 + "데이터가 최대 N분 지연될 수 있음" 메시지
+- If The Graph is not deployed: query event logs directly via RPC (slower but works)
+- If subgraph sync is delayed: use cached recent data + "Data may be up to N minutes behind" message
 
-## 완료 기준
+## Completion Criteria
 
-- [x] `pag0_audit_trail` MCP tool 구현 + 등록
-- [x] `pag0_reputation` MCP tool 구현 + 등록
-- [x] MCP client.ts에 audit/reputation API 메서드 추가
-- [x] The Graph subgraph schema 정의
-- [x] Event mapping 구현
-- [x] subgraph.yaml 설정
-- [x] MCP build 성공
+- [x] Implement and register `pag0_audit_trail` MCP tool
+- [x] Implement and register `pag0_reputation` MCP tool
+- [x] Add audit/reputation API methods to MCP client.ts
+- [x] Define The Graph subgraph schema
+- [x] Implement event mappings
+- [x] Configure subgraph.yaml
+- [x] MCP build succeeds
