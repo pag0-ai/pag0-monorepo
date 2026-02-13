@@ -115,7 +115,7 @@ CREATE TABLE IF NOT EXISTS requests (
   cached BOOLEAN NOT NULL DEFAULT false,
   latency_ms INTEGER NOT NULL,
   policy_id UUID REFERENCES policies(id) ON DELETE SET NULL,
-  cache_key VARCHAR(64),
+  cache_key VARCHAR(100),
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   CONSTRAINT check_status_code CHECK (status_code >= 100 AND status_code < 600),
   CONSTRAINT check_cost_non_negative CHECK (cost >= 0),

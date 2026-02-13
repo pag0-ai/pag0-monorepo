@@ -182,6 +182,12 @@ echo ""
 run_agent() {
   local step="$1" desc="$2" prompt="$3"
 
+  # Recording mode: pause before each step
+  if [ "${DEMO_PAUSE:-}" = "1" ]; then
+    echo -e "${YELLOW}▶ Press Enter to run Step ${step}: ${desc}${NC}"
+    read -r
+  fi
+
   echo -e "${BLUE}╔═══════════════════════════════════════════════╗${NC}"
   echo -e "${BLUE}║  Step ${step}: ${desc}${NC}"
   echo -e "${BLUE}╚═══════════════════════════════════════════════╝${NC}"
