@@ -15,6 +15,11 @@ import { ExactEvmScheme } from "@x402/evm";
 import { ExactEvmSchemeV1 } from "@x402/evm/v1";
 import type { IWallet } from "./wallet.js";
 
+const isVerbose = () => !!process.env.VERBOSE;
+function verbose(...args: unknown[]) {
+  if (isVerbose()) console.error('[MCP]', ...args);
+}
+
 export interface ProxyMetadata {
   cost: string;
   cached: boolean;
@@ -62,12 +67,15 @@ export function createProxyFetch(
       body = await req.arrayBuffer();
     }
 
-    return globalThis.fetch(relayUrl, {
+    verbose(`[MCP→Proxy] ${method} ${targetUrl} → relay`);
+    const res = await globalThis.fetch(relayUrl, {
       method,
       headers,
       body,
       signal: init?.signal ?? AbortSignal.timeout(RELAY_TIMEOUT_MS),
     });
+    verbose(`[MCP←Proxy] ${res.status} ${targetUrl}`);
+    return res;
   };
 
   // Register both V1 and V2 schemes

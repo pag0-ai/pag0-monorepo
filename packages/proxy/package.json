@@ -13,7 +13,9 @@
     "db:migrate": "bun run --env-file .env.local src/db/migrate.ts",
     "db:migrate:prod": "bun run --env-file .env.production src/db/migrate.ts",
     "db:seed": "bun run --env-file .env.local src/db/seed.ts",
-    "db:seed:prod": "bun run --env-file .env.production src/db/seed.ts"
+    "db:seed:prod": "bun run --env-file .env.production src/db/seed.ts",
+    "db:seed:resources": "bun run --env-file .env.local src/db/seed-resources.ts",
+    "db:seed:resources:prod": "bun run --env-file .env.production src/db/seed-resources.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.0",

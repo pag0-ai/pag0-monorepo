@@ -222,6 +222,7 @@ CREATE TABLE IF NOT EXISTS endpoint_scores (
   reliability_score NUMERIC(5, 2) NOT NULL,
   weights JSONB NOT NULL DEFAULT '{"cost": 0.4, "latency": 0.3, "reliability": 0.3}'::jsonb,
   evidence JSONB NOT NULL,
+  resources JSONB NOT NULL DEFAULT '[]'::jsonb,
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   CONSTRAINT check_scores_range CHECK (
     overall_score >= 0 AND overall_score <= 100 AND
@@ -236,6 +237,7 @@ CREATE INDEX IF NOT EXISTS idx_endpoint_scores_overall ON endpoint_scores(overal
 CREATE INDEX IF NOT EXISTS idx_endpoint_scores_category_overall ON endpoint_scores(category, overall_score DESC);
 CREATE INDEX IF NOT EXISTS idx_endpoint_scores_updated_at ON endpoint_scores(updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_endpoint_scores_evidence ON endpoint_scores USING GIN (evidence);
+CREATE INDEX IF NOT EXISTS idx_endpoint_scores_resources ON endpoint_scores USING GIN (resources);
 
 -- 10. categories
 CREATE TABLE IF NOT EXISTS categories (

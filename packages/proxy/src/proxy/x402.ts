@@ -9,6 +9,11 @@
  * CRITICAL: This proxy NEVER signs payments - it only relays
  */
 
+const isVerbose = () => !!process.env.VERBOSE;
+function verbose(...args: unknown[]) {
+  if (isVerbose()) console.error('[x402]', ...args);
+}
+
 export interface PaymentInfo {
   maxAmountRequired: string; // USDC BIGINT
   resource: string;
@@ -29,6 +34,7 @@ export class X402Integration {
    * Returns the raw response (may be 402 PaymentRequired)
    */
   async forwardRequest(url: string, options: RequestInit): Promise<Response> {
+    verbose(`→ ${options.method ?? 'GET'} ${url}`);
     try {
       const response = await fetch(url, {
         ...options,
@@ -36,6 +42,7 @@ export class X402Integration {
         signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
       });
 
+      verbose(`← ${response.status} ${url}`);
       return response;
     } catch (error) {
       if (error instanceof DOMException && error.name === 'TimeoutError') {
@@ -60,6 +67,7 @@ export class X402Integration {
     // x402 payment header format (base64-encoded JSON)
     const paymentHeader = Buffer.from(JSON.stringify(signedPayment)).toString('base64');
     headers.set('X-Payment', paymentHeader);
+    verbose(`→ ${options.method ?? 'GET'} ${url} (with X-Payment)`);
 
     const updatedOptions: RequestInit = {
       ...options,
@@ -128,7 +136,7 @@ export class X402Integration {
       return null;
     }
 
-    return {
+    const info = {
       maxAmountRequired: String(accept.maxAmountRequired),
       resource: accept.resource,
       scheme: accept.scheme,
@@ -139,6 +147,8 @@ export class X402Integration {
       asset: accept.asset,
       extra: accept.extra,
     };
+    verbose(`parsing 402: scheme=${info.scheme} cost=${info.maxAmountRequired} network=${info.network}`);
+    return info;
   }
 
   /**

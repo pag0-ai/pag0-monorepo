@@ -4,6 +4,11 @@ import { injectAuthHeaders } from "./auth.js";
 import type { ProxyMetadata } from "../proxy-fetch.js";
 import { extractProxyMetadata } from "../proxy-fetch.js";
 
+const isVerbose = () => !!process.env.VERBOSE;
+function verbose(...args: unknown[]) {
+  if (isVerbose()) console.error('[pag0_request]', ...args);
+}
+
 export function registerProxyTools(
   server: McpServer,
   proxyFetch: typeof globalThis.fetch,
@@ -25,6 +30,8 @@ export function registerProxyTools(
     async (args) => {
       const headers = injectAuthHeaders(args.url, args.headers ?? {}, credentials);
 
+      verbose(`${args.method} ${args.url}`, args.body != null ? `body=${JSON.stringify(args.body).slice(0, 200)}` : '');
+
       try {
         const response = await proxyFetch(args.url, {
           method: args.method,
@@ -36,6 +43,7 @@ export function registerProxyTools(
         });
 
         const metadata = extractProxyMetadata(response);
+        verbose(`← ${response.status} cost=${metadata.cost} cached=${metadata.cached} latency=${metadata.latency}ms`);
 
         // Try to parse response body
         let body: unknown;

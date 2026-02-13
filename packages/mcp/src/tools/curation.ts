@@ -10,7 +10,7 @@ export function registerCurationTools(
 
   server.tool(
     "pag0_recommend",
-    "Get recommended APIs ranked by quality score for a given category. Categories: AI, Data, Blockchain, IoT, Finance. Use this to discover the best API for a task.",
+    "Get recommended APIs ranked by quality score for a given category. Categories: AI Agents, Data & Analytics, IPFS & Storage, Content & Media, Web & Automation, Agent Infrastructure, Crypto & NFT, Developer Tools. Each result includes available API resources with method, path, cost, and schema.",
     {
       category: z.string().describe("API category: AI, Data, Blockchain, IoT, Finance"),
       sort_by: z.string().optional().describe("Sort weight override, e.g. 'cost:0.6,latency:0.2,reliability:0.2'"),
@@ -37,7 +37,7 @@ export function registerCurationTools(
 
   server.tool(
     "pag0_compare",
-    "Compare 2-5 API endpoints side by side. Returns winner per dimension (overall, cost, latency, reliability) with score details.",
+    "Compare 2-5 API endpoints side by side. Returns winner per dimension (overall, cost, latency, reliability) with score details and available resources for each endpoint.",
     {
       endpoints: z.array(z.string()).min(2).max(5).describe("Endpoint hostnames to compare, e.g. ['api.openai.com', 'api.anthropic.com']"),
     },
@@ -58,7 +58,7 @@ export function registerCurationTools(
 
   server.tool(
     "pag0_rankings",
-    "Get global API rankings across all categories or filtered by category.",
+    "Get global API rankings across all categories or filtered by category. Each ranked endpoint includes available resources with method, path, cost, and schema.",
     {
       category: z.string().optional().describe("Filter by category (optional)"),
       limit: z.number().optional().default(10).describe("Max results"),
@@ -83,7 +83,7 @@ export function registerCurationTools(
 
   server.tool(
     "pag0_score",
-    "Get detailed quality score for a specific API endpoint.",
+    "Get detailed quality score for a specific API endpoint. Includes available resources (paths, methods, costs, schemas) for the endpoint.",
     {
       endpoint: z.string().describe("Endpoint hostname, e.g. 'api.openai.com'"),
     },

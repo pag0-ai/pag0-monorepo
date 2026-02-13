@@ -20,6 +20,11 @@ import { curationEngine } from '../curation/engine';
 import { erc8004Audit } from '../audit/erc8004';
 import type { UsdcAmount } from '../types';
 
+const isVerbose = () => !!process.env.VERBOSE;
+function verbose(...args: unknown[]) {
+  if (isVerbose()) console.error('[Relay]', ...args);
+}
+
 const UPSTREAM_TIMEOUT_MS = 15_000; // 15s upstream timeout
 
 /** Headers to strip before forwarding to the upstream target */
@@ -98,6 +103,8 @@ export async function handleRelay(c: Context): Promise<Response> {
   const endpoint = extractHostname(targetUrl);
   const method = c.req.method;
 
+  verbose(`← ${method} ${targetUrl}`);
+
   // Read body once as ArrayBuffer (used for cache key + forwarding)
   const bodyBuf = method !== 'GET' && method !== 'HEAD'
     ? await c.req.arrayBuffer()
@@ -123,6 +130,7 @@ export async function handleRelay(c: Context): Promise<Response> {
   const cachedResponse = await cacheLayer.get(cacheKey);
 
   if (cachedResponse) {
+    verbose(`cache HIT ${cacheKey.slice(0, 12)}`);
     const latency = Date.now() - startTime;
     const budgetStatus = await budgetTracker.checkBudget(projectId);
 
@@ -174,6 +182,7 @@ export async function handleRelay(c: Context): Promise<Response> {
   });
 
   // ── 5. Forward to upstream target ────────────────────────
+  verbose(`→ ${method} ${targetUrl}`);
   let upstreamRes: Response;
   try {
     upstreamRes = await fetch(targetUrl, {
@@ -198,6 +207,8 @@ export async function handleRelay(c: Context): Promise<Response> {
     );
   }
 
+  verbose(`← upstream ${upstreamRes.status} ${Date.now() - startTime}ms`);
+
   // ── 6. If 402 → pass through raw response ───────────────
   if (upstreamRes.status === 402) {
     const latency = Date.now() - startTime;
@@ -212,6 +223,7 @@ export async function handleRelay(c: Context): Promise<Response> {
     resHeaders.set('x-pag0-latency', String(latency));
     resHeaders.set('x-pag0-endpoint', endpoint);
 
+    verbose(`402 pass-through to client`);
     return new Response(upstreamRes.body, {
       status: 402,
       headers: resHeaders,
@@ -302,6 +314,7 @@ export async function handleRelay(c: Context): Promise<Response> {
     monthly: String(BigInt(budgetStatus.monthlyBudget) - BigInt(budgetStatus.monthlySpent)),
   }));
 
+  verbose(`→ client ${upstreamRes.status} cost=${actualCost} cached=false`);
   return new Response(upstreamBody, {
     status: upstreamRes.status,
     headers: resHeaders,

@@ -39,6 +39,17 @@ export interface Policy {
   updatedAt: Date;
 }
 
+export interface EndpointResource {
+  path: string;
+  method: string;
+  description?: string;
+  cost: string;
+  bodySchema?: Record<string, any>;
+  queryParams?: Record<string, any>;
+  headerFields?: Record<string, any>;
+  outputSchema?: Record<string, any>;
+}
+
 export interface EndpointScore {
   endpoint: string;
   category: string;
@@ -62,6 +73,7 @@ export interface EndpointScore {
     avgLatencyMs: number;
     successRate: number;
   };
+  resources?: EndpointResource[];
 }
 
 export interface User {

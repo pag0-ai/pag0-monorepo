@@ -1,7 +1,7 @@
 import sql from '../db/postgres';
 import redis from '../cache/redis';
 import { subgraphClient } from '../subgraph/client';
-import type { EndpointScore } from '../types';
+import type { EndpointScore, EndpointResource } from '../types';
 
 /**
  * CurationEngine — Endpoint scoring, recommendation, and comparison
@@ -48,6 +48,12 @@ const DEFAULT_WEIGHTS: ScoreWeights = {
 };
 
 export class CurationEngine {
+  private parseResources(raw: any): EndpointResource[] {
+    if (!raw) return [];
+    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    return Array.isArray(parsed) ? parsed : [];
+  }
+
   /**
    * Calculate cost score (0-100)
    * Lower cost = higher score
@@ -289,6 +295,7 @@ export class CurationEngine {
           avgLatencyMs: number;
           successRate: number;
         };
+        resources: any;
         updated_at: Date;
       }>
     >`
@@ -301,6 +308,7 @@ export class CurationEngine {
         reliability_score,
         weights,
         evidence,
+        resources,
         updated_at
       FROM endpoint_scores
       WHERE endpoint = ${endpoint}
@@ -326,6 +334,7 @@ export class CurationEngine {
         reputation: score.weights.reputation ?? DEFAULT_WEIGHTS.reputation,
       },
       evidence: score.evidence,
+      resources: this.parseResources(score.resources),
     };
 
     // Cache in Redis (TTL: 300s)
@@ -366,13 +375,14 @@ export class CurationEngine {
         avgLatencyMs: number;
         successRate: number;
       };
+      resources: any;
       updated_at: Date;
     };
 
     const scores = category
       ? await sql<Array<ScoreRow>>`
           SELECT endpoint, category, overall_score, cost_score, latency_score, reliability_score,
-            weights, evidence, updated_at
+            weights, evidence, resources, updated_at
           FROM endpoint_scores
           WHERE category = ${category}
           ORDER BY ${sql(sortColumn)} DESC
@@ -380,7 +390,7 @@ export class CurationEngine {
         `
       : await sql<Array<ScoreRow>>`
           SELECT endpoint, category, overall_score, cost_score, latency_score, reliability_score,
-            weights, evidence, updated_at
+            weights, evidence, resources, updated_at
           FROM endpoint_scores
           ORDER BY ${sql(sortColumn)} DESC
           LIMIT ${limit}
@@ -402,6 +412,7 @@ export class CurationEngine {
         reputation: score.weights.reputation ?? DEFAULT_WEIGHTS.reputation,
       },
       evidence: score.evidence,
+      resources: this.parseResources(score.resources),
     }));
   }
 
@@ -429,6 +440,7 @@ export class CurationEngine {
           avgLatencyMs: number;
           successRate: number;
         };
+        resources: any;
         updated_at: Date;
       }>
     >`
@@ -441,6 +453,7 @@ export class CurationEngine {
         reliability_score,
         weights,
         evidence,
+        resources,
         updated_at
       FROM endpoint_scores
       WHERE endpoint = ANY(${endpoints})
@@ -466,6 +479,7 @@ export class CurationEngine {
         reputation: score.weights.reputation ?? DEFAULT_WEIGHTS.reputation,
       },
       evidence: score.evidence,
+      resources: this.parseResources(score.resources),
     }));
 
     // Find winners in each dimension
@@ -532,6 +546,7 @@ export class CurationEngine {
         avgLatencyMs: number;
         successRate: number;
       };
+      resources: any;
       updated_at: Date;
     };
 
@@ -539,7 +554,7 @@ export class CurationEngine {
       ? sql<Array<RankingRow>>`
           SELECT
             endpoint, category, overall_score, cost_score, latency_score, reliability_score,
-            weights, evidence, updated_at
+            weights, evidence, resources, updated_at
           FROM endpoint_scores
           WHERE category = ${category}
           ORDER BY overall_score DESC
@@ -548,7 +563,7 @@ export class CurationEngine {
       : sql<Array<RankingRow>>`
           SELECT
             endpoint, category, overall_score, cost_score, latency_score, reliability_score,
-            weights, evidence, updated_at
+            weights, evidence, resources, updated_at
           FROM endpoint_scores
           ORDER BY overall_score DESC
           LIMIT ${limit}
@@ -572,6 +587,7 @@ export class CurationEngine {
         reputation: score.weights.reputation ?? DEFAULT_WEIGHTS.reputation,
       },
       evidence: score.evidence,
+      resources: this.parseResources(score.resources),
     }));
   }
 }
