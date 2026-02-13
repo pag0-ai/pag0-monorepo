@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { BarChart3, Shield, Trophy, Sparkles, LogOut, Hexagon } from 'lucide-react';
+import { BarChart3, Shield, Trophy, Sparkles, LogOut } from 'lucide-react';
+import { Pag0Logo } from './pag0-logo';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: BarChart3 },
@@ -34,11 +35,10 @@ export function Sidebar({ onClose }: SidebarProps) {
           <div
             className="w-9 h-9 rounded-xl flex items-center justify-center"
             style={{
-              background: 'linear-gradient(135deg, var(--color-neon-indigo), #7c3aed)',
               boxShadow: '0 0 16px rgba(99, 102, 241, 0.3)',
             }}
           >
-            <Hexagon size={18} strokeWidth={2.5} className="text-white" />
+            <Pag0Logo size={28} />
           </div>
           <div>
             <h1 className="text-lg font-bold gradient-text tracking-tight">Pag0</h1>
