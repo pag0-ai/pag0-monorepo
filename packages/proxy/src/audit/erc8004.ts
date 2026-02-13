@@ -134,7 +134,7 @@ export class ERC8004AuditTrail {
       try {
         feedbackURI = await this.uploadToIPFS(feedbackData);
       } catch (err) {
-        console.warn('[ERC-8004] IPFS upload failed, proceeding with empty URI:', err);
+        // console.warn('[ERC-8004] IPFS upload failed, proceeding with empty URI:', err);
       }
 
       // 3. Compute integrity hash
