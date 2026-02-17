@@ -14,6 +14,7 @@ import { wrapFetchWithPayment, x402Client } from "@x402/fetch";
 import { ExactEvmScheme } from "@x402/evm";
 import { ExactEvmSchemeV1 } from "@x402/evm/v1";
 import type { IWallet } from "./wallet.js";
+import { BscPermit2Scheme } from "./bsc-permit2-scheme.js";
 
 const isVerbose = () => !!process.env.VERBOSE;
 function verbose(...args: unknown[]) {
@@ -85,7 +86,7 @@ export function createProxyFetch(
     .registerV1("base", new ExactEvmSchemeV1(signer))           // V1 (base mainnet)
     .register("eip155:84532", new ExactEvmScheme(signer))       // V2 (base-sepolia)
     .register("eip155:8453", new ExactEvmScheme(signer))        // V2 (base mainnet)
-    .register("eip155:56", new ExactEvmScheme(signer));         // BSC Mainnet
+    .register("eip155:56", new BscPermit2Scheme(signer));       // BSC Mainnet (custom spender)
 
   return wrapFetchWithPayment(relayFetch, client);
 }

@@ -184,13 +184,13 @@ run_agent "2" "Environment Health Check" \
 2. Use pag0_list_policies to list my spending policies.
 Summarize the results."
 
-# # ===== Step 3: Get DeFi Recommendations on BSC =====
-# run_agent "3" "Get DeFi Recommendations (BSC)" \
-#   "Use the pag0_recommend tool to get recommended APIs in the 'DeFi' category. For each endpoint, show: name, overall score, number of available resources, and the resource paths with their HTTP method and cost (in USDT). This shows agents can discover BNB Chain DeFi APIs to call."
+# ===== Step 3: Get DeFi Recommendations on BSC =====
+run_agent "3" "Get DeFi Recommendations (BSC)" \
+  "Use the pag0_recommend tool to get recommended APIs in the 'DeFi' category. For each endpoint, show: name, overall score, number of available resources, and the resource paths with their HTTP method and cost (in USDT). This shows agents can discover BNB Chain DeFi APIs to call."
 
-# # ===== Step 4: Individual Endpoint Score (BSC APIs) =====
-# run_agent "4" "Individual Endpoint Score (BSC)" \
-#   "Use the pag0_score tool to get the detailed score for localhost (or the proxy host). Show the overall score, individual dimension scores (cost, latency, reliability), and the available API resources — list all resource paths with their HTTP method, cost, and description. These are self-hosted BNB Chain DeFi APIs."
+# ===== Step 4: Individual Endpoint Score (BSC APIs) =====
+run_agent "4" "Individual Endpoint Score (BSC)" \
+  "Use the pag0_score tool to get the detailed score for localhost (or the proxy host). Show the overall score, individual dimension scores (cost, latency, reliability), and the available API resources — list all resource paths with their HTTP method, cost, and description. These are self-hosted BNB Chain DeFi APIs."
 
 # ===== Step 5: x402 Payment — Venus Protocol Rates =====
 run_agent "5" "x402 Payment (Venus Rates)" \

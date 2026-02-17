@@ -507,10 +507,15 @@ if (bscOnly) {
 
   await test("wallet status (BSC, local)", async () => {
     const status = await wallet.getStatus();
-    assert(status.network === "bsc", `expected network=bsc, got ${status.network}`);
+    assert(
+      status.network === "bsc",
+      `expected network=bsc, got ${status.network}`,
+    );
     assert(status.address.startsWith("0x"), "address should start with 0x");
     console.log(
-      `${DIM} → addr=${status.address.slice(0, 10)}..., balance=${status.balanceFormatted}${RESET}`,
+      `${DIM} → addr=${status.address.slice(0, 10)}..., balance=${
+        status.balanceFormatted
+      }${RESET}`,
     );
     if (status.permit2) {
       console.log(
@@ -522,8 +527,14 @@ if (bscOnly) {
   await test("Permit2 allowance check", async () => {
     const status = await wallet.getStatus();
     assert(status.permit2 != null, "permit2 status should be present for BSC");
-    assert(typeof status.permit2!.approved === "boolean", "approved should be boolean");
-    assert(typeof status.permit2!.allowance === "string", "allowance should be a string");
+    assert(
+      typeof status.permit2!.approved === "boolean",
+      "approved should be boolean",
+    );
+    assert(
+      typeof status.permit2!.allowance === "string",
+      "allowance should be a string",
+    );
     if (!status.permit2!.approved) {
       console.log(
         `${DIM}   ${YELLOW}⚠ Permit2 NOT approved — run pag0_approve_permit2 or use --approve flag${RESET}`,
@@ -548,7 +559,10 @@ if (bscOnly) {
 
       // Verify allowance updated
       const statusAfter = await wallet.getStatus();
-      assert(statusAfter.permit2?.approved === true, "permit2 should be approved after tx");
+      assert(
+        statusAfter.permit2?.approved === true,
+        "permit2 should be approved after tx",
+      );
     });
   }
 
@@ -565,19 +579,16 @@ if (bscOnly) {
       `${DIM} → status=${response.status}, cost=${meta.cost}, cached=${meta.cached}, latency=${meta.latency}ms${RESET}`,
     );
     if (response.ok && body) {
-      const markets = Array.isArray(body) ? body.length : Object.keys(body).length;
+      const markets = Array.isArray(body)
+        ? body.length
+        : Object.keys(body).length;
       console.log(`${DIM}   markets=${markets}${RESET}`);
     }
-    // 200 = paid successfully, 402 = Permit2 not approved, 500 = upstream error
+    // 200 = paid successfully, 500 = upstream error, 402 = Permit2 not approved(402 not allowed cause proxyFetch should handle retry with payment)
     assert(
-      response.status === 200 || response.status === 402 || response.status === 500,
-      `expected 200/402/500, got ${response.status}`,
+      response.status === 200 || response.status === 500,
+      `expected 200/500, got ${response.status}`,
     );
-    if (response.status === 402) {
-      console.log(
-        `${DIM}   ${YELLOW}402 = payment required — approve Permit2 first (--approve flag)${RESET}`,
-      );
-    }
   });
 
   await test("proxyFetch BSC PancakeSwap quote (GET, x402 payment)", async () => {
@@ -589,17 +600,21 @@ if (bscOnly) {
       `${DIM} → status=${response.status}, cost=${meta.cost}, cached=${meta.cached}, latency=${meta.latency}ms${RESET}`,
     );
     if (response.ok && body) {
-      console.log(`${DIM}   quote=${JSON.stringify(body).slice(0, 120)}${RESET}`);
+      console.log(
+        `${DIM}   quote=${JSON.stringify(body).slice(0, 120)}${RESET}`,
+      );
     }
     assert(
-      response.status === 200 || response.status === 402 || response.status === 500,
-      `expected 200/402/500, got ${response.status}`,
+      response.status === 200 || response.status === 500,
+      `expected 200/500, got ${response.status}`,
     );
   });
 
   await test("proxyFetch BSC token analysis (POST, x402 payment)", async () => {
     const url = `${PAG0_API_URL}/bsc/ai/analyze-token`;
-    const reqBody = JSON.stringify({ tokenAddress: "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82" }); // CAKE
+    const reqBody = JSON.stringify({
+      tokenAddress: "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82",
+    }); // CAKE
     const response = await proxyFetch(url, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -611,11 +626,13 @@ if (bscOnly) {
       `${DIM} → status=${response.status}, cost=${meta.cost}, cached=${meta.cached}, latency=${meta.latency}ms${RESET}`,
     );
     if (response.ok && body) {
-      console.log(`${DIM}   analysis=${JSON.stringify(body).slice(0, 150)}${RESET}`);
+      console.log(
+        `${DIM}   analysis=${JSON.stringify(body).slice(0, 150)}${RESET}`,
+      );
     }
     assert(
-      response.status === 200 || response.status === 400 || response.status === 402 || response.status === 500,
-      `expected 200/400/402/500, got ${response.status}`,
+      response.status === 200 || response.status === 500,
+      `expected 200/500, got ${response.status}`,
     );
   });
 
@@ -640,8 +657,8 @@ if (bscOnly) {
     }
     await response.text().catch(() => {});
     assert(
-      response.status === 200 || response.status === 402 || response.status === 500,
-      `expected 200/402/500, got ${response.status}`,
+      response.status === 200 || response.status === 500,
+      `expected 200/500, got ${response.status}`,
     );
   });
 

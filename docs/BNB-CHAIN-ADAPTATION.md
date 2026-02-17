@@ -410,7 +410,7 @@ import { LocalBscFacilitatorClient } from "./bsc-facilitator";
 // Local facilitator: verifies Permit2 EIP-712 signatures + settles via on-chain Permit2
 const facilitatorClient = new LocalBscFacilitatorClient(
   payToAddress,           // where USDT goes
-  paymentRelayerKey,      // proxy's private key (for on-chain tx, needs BNB gas)
+  payToPrivateKey,        // proxy's private key (payTo derived, also used as relayer for on-chain tx)
 );
 
 const resourceServer = new x402ResourceServer(facilitatorClient)
