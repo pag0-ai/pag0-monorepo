@@ -1,10 +1,11 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import type { Pag0Client } from "../client.js";
+import { type Pag0Client, formatTokenAmount } from "../client.js";
 
 export function registerPolicyTools(
   server: McpServer,
   client: Pag0Client,
+  network: string = "base-sepolia",
 ) {
   // ── Tier 1: pag0_check_budget ──────────────────────────
 
@@ -38,7 +39,7 @@ export function registerPolicyTools(
     "Check whether a specific API call would be allowed by the active spending policy. Returns allowed/denied with reason.",
     {
       url: z.string().describe("Target API endpoint URL"),
-      estimatedCost: z.string().describe("Estimated cost in USDC (6 decimals), e.g. '500000' for 0.5 USDC"),
+      estimatedCost: z.string().describe("Estimated cost in token smallest unit. USDC on Base: 6 decimals (e.g. '500000' = 0.5 USDC). USDT on BSC: 18 decimals (e.g. '500000000000000000' = 0.5 USDT)."),
     },
     async (args) => {
       // Fetch active policies and budget to evaluate locally

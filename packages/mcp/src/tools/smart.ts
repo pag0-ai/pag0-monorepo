@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { writeFileSync } from "node:fs";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { Pag0Client } from "../client.js";
 import type { IWallet } from "../wallet.js";
@@ -25,6 +24,7 @@ export function registerSmartTools(
   server: McpServer,
   client: Pag0Client,
   wallet: IWallet,
+  network: string = "base-sepolia",
 ) {
   server.tool(
     "pag0_smart_request",
@@ -74,34 +74,12 @@ export function registerSmartTools(
 
         let data = await response.json().catch(() => ({})) as any;
 
-        // Debug logging to file
-        const debugInfo = {
-          timestamp: new Date().toISOString(),
-          responseStatus: response.status,
-          responseOk: response.ok,
-          dataKeys: Object.keys(data),
-          hasBody: !!data.body,
-          hasPaymentRequest: !!data.body?.paymentRequest,
-          fullData: data
-        };
-        try {
-          writeFileSync("/tmp/mcp-smart-debug.json", JSON.stringify(debugInfo, null, 2));
-        } catch (e) {}
-
-        console.error("[smart] First response status:", response.status);
-        console.error("[smart] First response data keys:", Object.keys(data));
-        console.error("[smart] data.body exists?", !!data.body);
-        console.error("[smart] data.body?.paymentRequest exists?", !!data.body?.paymentRequest);
-        console.error("[smart] data sample:", JSON.stringify(data).slice(0, 300));
-
         // ── 2. Handle 402 payment required ────────────────────────
         if (response.status === 402 && data.body?.paymentRequest) {
-          console.error("[smart] Signing payment for:", data.body.paymentRequest.resource);
           const paymentInfo = data.body.paymentRequest as ProxyPaymentInfo;
 
           // Sign payment using wallet
           const signedPayment = await createPaymentPayload(wallet, paymentInfo);
-          console.error("[smart] Payment signed, retrying...");
 
           // Retry with signed payment
           response = await client.smartRequest({
@@ -113,7 +91,6 @@ export function registerSmartTools(
           });
 
           data = await response.json().catch(() => ({})) as any;
-          console.error("[smart] Second response status:", response.status, "OK?", response.ok);
         }
 
         // ── 3. Handle errors ──────────────────────────────────────
@@ -122,7 +99,7 @@ export function registerSmartTools(
             content: [
               {
                 type: "text" as const,
-                text: `Smart request error (${response.status})\nData keys: ${Object.keys(data).join(", ")}\nHas data.body? ${!!data.body}\nHas data.body.paymentRequest? ${!!data.body?.paymentRequest}\nCondition result: ${response.status === 402 && !!data.body?.paymentRequest}\n\nFull data: ${JSON.stringify(data, null, 2)}`,
+                text: `Smart request failed (${response.status}): ${JSON.stringify(data, null, 2)}`,
               },
             ],
             isError: true,

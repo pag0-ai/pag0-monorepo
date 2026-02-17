@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { injectAuthHeaders } from "./auth.js";
 import type { ProxyMetadata } from "../proxy-fetch.js";
 import { extractProxyMetadata } from "../proxy-fetch.js";
+import { formatTokenAmount } from "../client.js";
 
 const isVerbose = () => !!process.env.VERBOSE;
 function verbose(...args: unknown[]) {
@@ -13,6 +14,7 @@ export function registerProxyTools(
   server: McpServer,
   proxyFetch: typeof globalThis.fetch,
   credentials: Record<string, string> = {},
+  network: string = "base-sepolia",
 ) {
   server.tool(
     "pag0_request",
@@ -67,7 +69,7 @@ export function registerProxyTools(
         const result: Record<string, unknown> = {
           status: response.status,
           body,
-          cost: metadata.cost,
+          cost: formatTokenAmount(metadata.cost, network),
           cached: metadata.cached,
           cacheSource: metadata.cacheSource,
           latency: metadata.latency,

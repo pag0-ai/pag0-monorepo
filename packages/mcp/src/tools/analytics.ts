@@ -1,10 +1,11 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import type { Pag0Client } from "../client.js";
+import { type Pag0Client, formatTokenAmount } from "../client.js";
 
 export function registerAnalyticsTools(
   server: McpServer,
   client: Pag0Client,
+  network: string = "base-sepolia",
 ) {
   // ── Tier 2: pag0_spending ──────────────────────────────
 
@@ -35,8 +36,8 @@ export function registerAnalyticsTools(
             type: "text" as const,
             text: JSON.stringify(
               {
-                totalSpent: data.totalCost,
-                totalSaved: data.cacheSavings,
+                totalSpent: formatTokenAmount(data.totalCost, network),
+                totalSaved: formatTokenAmount(data.cacheSavings, network),
                 requestCount: data.totalRequests,
                 cacheHitRate: data.cacheHitRate,
                 successRate: data.successRate,
@@ -79,7 +80,7 @@ export function registerAnalyticsTools(
                 hitRate: data.hitRate,
                 hitCount: data.hitCount,
                 missCount: data.missCount,
-                savedAmount: data.totalSavings,
+                savedAmount: formatTokenAmount(data.totalSavings, network),
                 topCachedEndpoints: data.topCachedEndpoints,
               },
               null,

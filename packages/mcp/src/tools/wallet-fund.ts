@@ -8,7 +8,7 @@ export function registerWalletFundTools(
 ) {
   server.tool(
     "pag0_wallet_fund",
-    "Request testnet USDC from faucet (Base Sepolia only). Only available when using CDP wallet mode (WALLET_MODE=cdp).",
+    "Request testnet USDC from faucet (Base Sepolia only, not available on BSC). Only available when using CDP wallet mode (WALLET_MODE=cdp).",
     {},
     async () => {
       if (wallet.walletMode !== "cdp") {

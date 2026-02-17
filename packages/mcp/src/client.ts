@@ -1,8 +1,9 @@
 /**
  * Pag0 Proxy API HTTP Client
  *
- * All monetary values are USDC with 6 decimals (BIGINT string).
- * 1 USDC = "1000000"
+ * All monetary values are BIGINT strings in the token's smallest unit.
+ * Base (USDC, 6 decimals): 1 USDC = "1000000"
+ * BSC  (USDT, 18 decimals): 1 USDT = "1000000000000000000"
  */
 
 export interface ProxyRequestParams {
@@ -204,6 +205,17 @@ export class Pag0Client {
       params,
     );
   }
+}
+
+/** Format raw token amount to human-readable display string */
+export function formatTokenAmount(raw: string, network: string): string {
+  if (!raw || raw === '0') return network === 'bsc' ? '0 USDT' : '0 USDC';
+  const decimals = network === 'bsc' ? 18 : 6;
+  const symbol = network === 'bsc' ? 'USDT' : 'USDC';
+  const padded = raw.padStart(decimals + 1, '0');
+  const intPart = padded.slice(0, -decimals);
+  const decPart = padded.slice(-decimals).replace(/0+$/, '');
+  return decPart ? `${intPart}.${decPart} ${symbol}` : `${intPart} ${symbol}`;
 }
 
 export interface SmartSelectResult {
