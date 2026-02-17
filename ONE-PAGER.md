@@ -2,6 +2,11 @@
 
 > **One-liner:** Pag0 is the only smart proxy layer for the x402 ecosystem, giving AI agents **spend control**, **data-driven API curation**, and **smart caching** — all through a single middleware.
 
+**Quick Links**
+
+- **Demo Video (YouTube):** <https://youtu.be/lyAwe-EQnMU>
+- **Demo Setup & Run Guide:** <https://github.com/pag0-ai/pag0-monorepo/blob/main/guides/1-RUN-MCP-AGENT-SCRIPT.md>
+
 ---
 
 ## The Problem
@@ -130,12 +135,6 @@ We built a fully functional MCP server that lets any AI agent (Claude, GPT, etc.
 - **The Graph subgraph** indexing on-chain payment feedback
 - **Web dashboard** with real-time analytics, API rankings, and policy management
 - **Full demo script** — 10/10 scenarios passing end-to-end with real x402 payments
-
----
-
-## Team
-
-Carl Park
 
 ---
 
