@@ -27,6 +27,10 @@ export class CdpWallet implements IWallet {
       walletSecret: process.env.CDP_WALLET_SECRET,
     });
     this._network = network;
+
+    if (this._network === "bsc") {
+      throw new Error("CdpWallet does not support BSC. Use WALLET_MODE=local.");
+    }
   }
 
   get address(): string {

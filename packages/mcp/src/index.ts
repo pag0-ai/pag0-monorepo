@@ -29,7 +29,7 @@ const PAG0_API_URL = process.env.PAG0_API_URL;
 const PAG0_API_KEY = process.env.PAG0_API_KEY;
 const WALLET_PRIVATE_KEY = process.env.WALLET_PRIVATE_KEY;
 const WALLET_MODE = process.env.WALLET_MODE ?? "local";
-const NETWORK = process.env.NETWORK || "base-sepolia";
+const NETWORK = process.env.NETWORK || "bsc";
 
 // Optional: auto-inject Authorization headers for known API providers
 const API_CREDENTIALS: Record<string, string> = {};
@@ -72,12 +72,14 @@ const proxyFetch = createProxyFetch(PAG0_API_URL, PAG0_API_KEY, wallet);
 
 // Register all tools
 registerWalletTools(server, wallet);
-registerWalletFundTools(server, wallet);
-registerProxyTools(server, proxyFetch, API_CREDENTIALS);
-registerPolicyTools(server, client);
+if (WALLET_MODE === "cdp" && NETWORK !== "bsc") {
+  registerWalletFundTools(server, wallet);
+}
+registerProxyTools(server, proxyFetch, API_CREDENTIALS, NETWORK);
+registerPolicyTools(server, client, NETWORK);
 registerCurationTools(server, client);
-registerAnalyticsTools(server, client);
-registerSmartTools(server, client, wallet);
+registerAnalyticsTools(server, client, NETWORK);
+registerSmartTools(server, client, wallet, NETWORK);
 registerAuditTools(server, client);
 
 // ── Connect ────────────────────────────────────────────────

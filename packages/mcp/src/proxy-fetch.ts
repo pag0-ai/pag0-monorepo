@@ -84,7 +84,8 @@ export function createProxyFetch(
     .registerV1("base-sepolia", new ExactEvmSchemeV1(signer))   // V1 (base-sepolia)
     .registerV1("base", new ExactEvmSchemeV1(signer))           // V1 (base mainnet)
     .register("eip155:84532", new ExactEvmScheme(signer))       // V2 (base-sepolia)
-    .register("eip155:8453", new ExactEvmScheme(signer));        // V2 (base mainnet)
+    .register("eip155:8453", new ExactEvmScheme(signer))        // V2 (base mainnet)
+    .register("eip155:56", new ExactEvmScheme(signer));         // BSC Mainnet
 
   return wrapFetchWithPayment(relayFetch, client);
 }
