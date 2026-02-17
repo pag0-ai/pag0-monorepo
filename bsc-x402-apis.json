@@ -1,0 +1,75 @@
+[
+  {
+    "resource": "{BASE_URL}/bsc/defi/venus/rates",
+    "accepts": [
+      {
+        "scheme": "exact",
+        "price": "$0.001",
+        "network": "eip155:56",
+        "description": "Venus Protocol real-time lending rates on BNB Chain",
+        "maxAmountRequired": "1000000000000000",
+        "outputSchema": {
+          "input": {
+            "method": "GET"
+          },
+          "output": {
+            "supplyApy": "number",
+            "borrowApy": "number",
+            "market": "string"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "resource": "{BASE_URL}/bsc/defi/pancake/quote",
+    "accepts": [
+      {
+        "scheme": "exact",
+        "price": "$0.001",
+        "network": "eip155:56",
+        "description": "PancakeSwap optimal swap route and price quote",
+        "maxAmountRequired": "1000000000000000",
+        "outputSchema": {
+          "input": {
+            "method": "GET",
+            "queryParams": {
+              "tokenIn": "string",
+              "tokenOut": "string",
+              "amount": "string"
+            }
+          },
+          "output": {
+            "quote": "string",
+            "route": "array",
+            "priceImpact": "string"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "resource": "{BASE_URL}/bsc/ai/analyze-token",
+    "accepts": [
+      {
+        "scheme": "exact",
+        "price": "$0.005",
+        "network": "eip155:56",
+        "description": "AI-powered BNB Chain token risk analysis",
+        "maxAmountRequired": "5000000000000000",
+        "outputSchema": {
+          "input": {
+            "method": "POST",
+            "bodySchema": {
+              "tokenAddress": "string"
+            }
+          },
+          "output": {
+            "riskScore": "number",
+            "analysis": "string"
+          }
+        }
+      }
+    ]
+  }
+]
