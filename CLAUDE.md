@@ -69,13 +69,15 @@ pag0-monorepo/
 │   │   │   │   ├── queries.ts    # GraphQL query definitions
 │   │   │   │   └── types.ts      # Subgraph type definitions
 │   │   │   ├── db/
-│   │   │   │   ├── postgres.ts   # PostgreSQL client
-│   │   │   │   ├── schema.sql    # DDL script (10 tables)
-│   │   │   │   ├── seed.sql      # Seed data (categories, demo user, 20 endpoints, ~70 requests)
-│   │   │   │   ├── seed.ts       # TypeScript seed runner
-│   │   │   │   ├── seed-resources.ts  # Resource enrichment from bsc-x402-apis.json
-│   │   │   │   ├── migrate.ts    # Migration runner
-│   │   │   │   └── migrations/   # SQL migrations (001_add_chain_id.sql)
+│   │   │   │   ├── postgres.ts       # PostgreSQL client singleton (exports Sql type)
+│   │   │   │   ├── schema.sql        # DDL script (10 tables)
+│   │   │   │   ├── seeds/            # Seed functions — (sql: Sql) => Promise<void>
+│   │   │   │   │   ├── 01_base-sepolia.ts  # Categories, demo user/project/policy, 20 endpoints, ~80 requests
+│   │   │   │   │   └── 02_bsc.ts           # BSC endpoints from bsc-x402-apis.json + synthetic requests
+│   │   │   │   ├── run-migrate.ts    # CLI: schema.sql + migrations/*.sql (auto-scan)
+│   │   │   │   ├── run-seed.ts       # CLI: runs seeds/* in order
+│   │   │   │   ├── run-reset.ts      # CLI: truncate all tables
+│   │   │   │   └── migrations/       # SQL migrations (001_add_chain_id.sql)
 │   │   │   ├── demo-apis.ts      # Built-in demo x402 endpoints for testing
 │   │   │   └── types/
 │   │   │       └── index.ts      # Shared TypeScript interfaces
@@ -174,8 +176,9 @@ pnpm build                         # Build all packages
 pnpm test                          # Run tests (proxy)
 
 # Database
-pnpm db:migrate                    # Run schema migration
-pnpm db:seed                       # Insert seed data
+pnpm db:migrate                    # Run schema + migrations/*.sql (auto-scan)
+pnpm db:seed                       # Run all seeds (Base Sepolia + BSC) in order
+pnpm db:reset                      # Truncate all tables
 
 # Contracts (Foundry)
 cd packages/contracts && forge build    # Compile
@@ -261,6 +264,7 @@ MCP Agent → proxyFetch() rewrites URL to /relay with X-Pag0-Target-URL header
 ### Cache Conditions (isCacheable)
 
 Cache only when all 4 conditions are met:
+
 1. HTTP status 2xx
 2. GET, HEAD, or OPTIONS method
 3. No `Cache-Control: no-store` header

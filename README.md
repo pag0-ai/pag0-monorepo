@@ -42,7 +42,7 @@ pag0-monorepo/
 │   │       ├── routes/      # REST API routes (policies, analytics, curation, auth, smart-request, reputation)
 │   │       ├── audit/       # ERC-8004 on-chain audit trail (SKALE)
 │   │       ├── subgraph/    # The Graph subgraph client (GraphQL)
-│   │       ├── db/          # schema.sql, seed.sql, migrations, seed.ts
+│   │       ├── db/          # schema.sql, seeds/, migrations/, run-*.ts
 │   │       └── types/       # Shared TypeScript interfaces
 │   ├── dashboard/     # @pag0/dashboard — Next.js + Tailwind frontend
 │   ├── mcp/           # @pag0/mcp — MCP Server for AI agent demo
@@ -102,8 +102,9 @@ pnpm dev:dashboard    # Dashboard only (localhost:3001)
 pnpm dev:mcp          # MCP server (stdio, separate terminal)
 
 # Database
-pnpm db:migrate       # Apply schema (idempotent)
-pnpm db:seed          # Insert seed data (idempotent)
+pnpm db:migrate       # Apply schema + migrations (idempotent, auto-scan)
+pnpm db:seed          # Run all seeds in order (idempotent)
+pnpm db:reset         # Truncate all tables
 
 # Docker
 pnpm docker:up        # Start Postgres + Redis containers

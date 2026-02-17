@@ -59,10 +59,13 @@ AI Agent (Claude Code)
     │ MCP Tool Call
     ▼
 pag0-mcp (Local Wallet on BSC)
-    │ @x402/fetch → AEON Facilitator (facilitator.aeon.xyz)
+    │ Permit2 EIP-712 signature (spender = proxy relayer)
     ▼
 Pag0 Smart Proxy (Hono + Bun)
-    │ relay → Self-hosted x402 APIs on BSC
+    │ Local Permit2 Facilitator: verify + settle
+    │ → Permit2.permitWitnessTransferFrom() on BSC
+    ▼
+Self-hosted x402 APIs on BSC (Venus, PancakeSwap, AI Analysis)
     ▼
 ERC-8004 Audit → BSC (low gas, ~$0.01/tx)
     ▼
@@ -74,10 +77,12 @@ Subgraph → BSC-compatible indexer (or direct RPC)
 | Component | Base Sepolia | BSC |
 |-----------|-------------|-----|
 | Payment Chain | Base Sepolia (testnet) | BSC Mainnet (`eip155:56`) |
-| Facilitator | Coinbase (built-in) | AEON (`https://facilitator.aeon.xyz`) |
-| Facilitator Contract | N/A (built into SDK) | `0x555e3311a9893c9B17444C1Ff0d88192a57Ef13e` |
+| Facilitator | Coinbase (built-in) | Local Permit2 Facilitator (self-hosted) |
+| Authorization | EIP-3009 (transferWithAuthorization) | Permit2 (PermitWitnessTransferFrom) |
 | Payment Token | USDC (`0x036CbD53842c5426634e7929541eC2318f3dCF7e`) | USDT (`0x55d398326f99059fF775485246999027B3197955`) |
+| Token Decimals | 6 (USDC) | 18 (USDT) |
 | Wallet | CDP Server Wallet (Coinbase) | Local ethers wallet (private key) |
+| Settlement | Via Coinbase facilitator | Proxy relayer calls Permit2.permitWitnessTransferFrom() |
 | Audit Chain | SKALE (zero gas) | BSC (~$0.01/tx) |
 | Subgraph | The Graph (Goldsky) | Direct RPC / BSCScan API |
 | Explorer | basescan.org | bscscan.com |
@@ -121,6 +126,7 @@ Also update `getStatus()` to use "USDT" label when network is BSC (currently har
 #### `src/cdp-wallet.ts`
 
 CDP Server Wallet does **not** support BSC. For BNB Chain version:
+
 - **Deprecate** `CdpWallet` — do not use
 - Use `Pag0Wallet` (local ethers wallet) exclusively
 - Set `WALLET_MODE=local` in env
@@ -224,21 +230,16 @@ Update hardcoded strings:
 // L107: 'Audit trail: ERC-8004 on BSC'
 ```
 
-#### `src/db/seed-resources.ts` (L43)
+#### `src/db/seeds/02_bsc.ts`
 
-```typescript
-// Current
-const jsonPath = join(import.meta.dir, "../../../../base-sepolia-x402-apis.json");
-
-// BSC version
-const jsonPath = join(import.meta.dir, "../../../../bsc-x402-apis.json");
-```
+BSC seed data is now a TypeScript function in `seeds/02_bsc.ts`. It reads `bsc-x402-apis.json` from the monorepo root and inserts BSC endpoint scores + synthetic requests. The seed is executed automatically as part of `pnpm db:seed` (via `run-seed.ts`).
 
 Create `bsc-x402-apis.json` at monorepo root with self-hosted API entries (see Section 4).
 
 #### `src/subgraph/client.ts`
 
 The subgraph URL is already env-configured (`ERC8004_SUBGRAPH_URL`). Options:
+
 1. Deploy a BSC subgraph (if using The Graph's BSC support)
 2. Use direct BSC RPC event queries (simpler for hackathon)
 3. Use BSCScan API for event indexing
@@ -248,6 +249,7 @@ For hackathon speed, option 2 or 3 is recommended.
 #### Other proxy files (NO changes needed)
 
 These are chain-agnostic:
+
 - `src/proxy/relay.ts` — transparent relay
 - `src/proxy/x402.ts` — parses network from 402 response dynamically
 - `src/proxy/core.ts` — chain info comes from env/DB
@@ -317,9 +319,10 @@ The entire codebase assumes **USDC with 6 decimals** (`1 USDC = "1000000"`). BSC
 | `mcp/src/tools/wallet.ts` (L10) | description mentions "USDC" | Change to "USDT" |
 | `mcp/src/tools/policy.ts` (L41) | `"USDC (6 decimals)"` | Change to `"USDT (18 decimals)"` |
 | `mcp/src/tools/wallet-fund.ts` (L11) | `"Base Sepolia only"` | Disable or remove for BSC |
-| `proxy/src/db/seed.sql` | Budget amounts in 6-decimal format | Recalculate for 18 decimals |
+| `proxy/src/db/seeds/01_base-sepolia.ts` | Budget amounts in 6-decimal format | Recalculate for 18 decimals |
 
 **Approach options:**
+
 1. **Use env-driven decimals** — add `TOKEN_DECIMALS=18` env var, use throughout
 2. **Hardcode 18** — simpler for hackathon, less flexible
 3. **Use BSC USDC instead** — `0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d` (also 18 decimals on BSC, same issue)
@@ -390,70 +393,48 @@ Since the x402 Bazaar has 0 APIs on BSC, Pag0 will self-host demo APIs using AEO
 
 | Endpoint | Method | Price | Description | Data Source |
 |----------|--------|-------|-------------|-------------|
-| `/defi/venus/rates` | GET | $0.001 | Venus Protocol lending rates (supply APY, borrow APY per market) | Venus `vToken` contract reads on BSC |
-| `/defi/pancake/quote` | GET | $0.001 | PancakeSwap swap quote (best route, price impact, output amount) | PancakeSwap Smart Router on BSC |
-| `/ai/analyze-token` | POST | $0.005 | AI-powered token analysis (risk factors, holder distribution, liquidity depth) | OpenAI API + BSCScan API |
-| `/ai/risk-score` | POST | $0.005 | DeFi protocol risk score (A+ to D rating with reasoning) | OpenAI API + on-chain data |
+| `/bsc/defi/venus/rates` | GET | $0.001 | Venus Protocol lending rates (supply APY, borrow APY per market) | Venus `vToken` contract reads on BSC |
+| `/bsc/defi/pancake/quote` | GET | $0.001 | PancakeSwap swap quote (best route, price impact, output amount) | PancakeSwap Smart Router on BSC |
+| `/bsc/ai/analyze-token` | POST | $0.005 | AI-powered token analysis (risk factors, holder distribution, liquidity depth) | OpenAI API + BSCScan API |
+| `/bsc/ai/risk-score` | POST | $0.005 | DeFi protocol risk score (A+ to D rating with reasoning) | OpenAI API + on-chain data |
 
 ### Implementation
 
-Using AEON's x402 Hono middleware (from [AEON-Project/bnb-x402](https://github.com/AEON-Project/bnb-x402)):
+Using x402 Hono middleware with a **local Permit2 facilitator** (AEON's facilitator doesn't support Permit2):
 
 ```typescript
-import { Hono } from "hono";
 import { paymentMiddleware, x402ResourceServer } from "@x402/hono";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
-import { HTTPFacilitatorClient } from "@x402/core/server";
+import { LocalBscFacilitatorClient } from "./bsc-facilitator";
 
-const facilitatorClient = new HTTPFacilitatorClient({
-  url: "https://facilitator.aeon.xyz",
-  createAuthHeaders: async () => ({
-    verify: { Authorization: `Bearer ${process.env.AEON_API_KEY}` },
-    settle: { Authorization: `Bearer ${process.env.AEON_API_KEY}` },
-    supported: { Authorization: `Bearer ${process.env.AEON_API_KEY}` },
-  }),
+// Local facilitator: verifies Permit2 EIP-712 signatures + settles via on-chain Permit2
+const facilitatorClient = new LocalBscFacilitatorClient(
+  payToAddress,           // where USDT goes
+  paymentRelayerKey,      // proxy's private key (for on-chain tx, needs BNB gas)
+);
+
+const resourceServer = new x402ResourceServer(facilitatorClient)
+  .register("eip155:56", new ExactEvmScheme());
+
+// Route config with explicit Permit2 asset
+const bscAsset = (dollars: string) => ({
+  amount: usdtAmount(dollars),
+  asset: "0x55d398326f99059fF775485246999027B3197955", // BSC USDT
+  extra: {
+    name: "Tether USD", version: "1",
+    assetTransferMethod: "permit2",
+    spender: relayerAddress,  // proxy relayer = Permit2 spender
+  },
 });
 
-const app = new Hono();
-
-app.use(
-  paymentMiddleware(
-    {
-      "GET /defi/venus/rates": {
-        accepts: [{
-          scheme: "exact",
-          price: "$0.001",
-          network: "eip155:56",
-          payTo: process.env.EVM_ADDRESS as `0x${string}`,
-        }],
-        description: "Venus Protocol real-time lending rates on BNB Chain",
-        mimeType: "application/json",
-      },
-      "GET /defi/pancake/quote": {
-        accepts: [{
-          scheme: "exact",
-          price: "$0.001",
-          network: "eip155:56",
-          payTo: process.env.EVM_ADDRESS as `0x${string}`,
-        }],
-        description: "PancakeSwap optimal swap route and price quote",
-        mimeType: "application/json",
-      },
-      "POST /ai/analyze-token": {
-        accepts: [{
-          scheme: "exact",
-          price: "$0.005",
-          network: "eip155:56",
-          payTo: process.env.EVM_ADDRESS as `0x${string}`,
-        }],
-        description: "AI-powered BNB Chain token risk analysis",
-        mimeType: "application/json",
-      },
-    },
-    new x402ResourceServer(facilitatorClient)
-      .register("eip155:56", new ExactEvmScheme())
-  ),
-);
+app.use(paymentMiddleware({
+  "GET /bsc/defi/venus/rates": {
+    accepts: [{ scheme: "exact", price: bscAsset("$0.001"), network: "eip155:56", payTo: payToAddress }],
+    description: "Venus Protocol lending rates on BSC",
+    mimeType: "application/json",
+  },
+  // ... more routes
+}, resourceServer));
 ```
 
 ### Venus Protocol Data Fetching
@@ -486,57 +467,52 @@ const PANCAKE_ROUTER = "0x13f4EA83D0bd40E75C8222255bc855a974568Dd4";
 
 ---
 
-## 5. AEON x402 Integration Details
+## 5. Permit2 x402 Integration Details
+
+### Why Permit2 (not EIP-3009 or AEON)
+
+BSC USDT does **not** support EIP-3009 (`transferWithAuthorization`). No BSC stablecoin (USDT, USDC, FDUSD, TUSD, DAI) supports it — they're all basic BEP-20 bridge wrappers without `permit` or `DOMAIN_SEPARATOR`.
+
+AEON's facilitator crashes with 500 on Permit2 payloads (tries to read EIP-3009 fields that don't exist).
+
+**Solution**: Local Permit2 Facilitator using Uniswap's universal Permit2 contract (`0x000000000022D473030F116dDEE9F6B43aC78BA3`), already deployed on BSC.
 
 ### Protocol Flow on BSC
 
 ```
-1. Client → Server: GET /defi/venus/rates
-2. Server → Client: 402 Payment Required
+1. Client → Proxy: GET /bsc/defi/venus/rates
+2. Proxy → Client: 402 Payment Required
    {
      "accepts": [{
        "scheme": "exact",
        "network": "eip155:56",
-       "maxAmountRequired": "1000",
+       "amount": "1000000000000000",
        "asset": "0x55d398326f99059fF775485246999027B3197955",
        "payTo": "0x...",
-       "maxTimeoutSeconds": 300,
-       "extra": { "name": "USDT", "version": "1" }
+       "extra": { "name": "Tether USD", "version": "1", "assetTransferMethod": "permit2", "spender": "0xRelayerAddress" }
      }]
    }
-3. Client: Sign payment (ERC-20 approve + tokenTransferWithAuthorization)
-4. Client → Server: Retry with PAYMENT-SIGNATURE header
-5. Server → AEON Facilitator: POST /verify
-6. Server → AEON Facilitator: POST /settle
-7. AEON → BSC: On-chain USDT transfer
-8. Server → Client: 200 OK + data + tx_hash
+3. Client: Sign Permit2 EIP-712 typed data (spender = proxy relayer address)
+4. Client → Proxy: Retry with PAYMENT-SIGNATURE header (base64 payload)
+5. Proxy (LocalBscFacilitatorClient): verify — recover signer, check amounts/token/payTo/deadline
+6. Proxy (LocalBscFacilitatorClient): settle — call Permit2.permitWitnessTransferFrom() on BSC
+7. Permit2 → BSC: On-chain USDT transfer (user → payTo)
+8. Proxy → Client: 200 OK + data + tx_hash
 ```
 
-### EIP-3009 vs ERC-20 Approve
+### Permit2 Pre-requisite
 
-BSC USDT does **not** support EIP-3009 (`transferWithAuthorization`). AEON solves this with a custom approach:
+One-time ERC-20 approval: user calls `USDT.approve(PERMIT2_ADDRESS, MAX_UINT256)` (~$0.01 BNB gas).
 
-1. Client calls `approve(facilitatorAddress, amount)` on USDT contract
-2. Client signs a typed data message (`tokenTransferWithAuthorization`) with `needApprove: true`
-3. AEON facilitator executes the transfer using the pre-approved allowance
+The MCP server provides `pag0_approve_permit2` tool for this. After approval, all subsequent x402 payments use gasless off-chain Permit2 signatures.
 
-**Facilitator contract for approve**: `0x555e3311a9893c9B17444C1Ff0d88192a57Ef13e`
+### Key Addresses
 
-This means the first x402 payment on BSC requires an `approve` transaction (gas cost ~$0.01), after which subsequent payments are gasless for the client.
-
-### AEON SDK Setup
-
-```bash
-# Clone AEON's BNB x402 SDK
-git clone https://github.com/AEON-Project/bnb-x402.git
-cd bnb-x402/typescript
-pnpm install && pnpm build
-```
-
-Or install the published packages (if available on npm):
-```bash
-pnpm add @x402/hono @x402/fetch @x402/evm @x402/core
-```
+| Contract | Address |
+|----------|---------|
+| Permit2 | `0x000000000022D473030F116dDEE9F6B43aC78BA3` |
+| BSC USDT | `0x55d398326f99059fF775485246999027B3197955` |
+| x402 SDK packages | `@x402/hono`, `@x402/fetch`, `@x402/evm`, `@x402/core` |
 
 ---
 
@@ -556,9 +532,9 @@ Hackathon requirement: **"Contract address or tx hash on BSC or opBNB"**
 
 | # | Transaction | Chain | Purpose |
 |---|-------------|-------|---------|
-| 4 | USDT `approve()` | BSC Mainnet | Approve AEON facilitator for USDT |
-| 5 | x402 payment for `/defi/venus/rates` | BSC Mainnet | First x402 payment on BSC via Pag0 |
-| 6 | x402 payment for `/ai/analyze-token` | BSC Mainnet | AI Agent paying for API on BSC |
+| 4 | USDT `approve(Permit2)` | BSC Mainnet | One-time Permit2 approval for USDT |
+| 5 | `permitWitnessTransferFrom` for Venus rates | BSC Mainnet | First x402 payment on BSC via Pag0 |
+| 6 | `permitWitnessTransferFrom` for token analysis | BSC Mainnet | AI Agent paying for API on BSC |
 
 ### Required BSC Resources
 
@@ -571,25 +547,30 @@ Hackathon requirement: **"Contract address or tx hash on BSC or opBNB"**
 ## 7. Demo Scenario (2-3 min video)
 
 ### Scene 1: Setup (30s)
+
 - Show Pag0 dashboard on BSC (network: BSC, token: USDT)
 - Show AI Agent (Claude Code) with Pag0 MCP tools
 
 ### Scene 2: API Discovery (30s)
+
 - AI Agent: "What BNB Chain DeFi APIs are available?"
 - Pag0 MCP → `pag0_recommend_apis` → Shows Venus rates, PancakeSwap quotes ranked by score
 
 ### Scene 3: x402 Payment on BSC (45s)
+
 - AI Agent: "Get current Venus lending rates"
 - Pag0 MCP → relay → 402 → USDT payment via AEON → 200 OK
 - Show BSCScan tx: USDT transferred on BSC
 - Show Pag0 dashboard: budget updated, API score refreshed
 
 ### Scene 4: Smart Features (30s)
+
 - Show spend firewall blocking over-budget request
 - Show smart cache saving duplicate payment
 - Show curation engine ranking APIs by quality
 
 ### Scene 5: On-chain Audit (15s)
+
 - Show ReputationRegistry on BSCScan
 - Show `FeedbackGiven` events with quality scores
 
@@ -598,6 +579,7 @@ Hackathon requirement: **"Contract address or tx hash on BSC or opBNB"**
 ## 8. Submission Checklist
 
 ### Required
+
 - [ ] GitHub Repository (public) — fork or new repo with BSC config
 - [ ] Contract addresses on BSC (ReputationRegistry, ValidationRegistry)
 - [ ] Transaction hashes on BSC (deployment + x402 payments)
@@ -606,6 +588,7 @@ Hackathon requirement: **"Contract address or tx hash on BSC or opBNB"**
 - [ ] Reproduction instructions in README
 
 ### Bonus
+
 - [ ] AI Build Log (`AI-BUILD-LOG.md` with Claude Code usage evidence)
 - [ ] Git commits tagged with `[AI]`
 
@@ -615,10 +598,10 @@ Hackathon requirement: **"Contract address or tx hash on BSC or opBNB"**
 
 | Risk | Probability | Impact | Mitigation |
 |------|-------------|--------|------------|
-| AEON facilitator API key not obtainable | Medium | High | Contact AEON team via Discord; fallback: mock facilitator for demo |
-| BSC USDT approve flow adds UX friction | Low | Low | Pre-approve large allowance once; document in demo |
+| Permit2 on-chain settle fails (gas, nonce) | Medium | Medium | Fallback: verify-only mode (signature verified, settlement logged) |
+| BSC USDT Permit2 approve adds UX friction | Low | Low | One-time max approval via pag0_approve_permit2 tool; documented in demo |
 | Gas costs on BSC for audit trail | Low | Low | ~$0.01/tx, negligible vs SKALE zero-gas |
-| x402 SDK incompatibility with AEON | Medium | High | Test early; AEON's bnb-x402 repo has working examples |
+| x402 SDK Permit2 spender mismatch | Low | Medium | Manual Permit2 payload creation bypasses SDK's hardcoded spender |
 | Time constraint (2 days) | High | High | Prioritize: contracts deploy > MCP wallet > demo APIs > video |
 
 ---
@@ -626,6 +609,7 @@ Hackathon requirement: **"Contract address or tx hash on BSC or opBNB"**
 ## 10. Priority Order (2-Day Sprint)
 
 ### Day 1: Infrastructure
+
 1. **Deploy contracts to BSC** (30 min) — `forge script` with BSC RPC
 2. **Update wallet.ts** for BSC (30 min) — add BSC network config
 3. **Update proxy-fetch.ts** for BSC (1 hr) — register `eip155:56`, AEON facilitator
@@ -633,22 +617,23 @@ Hackathon requirement: **"Contract address or tx hash on BSC or opBNB"**
 5. **Test E2E payment flow** (2 hr) — MCP → proxy → demo API → AEON → BSC tx
 
 ### Day 2: Polish & Submit
-6. **Update proxy env & seed data** (1 hr) — BSC config, `bsc-x402-apis.json`
-7. **Update dashboard** (1 hr) — BSCScan links, BSC network label
-8. **Record demo video** (2 hr) — 3 scenes, screen recording
-9. **Write AI Build Log** (30 min) — document AI usage
-10. **Submit to DoraHacks** (30 min) — repo, video, contract addresses
+
+1. **Update proxy env & seed data** (1 hr) — BSC config, `bsc-x402-apis.json`
+2. **Update dashboard** (1 hr) — BSCScan links, BSC network label
+3. **Record demo video** (2 hr) — 3 scenes, screen recording
+4. **Write AI Build Log** (30 min) — document AI usage
+5. **Submit to DoraHacks** (30 min) — repo, video, contract addresses
 
 ---
 
 ## References
 
-- **AEON bnb-x402 SDK**: https://github.com/AEON-Project/bnb-x402
-- **AEON Facilitator API**: `https://facilitator.aeon.xyz` (`/verify`, `/settle`)
-- **AEON Facilitator Contract (BSC)**: `0x555e3311a9893c9B17444C1Ff0d88192a57Ef13e`
+- **Uniswap Permit2**: <https://github.com/Uniswap/permit2>
+- **Permit2 on BSC**: `0x000000000022D473030F116dDEE9F6B43aC78BA3`
 - **BSC USDT Contract**: `0x55d398326f99059fF775485246999027B3197955`
-- **Venus Protocol (BSC)**: https://venus.io/
-- **PancakeSwap Router API**: https://router-api.pancakeswap.com
-- **Hackathon Page**: https://dorahacks.io/hackathon/goodvibes/detail
-- **AEON x402 Launch PR**: https://www.prnewswire.com/news-releases/aeon-launches-x402-facilitator-on-bnb-chain-advancing-real-world-autonomous-ai-payments-302599547.html
-- **BNB Chain Developers on x402**: https://x.com/BNBChainDevs/status/1983198549039780026
+- **x402 Protocol SDK**: `@x402/hono`, `@x402/evm`, `@x402/core`, `@x402/fetch`
+- **Venus Protocol (BSC)**: <https://venus.io/>
+- **PancakeSwap Router API**: <https://router-api.pancakeswap.com>
+- **Hackathon Page**: <https://dorahacks.io/hackathon/goodvibes/detail>
+- **AEON x402 Launch PR**: <https://www.prnewswire.com/news-releases/aeon-launches-x402-facilitator-on-bnb-chain-advancing-real-world-autonomous-ai-payments-302599547.html>
+- **BNB Chain Developers on x402**: <https://x.com/BNBChainDevs/status/1983198549039780026>
