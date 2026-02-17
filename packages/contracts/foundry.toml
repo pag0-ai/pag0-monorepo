@@ -9,6 +9,9 @@ fs_permissions = [{ access = "read-write", path = "./" }]
 
 [rpc_endpoints]
 skale = "https://base-sepolia-testnet.skalenodes.com/v1/bite-v2-sandbox"
+bsc = "https://bsc-dataseed.binance.org"
+bsc-testnet = "https://data-seed-prebsc-1-s1.binance.org:8545"
 
 [etherscan]
-# SKALE doesn't use Etherscan verification
+bsc = { key = "${BSCSCAN_API_KEY}" }
+
