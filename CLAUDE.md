@@ -34,7 +34,7 @@
 ```
 pag0-monorepo/
 ├── packages/
-│   ├── proxy/                    # @pag0/proxy — Hono + Bun backend
+│   ├── proxy/                    # @pag0/proxy — Hono + Bun backend [SUBMODULE: pag0-ai/pag0-proxy]
 │   │   ├── src/
 │   │   │   ├── index.ts          # Entry point + Hono app + route registration
 │   │   │   ├── proxy/
@@ -81,7 +81,7 @@ pag0-monorepo/
 │   │   │       └── index.ts      # Shared TypeScript interfaces
 │   │   ├── package.json
 │   │   └── tsconfig.json
-│   ├── dashboard/                # @pag0/dashboard — Next.js + Tailwind
+│   ├── dashboard/                # @pag0/dashboard — Next.js + Tailwind [SUBMODULE: pag0-ai/pag0-dashboard]
 │   │   ├── app/
 │   │   │   ├── dashboard/page.tsx
 │   │   │   ├── policies/page.tsx
@@ -135,6 +135,29 @@ pag0-monorepo/
 ```
 
 > **Middleware**: Auth, Rate Limiter, and Chain ID are separate Hono middleware files in `proxy/src/middleware/`.
+
+### Git Submodules
+
+`packages/proxy` and `packages/dashboard` are **private git submodules** with their own repositories. `packages/contracts/lib/forge-std` is Foundry's standard library submodule.
+
+| Path | Repository | Note |
+|------|-----------|------|
+| `packages/proxy` | `git@github.com:pag0-ai/pag0-proxy.git` | Private. Hono + Bun backend |
+| `packages/dashboard` | `git@github.com:pag0-ai/pag0-dashboard.git` | Private. Next.js frontend |
+| `packages/contracts/lib/forge-std` | `https://github.com/foundry-rs/forge-std` | Foundry std lib (public) |
+
+```bash
+# Clone with submodules
+git clone --recurse-submodules git@github.com:pag0-ai/pag0-monorepo.git
+
+# If already cloned without submodules
+git submodule update --init --recursive
+
+# Update submodules to latest
+git submodule update --remote
+```
+
+> **Important**: Commits inside `packages/proxy` or `packages/dashboard` must be pushed to their respective repos first, then the monorepo submodule ref updated with `git add packages/proxy packages/dashboard && git commit`.
 
 ---
 
