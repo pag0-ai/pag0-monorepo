@@ -33,10 +33,28 @@ pag0-monorepo/
 ├── packages/
 │   ├── proxy/         # @pag0/proxy — Hono + Bun backend
 │   │   └── src/
-│   │       ├── db/    # schema.sql, seed.sql, migrate.ts, seed.ts
-│   │       └── ...    # proxy, policy, curation, cache, analytics
+│   │       ├── proxy/       # ProxyCore (request relay), X402Integration, transparent relay
+│   │       ├── policy/      # PolicyEngine (budget/whitelist/blacklist), BudgetTracker
+│   │       ├── curation/    # CurationEngine (scoring, recommendations, comparisons)
+│   │       ├── cache/       # CacheLayer (Redis, TTL, isCacheable), Redis client
+│   │       ├── analytics/   # AnalyticsCollector (async metrics)
+│   │       ├── middleware/   # Auth (API Key + JWT), Rate Limit, Chain ID
+│   │       ├── routes/      # REST API routes (policies, analytics, curation, auth, smart-request, reputation)
+│   │       ├── audit/       # ERC-8004 on-chain audit trail (SKALE)
+│   │       ├── subgraph/    # The Graph subgraph client (GraphQL)
+│   │       ├── db/          # schema.sql, seed.sql, migrations, seed.ts
+│   │       └── types/       # Shared TypeScript interfaces
 │   ├── dashboard/     # @pag0/dashboard — Next.js + Tailwind frontend
-│   └── mcp/           # @pag0/mcp — MCP Server for Claude Code demo
+│   ├── mcp/           # @pag0/mcp — MCP Server for AI agent demo
+│   │   └── src/
+│   │       ├── tools/       # 16 MCP tools (wallet, proxy, policy, curation, analytics, smart, audit)
+│   │       ├── proxy-fetch.ts   # x402 SDK integration (wrapFetchWithPayment → /relay)
+│   │       ├── x402-payment.ts  # Payment payload creation (ExactEvmSchemeV1)
+│   │       ├── wallet.ts        # Local ethers.Wallet (Base Sepolia / BSC)
+│   │       ├── cdp-wallet.ts    # Coinbase CDP Server Wallet (auto-faucet)
+│   │       ├── client.ts        # Pag0 Proxy API HTTP client
+│   │       └── index.ts         # MCP Server entry (stdio transport)
+│   └── contracts/     # @pag0/contracts — Foundry (ERC-8004 Solidity on SKALE)
 ├── docs/              # Product & technical documentation
 ├── docker-compose.yml # Local Postgres + Redis
 ├── .env.local         # Environment variables (gitignored)
@@ -114,10 +132,11 @@ The schema includes 10 tables: `users`, `projects`, `policies`, `budgets`, `requ
 
 Seed data includes:
 
-- 8 API categories (AI, Data, Blockchain, IoT, Finance, Social, Communication, Storage)
+- 8 API categories (AI Agents, Data & Analytics, IPFS & Storage, Content & Media, Web & Automation, Agent Infrastructure, Crypto & NFT, Developer Tools)
 - Demo user (`demo@pag0.dev`, tier: pro)
 - Demo project with default policy (5 USDC/request, 50 USDC/day, 500 USDC/month)
-- 5 sample endpoint scores (OpenAI, Anthropic, Infura, CoinGecko, Google Storage)
+- 20 endpoint scores from real x402 Base Sepolia APIs (dctx.link, grapevine, pinata, etc.)
+- ~70 synthetic request logs across 7 days for realistic analytics display
 
 ### Testing the Setup
 

@@ -22,7 +22,7 @@
 | Blockchain | SKALE (Zero Gas) | `ethers` |
 | Dashboard | Next.js + Tailwind | `recharts`, `@tanstack/react-query`, `lucide-react` |
 | Hosting | Fly.io (backend) / Vercel (dashboard) | - |
-| MCP Server | MCP SDK + ethers | `@modelcontextprotocol/sdk`, `ethers`, `zod` |
+| MCP Server | MCP SDK + ethers + CDP SDK | `@modelcontextprotocol/sdk`, `ethers`, `@coinbase/cdp-sdk`, `@x402/fetch`, `zod` |
 | Dev | TypeScript strict | `@types/node`, `typescript` |
 
 > **Note**: Redis client uses `ioredis` (TCP). Only switch to `@upstash/redis` (REST) when migrating to Cloudflare Workers.
@@ -36,23 +36,47 @@ pag0-monorepo/
 ├── packages/
 │   ├── proxy/                    # @pag0/proxy — Hono + Bun backend
 │   │   ├── src/
-│   │   │   ├── index.ts          # Entry point + Hono routes + middleware (auth, rate-limit)
+│   │   │   ├── index.ts          # Entry point + Hono app + route registration
 │   │   │   ├── proxy/
-│   │   │   │   ├── core.ts       # ProxyCore class (request relay orchestration)
-│   │   │   │   └── x402.ts       # x402 SDK wrapper (X402Integration)
+│   │   │   │   ├── core.ts       # ProxyCore class (8-step request relay orchestration)
+│   │   │   │   ├── x402.ts       # X402Integration (forward, parse 402, payment relay)
+│   │   │   │   └── relay.ts      # Transparent /relay endpoint (raw 402 pass-through)
 │   │   │   ├── policy/
-│   │   │   │   ├── engine.ts     # PolicyEngine (budget/whitelist/blacklist validation)
-│   │   │   │   └── budget.ts     # BudgetTracker (daily/monthly spend tracking)
+│   │   │   │   ├── engine.ts     # PolicyEngine (6-step validation: blacklist/whitelist/budget)
+│   │   │   │   └── budget.ts     # BudgetTracker (Redis + PostgreSQL, multi-chain)
 │   │   │   ├── curation/
-│   │   │   │   └── engine.ts     # CurationEngine (scoring, recommendations, comparisons)
+│   │   │   │   └── engine.ts     # CurationEngine (4-dimension scoring, recommendations, comparisons)
 │   │   │   ├── cache/
-│   │   │   │   ├── redis.ts      # Redis client configuration
-│   │   │   │   └── layer.ts      # CacheLayer (key generation, TTL, invalidation)
+│   │   │   │   ├── redis.ts      # Redis client configuration (ioredis TCP)
+│   │   │   │   └── layer.ts      # CacheLayer (4-condition isCacheable, TTL rules)
 │   │   │   ├── analytics/
-│   │   │   │   └── collector.ts  # AnalyticsCollector (metrics collection/storage)
+│   │   │   │   └── collector.ts  # AnalyticsCollector (fire-and-forget, dual Redis+PG storage)
+│   │   │   ├── middleware/
+│   │   │   │   ├── auth.ts       # API Key (SHA-256) + JWT authentication
+│   │   │   │   ├── rate-limit.ts # Tier-based rate limiting (60/1000/10000 req/min)
+│   │   │   │   └── chain-id.ts   # X-Pag0-Chain-ID extraction (default: 56 BSC)
+│   │   │   ├── routes/
+│   │   │   │   ├── policies.ts   # Policy CRUD
+│   │   │   │   ├── analytics.ts  # Analytics queries (summary, endpoints, costs, cache)
+│   │   │   │   ├── curation.ts   # Curation API (recommend, compare, rankings, score)
+│   │   │   │   ├── auth.ts       # Register / login
+│   │   │   │   ├── smart-request.ts  # AI-driven endpoint selection by category
+│   │   │   │   └── reputation.ts # ERC-8004 feedback submission / queries
+│   │   │   ├── audit/
+│   │   │   │   └── erc8004.ts    # On-chain audit trail (SKALE, retry queue)
+│   │   │   ├── subgraph/
+│   │   │   │   ├── client.ts     # GraphQL client for The Graph (reputation data)
+│   │   │   │   ├── queries.ts    # GraphQL query definitions
+│   │   │   │   └── types.ts      # Subgraph type definitions
 │   │   │   ├── db/
 │   │   │   │   ├── postgres.ts   # PostgreSQL client
-│   │   │   │   └── schema.sql    # DDL script
+│   │   │   │   ├── schema.sql    # DDL script (10 tables)
+│   │   │   │   ├── seed.sql      # Seed data (categories, demo user, 20 endpoints, ~70 requests)
+│   │   │   │   ├── seed.ts       # TypeScript seed runner
+│   │   │   │   ├── seed-resources.ts  # Resource enrichment from bsc-x402-apis.json
+│   │   │   │   ├── migrate.ts    # Migration runner
+│   │   │   │   └── migrations/   # SQL migrations (001_add_chain_id.sql)
+│   │   │   ├── demo-apis.ts      # Built-in demo x402 endpoints for testing
 │   │   │   └── types/
 │   │   │       └── index.ts      # Shared TypeScript interfaces
 │   │   ├── package.json
@@ -68,24 +92,31 @@ pag0-monorepo/
 │   │   └── tsconfig.json
 │   ├── contracts/                 # @pag0/contracts — Foundry (ERC-8004 Solidity)
 │   │   ├── src/
-│   │   │   ├── ReputationRegistry.sol  # giveFeedback() + FeedbackGiven event
-│   │   │   └── ValidationRegistry.sol  # validationRequest() + ValidationRequested event
+│   │   │   ├── ReputationRegistry.sol  # giveFeedback() + FeedbackGiven event (stateless)
+│   │   │   └── ValidationRegistry.sol  # validationRequest() + ValidationRequested event (stateless)
 │   │   ├── script/Deploy.s.sol         # Forge deploy script → deployments.json
 │   │   ├── test/                       # Forge tests
-│   │   ├── foundry.toml                # Solc 0.8.19, Shanghai EVM, SKALE RPC
+│   │   ├── foundry.toml                # Solc 0.8.19, Shanghai EVM, SKALE + BSC RPC
 │   │   └── deployments.json            # Deployed addresses (SKALE bite-v2-sandbox)
-│   └── mcp/                      # @pag0/mcp — Demo Agent MCP Server
+│   └── mcp/                      # @pag0/mcp — MCP Server for AI agent demo (16 tools)
 │       ├── src/
 │       │   ├── index.ts          # MCP Server entry (stdio transport)
 │       │   ├── client.ts         # Pag0 Proxy API HTTP client
-│       │   ├── wallet.ts         # ethers.Wallet wrapper (balance query + payment signing)
+│       │   ├── proxy-fetch.ts    # x402 SDK integration (wrapFetchWithPayment → /relay)
+│       │   ├── x402-payment.ts   # Payment payload creation (ExactEvmSchemeV1, EIP-3009)
+│       │   ├── wallet.ts         # Pag0Wallet — local ethers.Wallet (Base Sepolia / BSC)
+│       │   ├── cdp-wallet.ts     # CdpWallet — Coinbase CDP Server Wallet (auto-faucet)
 │       │   └── tools/
 │       │       ├── wallet.ts     # pag0_wallet_status
-│       │       ├── proxy.ts      # pag0_request (402→sign→retry)
+│       │       ├── wallet-fund.ts # pag0_wallet_fund (CDP faucet)
+│       │       ├── proxy.ts      # pag0_request (402→sign→retry via proxyFetch)
+│       │       ├── smart.ts      # pag0_smart_request (auto-select best + manual 402 handling)
 │       │       ├── policy.ts     # pag0_check_budget, pag0_check_policy, pag0_list_policies
 │       │       ├── curation.ts   # pag0_recommend, pag0_compare, pag0_rankings, pag0_score
-│       │       └── analytics.ts  # pag0_spending, pag0_cache_stats, pag0_tx_history
-│       ├── .env                  # PAG0_API_URL, PAG0_API_KEY, WALLET_PRIVATE_KEY
+│       │       ├── analytics.ts  # pag0_spending, pag0_cache_stats, pag0_tx_history
+│       │       ├── audit.ts      # pag0_audit_trail, pag0_reputation
+│       │       └── auth.ts       # Helper: injectAuthHeaders
+│       ├── .env                  # PAG0_API_URL, PAG0_API_KEY, WALLET_MODE, WALLET_PRIVATE_KEY, CDP keys
 │       ├── package.json
 │       └── tsconfig.json
 ├── subgraph/                     # The Graph subgraph (ERC-8004 indexer)
@@ -103,7 +134,7 @@ pag0-monorepo/
 └── tsconfig.json                 # Shared TS configuration
 ```
 
-> **Middleware**: Auth (API Key validation) and Rate Limiter are implemented as Hono middleware in `index.ts`.
+> **Middleware**: Auth, Rate Limiter, and Chain ID are separate Hono middleware files in `proxy/src/middleware/`.
 
 ---
 
@@ -160,7 +191,9 @@ SKALE_RPC_URL, ERC8004_SIGNER_KEY, ERC8004_REPUTATION_REGISTRY, ERC8004_VALIDATI
 JWT_SECRET, API_KEY_SALT, ENCRYPTION_KEY, CORS_ORIGINS
 
 # MCP Server (packages/mcp)
-PAG0_API_URL, PAG0_API_KEY, WALLET_PRIVATE_KEY, NETWORK
+PAG0_API_URL, PAG0_API_KEY, WALLET_MODE, WALLET_PRIVATE_KEY, NETWORK
+# CDP Wallet (when WALLET_MODE=cdp)
+CDP_API_KEY_ID, CDP_API_KEY_SECRET
 ```
 
 > **Important**: Redis credentials may already exist in the `.env` file. Extend the existing file rather than creating a new one.
@@ -169,23 +202,31 @@ PAG0_API_URL, PAG0_API_KEY, WALLET_PRIVATE_KEY, NETWORK
 
 ## Architecture & Core Concepts
 
-### 5 Core Components
+### 8 Core Components
 
-1. **Proxy Core** — x402 request relay, 402 response parsing, payment relay
-2. **Policy Engine (Spend Firewall)** — budget limits, whitelist/blacklist, approval workflows
-3. **Curation Engine** — endpoint scoring (cost/latency/reliability), recommendations, comparisons
-4. **Cache Layer** — Redis response caching, TTL management, pattern-based rules
-5. **Analytics Collector** — request metrics collection/aggregation/storage (async)
+1. **Proxy Core** — x402 request relay (POST `/proxy`), transparent relay (ALL `/relay`), 402 response parsing, payment relay
+2. **Policy Engine (Spend Firewall)** — 6-step validation: blacklist → whitelist → per-request limit → daily/monthly budget (multi-chain)
+3. **Curation Engine** — 4-dimension scoring (cost 0.3, latency 0.25, reliability 0.25, reputation 0.2), recommendations, comparisons
+4. **Cache Layer** — Redis response caching, 4-condition isCacheable, pattern-based TTL rules
+5. **Analytics Collector** — fire-and-forget async metrics, dual storage (Redis real-time + PostgreSQL source of truth)
+6. **ERC-8004 Audit Trail** — on-chain feedback via SKALE `ReputationRegistry.giveFeedback()`, IPFS metadata, retry queue
+7. **Subgraph Client** — GraphQL client for The Graph, reputation queries, Redis-cached (300s TTL)
+8. **Smart Request** — AI-driven endpoint selection by category (recommend → compare → request)
 
 ### Request Flow
 
 ```
-Agent → Pag0 Proxy → Auth Check → Policy Check → Cache Check
-  → [Cache HIT] → Response + metadata (cost=0)
-  → [Cache MISS] → x402 Server → 402 response → Agent signs → Facilitator verification
-    → Post-processing: Cache Store + Analytics Log (async) + Budget Update
-    → Response + metadata (cost, latency, cache info)
+MCP Agent → proxyFetch() rewrites URL to /relay with X-Pag0-Target-URL header
+  → Pag0 Proxy /relay → Auth Check → Chain ID → Rate Limit → Policy Check → Cache Check
+    → [Cache HIT] → Response + X-Pag0-* metadata headers (cost=0)
+    → [Cache MISS] → Forward to x402 Server
+      → [402] → Proxy returns 402 + paymentInfo to MCP → MCP signs (ExactEvmSchemeV1)
+        → MCP retries with X-Payment header (base64) → Proxy forwards to x402
+      → [200] → Cache Store + Analytics Log (async) + Budget Deduct + ERC-8004 Audit (async)
+        → Response + X-Pag0-* metadata headers (cost, latency, cached, budget-remaining)
 ```
+
+> **Key**: MCP ONLY communicates with the proxy (never directly with x402 servers). The x402 SDK's `wrapFetchWithPayment` handles the 402→sign→retry loop automatically for `pag0_request`. `pag0_smart_request` uses manual 402 handling.
 
 ### CRITICAL INVARIANTS
 
@@ -198,9 +239,9 @@ Agent → Pag0 Proxy → Auth Check → Policy Check → Cache Check
 
 Cache only when all 4 conditions are met:
 1. HTTP status 2xx
-2. GET or idempotent method
+2. GET, HEAD, or OPTIONS method
 3. No `Cache-Control: no-store` header
-4. Response size < `maxCacheSizeBytes`
+4. Response size < `maxCacheSizeBytes` (default: 1MB)
 
 ### Performance Targets (P95)
 
@@ -231,18 +272,19 @@ Cache only when all 4 conditions are met:
 | `endpoint_metrics_daily` | Daily aggregations |
 | `endpoint_metrics_monthly` | Monthly aggregations |
 
-> **categories seed data**: AI, Data, Blockchain, IoT, Finance, Social, Communication, Storage (8 total)
+> **categories seed data**: AI Agents, Data & Analytics, IPFS & Storage, Content & Media, Web & Automation, Agent Infrastructure, Crypto & NFT, Developer Tools (8 total)
 
-### Redis — 6 Key Patterns
+### Redis — 8 Key Patterns
 
 ```
 cache:{sha256(url+method+body)}           → JSON response    (TTL: configurable, default 300s)
-budget:{projectId}:daily                   → spent amount     (TTL: midnight UTC)
-budget:{projectId}:monthly                 → spent amount     (TTL: end of month)
+budget:{projectId}:{chainId}:daily         → spent amount     (TTL: midnight UTC)
+budget:{projectId}:{chainId}:monthly       → spent amount     (TTL: end of month)
 rate:{projectId}:{window}                  → request count    (TTL: 60s)
 score:{endpoint}                           → EndpointScore    (TTL: 300s)
 metrics:{projectId}:{endpoint}:hourly      → hash counters    (TTL: 7200s)
 nonce:{paymentId}                          → "1"              (TTL: 3600s, replay prevention)
+subgraph:{hash}                            → GraphQL result   (TTL: 300s)
 ```
 
 ---
@@ -253,7 +295,9 @@ nonce:{paymentId}                          → "1"              (TTL: 3600s, rep
 
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/proxy` | x402 request relay (core) |
+| POST | `/proxy` | x402 request relay (JSON-wrapped, with payment handling) |
+| ALL | `/relay` | Transparent pass-through relay (raw 402, X-Pag0-Target-URL header) |
+| POST | `/api/smart-request` | AI-driven endpoint selection by category + auto-call |
 | GET | `/api/policies` | List policies |
 | POST | `/api/policies` | Create policy |
 | GET | `/api/policies/:id` | Get policy details |
@@ -268,17 +312,23 @@ nonce:{paymentId}                          → "1"              (TTL: 3600s, rep
 | GET | `/api/curation/rankings` | Rankings by category |
 | GET | `/api/curation/categories` | Category list |
 | GET | `/api/curation/score/:endpoint` | Individual endpoint score |
+| POST | `/api/reputation/feedback` | Submit ERC-8004 feedback |
+| GET | `/api/reputation/agent/:agentId` | Get agent reputation from subgraph |
+| GET | `/api/reputation/leaderboard` | Reputation leaderboard |
 | POST | `/api/auth/register` | User registration |
 | POST | `/api/auth/login` | Login |
 | GET | `/api/auth/me` | Current user info |
 | GET | `/health` | Health check |
+| GET | `/.well-known/agent.json` | A2A protocol agent card |
+| GET | `/llms.txt` | LLM-readable documentation |
 
 ### Authentication & Rate Limiting
 
 - **Auth Header**: `X-Pag0-API-Key: pag0_live_{32_char_random}`
-- **Rate Limit**:
-  - Free: 60 req/min, 1,000 req/day
-  - Pro: 1,000 req/min, Unlimited req/day
+- **Rate Limit** (per-minute, Redis counter with 60s window):
+  - Free: 60 req/min
+  - Pro: 1,000 req/min
+  - Enterprise: 10,000 req/min
 - **Response Format**: `application/json`
 
 > **Note**: The `04-API-SPEC.md` TL;DR states "1,000/min freemium", but per the detailed Rate Limiting table, Free=60/min is the accurate value.
@@ -312,16 +362,20 @@ nonce:{paymentId}                          → "1"              (TTL: 3600s, rep
 
 ### MVP Scope (Included)
 
-- Proxy Core, Policy Engine, Curation Engine, Cache Layer, Analytics Collector
-- Web Dashboard (basic visualization, policy management, API rankings)
-- 3 demo scenarios (Policy enforcement, Cache savings, API curation)
+- 8 core modules: Proxy Core, Policy Engine, Curation Engine, Cache Layer, Analytics Collector, ERC-8004 Audit Trail, Subgraph Client, Smart Request
+- 16 MCP tools: wallet (2), proxy (1), smart (1), policy (3), curation (4), analytics (3), audit (2)
+- Two wallet modes: Local ethers.Wallet + Coinbase CDP Server Wallet
+- ERC-8004 smart contracts deployed on SKALE (ReputationRegistry + ValidationRegistry)
+- The Graph subgraph indexing on-chain payment feedback
+- Web Dashboard (analytics, policy management, API rankings)
+- 10-step demo script passing end-to-end with real x402 payments
+- Multi-chain support (Base Sepolia, BSC) via chain_id column
 
 ### MVP Scope (Excluded — Post-hackathon)
 
 - Approval workflow
 - Anomaly detection
 - Background aggregation jobs
-- SKALE on-chain metrics (optional)
 - Advanced Dashboard charts/animations
 
 ### Fallback Strategy

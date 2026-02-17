@@ -65,7 +65,7 @@ We built a fully functional MCP server that lets any AI agent (Claude, GPT, etc.
 | **Spending Report** | Real-time cost analytics | 1.54 USDC spent across 35 requests, per-endpoint breakdown |
 | **Endpoint Score** | Individual quality scoring | Cost/latency/reliability breakdown with evidence |
 | **Transaction History** | Full audit trail | 69 requests across 5 endpoints with latency percentiles |
-| **On-Chain Audit** | ERC-8004 feedback on SKALE | **134 on-chain events** indexed via subgraph — every payment is auditable |
+| **On-Chain Audit** | ERC-8004 feedback on SKALE | **224 on-chain events** indexed via subgraph — every payment is auditable |
 
 ---
 
@@ -77,16 +77,17 @@ We built a fully functional MCP server that lets any AI agent (Claude, GPT, etc.
 └──────────────────┬────────────────────────────┘
                    │ MCP Tool Call 
 ┌──────────────────▼────────────────────────────┐
-│  pag0-mcp (MCP Server + CDP Wallet)           │
-│  402 → sign → retry, all automated            │
+│  pag0-mcp (MCP Server + CDP/Local Wallet)      │
+│  402 → sign → retry via /relay endpoint        │
 └──────────────────┬────────────────────────────┘
-                   │ pag0.fetch() 
+                   │ proxyFetch → /relay
 ┌──────────────────▼────────────────────────────┐
 │  Pag0 Smart Proxy (Hono + Bun)                │
 │  ┌─────────┬──────────┬───────────┬─────────┐ │
 │  │ Policy  │ Cache    │ Curation  │Analytics│ │
 │  │ Engine  │ Layer    │ Engine    │Collector│ │
 │  └─────────┴──────────┴───────────┴─────────┘ │
+│  + ERC-8004 Audit Trail (SKALE) + Subgraph    │
 └──────────────────┬────────────────────────────┘
                    │ 
 ┌──────────────────▼────────────────────────────┐
@@ -97,7 +98,7 @@ We built a fully functional MCP server that lets any AI agent (Claude, GPT, etc.
 | Layer | Technology | Sponsor |
 |---|---|---|
 | **Proxy Runtime** | Hono + Bun | — |
-| **Wallet** | Coinbase CDP Server Wallet | **Coinbase** |
+| **Wallet** | Coinbase CDP Server Wallet + Local ethers.Wallet | **Coinbase** |
 | **x402 Payments** | @x402/fetch SDK (Base Sepolia, USDC) | **Coinbase** |
 | **On-Chain Audit** | ERC-8004 ReputationRegistry | **SKALE** (zero gas) |
 | **Subgraph** | The Graph (Goldsky) | **The Graph** |
@@ -129,8 +130,8 @@ We built a fully functional MCP server that lets any AI agent (Claude, GPT, etc.
 
 ## What We Built (3-Day Hackathon)
 
-- **5 core modules:** Proxy Core, Policy Engine, Curation Engine, Cache Layer, Analytics Collector
-- **14 MCP tools:** wallet, proxy, policy, curation, analytics, smart request, audit trail
+- **8 core modules:** Proxy Core, Policy Engine, Curation Engine, Cache Layer, Analytics Collector, ERC-8004 Audit Trail, Subgraph Client, Smart Request
+- **16 MCP tools:** wallet (2), proxy (1), policy (3), curation (4), analytics (3), smart request (1), audit trail (2)
 - **ERC-8004 smart contracts** deployed on SKALE (ReputationRegistry + ValidationRegistry)
 - **The Graph subgraph** indexing on-chain payment feedback
 - **Web dashboard** with real-time analytics, API rankings, and policy management
