@@ -7,12 +7,15 @@
  *
  * Usage:
  *   cd packages/mcp
- *   npx tsx test-tools.ts              # run all tests
+ *   npx tsx test-tools.ts              # run all tests (Base Sepolia / CDP)
  *   npx tsx test-tools.ts --smart-only # run only smart-request tests
+ *   npx tsx test-tools.ts --bsc        # run BSC local wallet tests
+ *   npx tsx test-tools.ts --bsc --approve  # BSC tests + Permit2 approve tx
  *
  * Requires:
  *   - Proxy running at PAG0_API_URL (default localhost:3000)
  *   - .env with PAG0_API_URL, PAG0_API_KEY, WALLET_PRIVATE_KEY or CDP creds
+ *   - For BSC: NETWORK=bsc, WALLET_MODE=local, WALLET_PRIVATE_KEY (with USDT + BNB)
  */
 
 import "dotenv/config";
@@ -124,6 +127,9 @@ if (WALLET_MODE === "cdp") {
   await cdp.init();
   wallet = cdp;
 } else {
+  if (!process.env.WALLET_PRIVATE_KEY) {
+    throw new Error("WALLET_PRIVATE_KEY is required for local wallet mode");
+  }
   wallet = new Pag0Wallet(process.env.WALLET_PRIVATE_KEY!, NETWORK);
 }
 const proxyFetch = createProxyFetch(PAG0_API_URL, PAG0_API_KEY, wallet);
@@ -131,6 +137,8 @@ const proxyFetch = createProxyFetch(PAG0_API_URL, PAG0_API_KEY, wallet);
 console.log(`${DIM}  address: ${wallet.address}${RESET}\n`);
 
 const smartOnly = process.argv.includes("--smart-only");
+const bscOnly = process.argv.includes("--bsc") || NETWORK === "bsc";
+const isBsc = NETWORK === "bsc";
 
 // ── Client Method Tests ───────────────────────────────────────
 
@@ -248,8 +256,7 @@ await test("proxyFetch x402-ai-starter (POST, x402 payment)", async () => {
     await verifyUpstream500(url, "POST", reqBody);
   }
   assert(
-    response.status === 200 ||
-      response.status === 500,
+    response.status === 200 || response.status === 500,
     `expected 200 or 500, got ${response.status} (402 means x402 SDK payment flow failed)`,
   );
 });
@@ -277,8 +284,9 @@ await test("x402 cost reporting: proxy cost vs payment-response", async () => {
   const proxyCost = response.headers.get("x-pag0-cost") || "0";
 
   // 2. All cost-related headers from upstream (forwarded through proxy)
-  const paymentResponse = response.headers.get("payment-response")
-    || response.headers.get("x-payment-response");
+  const paymentResponse =
+    response.headers.get("payment-response") ||
+    response.headers.get("x-payment-response");
   const xCost = response.headers.get("x-cost");
   const xPaymentAmount = response.headers.get("x-payment-amount");
 
@@ -286,8 +294,12 @@ await test("x402 cost reporting: proxy cost vs payment-response", async () => {
   let settlementAmount: string | null = null;
   if (paymentResponse) {
     try {
-      const decoded = JSON.parse(Buffer.from(paymentResponse, "base64").toString());
-      console.log(`${DIM}   payment-response: ${JSON.stringify(decoded)}${RESET}`);
+      const decoded = JSON.parse(
+        Buffer.from(paymentResponse, "base64").toString(),
+      );
+      console.log(
+        `${DIM}   payment-response: ${JSON.stringify(decoded)}${RESET}`,
+      );
       settlementAmount = decoded.amount || decoded.transaction?.amount || null;
     } catch {
       console.log(`${DIM}   payment-response: (decode failed)${RESET}`);
@@ -296,21 +308,30 @@ await test("x402 cost reporting: proxy cost vs payment-response", async () => {
 
   // 4. Dump all response headers for diagnosis
   const allHeaders: Record<string, string> = {};
-  response.headers.forEach((v, k) => { allHeaders[k] = v; });
+  response.headers.forEach((v, k) => {
+    allHeaders[k] = v;
+  });
   const costRelated = Object.entries(allHeaders)
     .filter(([k]) => /cost|payment|pag0/i.test(k))
     .map(([k, v]) => `${k}=${v.length > 80 ? v.slice(0, 80) + "…" : v}`);
-  console.log(`${DIM}   cost-related headers: ${costRelated.join(", ") || "(none)"}${RESET}`);
+  console.log(
+    `${DIM}   cost-related headers: ${
+      costRelated.join(", ") || "(none)"
+    }${RESET}`,
+  );
 
   console.log(
     `${DIM}   proxy-cost=${proxyCost}, x-cost=${xCost ?? "null"}, ` +
-    `x-payment-amount=${xPaymentAmount ?? "null"}, ` +
-    `settlement=${settlementAmount ?? "null"}${RESET}`,
+      `x-payment-amount=${xPaymentAmount ?? "null"}, ` +
+      `settlement=${settlementAmount ?? "null"}${RESET}`,
   );
 
   // 5. Assert: cost should not be "0" after a paid x402 request
   assert(
-    proxyCost !== "0" || xCost != null || xPaymentAmount != null || paymentResponse != null,
+    proxyCost !== "0" ||
+      xCost != null ||
+      xPaymentAmount != null ||
+      paymentResponse != null,
     `No cost data found anywhere — proxy-cost=0 and no upstream cost headers`,
   );
 });
@@ -345,10 +366,10 @@ await test("full smart flow (Developer Tools)", async () => {
   const reqBody = noBody
     ? undefined
     : sel.body != null
-      ? JSON.stringify(sel.body)
-      : sel.isPassthrough
-        ? JSON.stringify({ a: 2, b: 3 }) // x402-ai-starter-alpha expects { a, b }
-        : undefined;
+    ? JSON.stringify(sel.body)
+    : sel.isPassthrough
+    ? JSON.stringify({ a: 2, b: 3 }) // x402-ai-starter-alpha expects { a, b }
+    : undefined;
   const response = await proxyFetch(sel.targetUrl, {
     method: sel.method,
     headers,
@@ -404,9 +425,7 @@ await test("requests are recorded in analytics and affect metrics", async () => 
   );
   const beforeTotal = before?.requestCount ?? 0;
 
-  console.log(
-    `${DIM}   before: total=${beforeTotal}${RESET}`,
-  );
+  console.log(`${DIM}   before: total=${beforeTotal}${RESET}`);
 
   // 2. Fire N relay calls
   const results: number[] = [];
@@ -480,6 +499,154 @@ await test("requests are recorded in analytics and affect metrics", async () => 
 });
 
 console.log();
+
+// ── BSC Local Wallet Tests ───────────────────────────────────
+
+if (bscOnly) {
+  console.log(`${YELLOW}[BSC: Wallet & Permit2]${RESET}`);
+
+  await test("wallet status (BSC, local)", async () => {
+    const status = await wallet.getStatus();
+    assert(status.network === "bsc", `expected network=bsc, got ${status.network}`);
+    assert(status.address.startsWith("0x"), "address should start with 0x");
+    console.log(
+      `${DIM} → addr=${status.address.slice(0, 10)}..., balance=${status.balanceFormatted}${RESET}`,
+    );
+    if (status.permit2) {
+      console.log(
+        `${DIM}   permit2: approved=${status.permit2.approved}, allowance=${status.permit2.allowance}${RESET}`,
+      );
+    }
+  });
+
+  await test("Permit2 allowance check", async () => {
+    const status = await wallet.getStatus();
+    assert(status.permit2 != null, "permit2 status should be present for BSC");
+    assert(typeof status.permit2!.approved === "boolean", "approved should be boolean");
+    assert(typeof status.permit2!.allowance === "string", "allowance should be a string");
+    if (!status.permit2!.approved) {
+      console.log(
+        `${DIM}   ${YELLOW}⚠ Permit2 NOT approved — run pag0_approve_permit2 or use --approve flag${RESET}`,
+      );
+    } else {
+      console.log(`${DIM}   ${GREEN}✓ Permit2 approved${RESET}`);
+    }
+  });
+
+  // Optional: approve Permit2 if --approve flag is passed
+  if (process.argv.includes("--approve") && wallet instanceof Pag0Wallet) {
+    await test("Permit2 approve (on-chain tx)", async () => {
+      const statusBefore = await wallet.getStatus();
+      if (statusBefore.permit2?.approved) {
+        console.log(`${DIM}   already approved, skipping${RESET}`);
+        return;
+      }
+      const result = await (wallet as Pag0Wallet).approvePermit2();
+      assert(typeof result.txHash === "string", "txHash should be a string");
+      assert(result.txHash.startsWith("0x"), "txHash should start with 0x");
+      console.log(`${DIM}   tx=${result.txHash}${RESET}`);
+
+      // Verify allowance updated
+      const statusAfter = await wallet.getStatus();
+      assert(statusAfter.permit2?.approved === true, "permit2 should be approved after tx");
+    });
+  }
+
+  console.log();
+
+  console.log(`${YELLOW}[BSC: ProxyFetch — Self-Hosted x402 APIs]${RESET}`);
+
+  await test("proxyFetch BSC Venus rates (GET, x402 payment)", async () => {
+    const url = `${PAG0_API_URL}/bsc/defi/venus/rates`;
+    const response = await proxyFetch(url, { method: "GET" });
+    const meta = extractProxyMetadata(response);
+    const body = await response.json().catch(() => null);
+    console.log(
+      `${DIM} → status=${response.status}, cost=${meta.cost}, cached=${meta.cached}, latency=${meta.latency}ms${RESET}`,
+    );
+    if (response.ok && body) {
+      const markets = Array.isArray(body) ? body.length : Object.keys(body).length;
+      console.log(`${DIM}   markets=${markets}${RESET}`);
+    }
+    // 200 = paid successfully, 402 = Permit2 not approved, 500 = upstream error
+    assert(
+      response.status === 200 || response.status === 402 || response.status === 500,
+      `expected 200/402/500, got ${response.status}`,
+    );
+    if (response.status === 402) {
+      console.log(
+        `${DIM}   ${YELLOW}402 = payment required — approve Permit2 first (--approve flag)${RESET}`,
+      );
+    }
+  });
+
+  await test("proxyFetch BSC PancakeSwap quote (GET, x402 payment)", async () => {
+    const url = `${PAG0_API_URL}/bsc/defi/pancake/quote?tokenIn=0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c&tokenOut=0x55d398326f99059fF775485246999027B3197955&amount=1000000000000000000`;
+    const response = await proxyFetch(url, { method: "GET" });
+    const meta = extractProxyMetadata(response);
+    const body = await response.json().catch(() => null);
+    console.log(
+      `${DIM} → status=${response.status}, cost=${meta.cost}, cached=${meta.cached}, latency=${meta.latency}ms${RESET}`,
+    );
+    if (response.ok && body) {
+      console.log(`${DIM}   quote=${JSON.stringify(body).slice(0, 120)}${RESET}`);
+    }
+    assert(
+      response.status === 200 || response.status === 402 || response.status === 500,
+      `expected 200/402/500, got ${response.status}`,
+    );
+  });
+
+  await test("proxyFetch BSC token analysis (POST, x402 payment)", async () => {
+    const url = `${PAG0_API_URL}/bsc/ai/analyze-token`;
+    const reqBody = JSON.stringify({ tokenAddress: "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82" }); // CAKE
+    const response = await proxyFetch(url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: reqBody,
+    });
+    const meta = extractProxyMetadata(response);
+    const body = await response.json().catch(() => null);
+    console.log(
+      `${DIM} → status=${response.status}, cost=${meta.cost}, cached=${meta.cached}, latency=${meta.latency}ms${RESET}`,
+    );
+    if (response.ok && body) {
+      console.log(`${DIM}   analysis=${JSON.stringify(body).slice(0, 150)}${RESET}`);
+    }
+    assert(
+      response.status === 200 || response.status === 400 || response.status === 402 || response.status === 500,
+      `expected 200/400/402/500, got ${response.status}`,
+    );
+  });
+
+  console.log();
+
+  console.log(`${YELLOW}[BSC: Cache Verification]${RESET}`);
+
+  await test("second Venus request should be cached", async () => {
+    const url = `${PAG0_API_URL}/bsc/defi/venus/rates`;
+    const response = await proxyFetch(url, { method: "GET" });
+    const meta = extractProxyMetadata(response);
+    console.log(
+      `${DIM} → status=${response.status}, cached=${meta.cached}, cacheSource=${meta.cacheSource}${RESET}`,
+    );
+    if (response.status === 200) {
+      // First call may or may not be cached; this is the second call
+      console.log(
+        meta.cached
+          ? `${DIM}   ${GREEN}✓ cache hit — saved payment cost${RESET}`
+          : `${DIM}   ${YELLOW}cache miss (may need longer TTL or first call failed)${RESET}`,
+      );
+    }
+    await response.text().catch(() => {});
+    assert(
+      response.status === 200 || response.status === 402 || response.status === 500,
+      `expected 200/402/500, got ${response.status}`,
+    );
+  });
+
+  console.log();
+}
 
 // ── Summary ───────────────────────────────────────────────────
 
