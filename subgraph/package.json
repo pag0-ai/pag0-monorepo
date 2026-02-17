@@ -7,7 +7,12 @@
     "build": "graph codegen && graph build",
     "create-local": "graph create --node http://localhost:8020/ pag0/erc8004",
     "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 --version-label v0.0.1 pag0/erc8004",
-    "deploy:goldsky": "graph codegen && graph build && goldsky subgraph deploy pag0-erc8004/v1 --path ."
+    "deploy:goldsky": "graph codegen && graph build && goldsky subgraph deploy pag0-erc8004/v1 --path .",
+    "codegen:bsc": "graph codegen subgraph-bsc.yaml",
+    "build:bsc": "graph codegen subgraph-bsc.yaml && graph build subgraph-bsc.yaml",
+    "create-local:bsc": "graph create --node http://localhost:8020/ pag0/erc8004-bsc",
+    "deploy-local:bsc": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 --version-label v0.0.1 pag0/erc8004-bsc subgraph-bsc.yaml",
+    "deploy:goldsky:bsc": "graph codegen subgraph-bsc.yaml && graph build subgraph-bsc.yaml && goldsky subgraph deploy pag0-erc8004-bsc/v1 --path ."
   },
   "dependencies": {
     "@graphprotocol/graph-cli": "^0.93.2",
