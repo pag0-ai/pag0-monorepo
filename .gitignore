@@ -42,3 +42,5 @@ fly.toml
 prepare-hackathon
 
 .claude/settings.json
+
+*.mp4

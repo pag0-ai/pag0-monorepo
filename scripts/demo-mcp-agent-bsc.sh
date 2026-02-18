@@ -22,6 +22,28 @@ NC='\033[0m'
 PASS=0
 FAIL=0
 
+# Timestamp-seeded randomization — cache-busting across runs
+TS=$(date +%s)
+
+# Popular BSC token addresses for AI token analysis (Step 7)
+BSC_TOKENS=("0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82" "0x2170Ed0880ac9A755fd29B2688956BD959F933F8" "0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c" "0x1D2F0da169ceB9fC7B3144628dB156f3F6c60dBE" "0x3EE2200Efb3400fAbB9AacF31297cBdD1d435D47" "0xBf5140A22578168FD562DCcF235E5D43A02ce9B1")
+BSC_TOKEN_NAMES=("CAKE" "ETH (Binance-Peg)" "BTCB" "XRP (BSC)" "ADA (BSC)" "UNI (BSC)")
+
+# Varying BNB amounts for PancakeSwap quote (Step 6)
+BNB_AMOUNTS=("500000000000000000" "1000000000000000000" "1500000000000000000" "2000000000000000000" "3000000000000000000" "5000000000000000000")
+BNB_LABELS=("0.5 BNB" "1 BNB" "1.5 BNB" "2 BNB" "3 BNB" "5 BNB")
+
+T1=$((TS % ${#BSC_TOKENS[@]}))
+T2=$(( (TS / ${#BSC_TOKENS[@]}) % ${#BNB_AMOUNTS[@]} ))
+NONCE=$((TS % 100000))
+
+SELECTED_TOKEN="${BSC_TOKENS[$T1]}"
+SELECTED_TOKEN_NAME="${BSC_TOKEN_NAMES[$T1]}"
+SELECTED_AMOUNT="${BNB_AMOUNTS[$T2]}"
+SELECTED_AMOUNT_LABEL="${BNB_LABELS[$T2]}"
+
+echo -e "${CYAN}Randomized inputs: token=${SELECTED_TOKEN_NAME}, amount=${SELECTED_AMOUNT_LABEL}, nonce=${NONCE}${NC}"
+
 # Create temp working directory
 DEMO_DIR="/tmp/pag0-mcp-demo-bsc-$(date +%s)"
 mkdir -p "$DEMO_DIR"
@@ -197,19 +219,19 @@ run_agent "5" "x402 Payment (Venus Rates)" \
   "Demonstrate resource discovery and x402 payment on BNB Chain:
 1. Use pag0_score to look up the proxy host and find its BSC API resources.
 2. Find the Venus Protocol lending rates resource (/bsc/defi/venus/rates, GET method).
-3. Use pag0_request to call the full URL (${BASE_URL}/bsc/defi/venus/rates) with method GET.
+3. Use pag0_request to call the full URL (${BASE_URL}/bsc/defi/venus/rates?_t=${NONCE}) with method GET.
 Show: the discovered resource info, then the payment result (status, response body, cost in USDT, latency, remaining budget). This is an x402 payment on BSC via Permit2."
 
 # ===== Step 6: x402 Payment — PancakeSwap Quote =====
 run_agent "6" "x402 Payment (PancakeSwap Quote)" \
   "Demonstrate a second x402 payment on BNB Chain:
-1. Use pag0_request to call ${BASE_URL}/bsc/defi/pancake/quote with method GET and query params tokenIn=0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c (WBNB) and tokenOut=0x55d398326f99059fF775485246999027B3197955 (USDT) and amount=1000000000000000000 (1 BNB).
+1. Use pag0_request to call ${BASE_URL}/bsc/defi/pancake/quote with method GET and query params tokenIn=0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c (WBNB) and tokenOut=0x55d398326f99059fF775485246999027B3197955 (USDT) and amount=${SELECTED_AMOUNT} (${SELECTED_AMOUNT_LABEL}).
 Show: the response (status, body, cost in USDT, latency, remaining budget). Compare cost vs the Venus rates call."
 
 # ===== Step 7: x402 Payment — AI Token Analysis =====
 run_agent "7" "x402 Payment (AI Token Analysis)" \
   "Demonstrate a higher-cost x402 payment on BNB Chain:
-1. Use pag0_request to call ${BASE_URL}/bsc/ai/analyze-token with method POST and JSON body {\"tokenAddress\": \"0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82\"} (CAKE token on BSC).
+1. Use pag0_request to call ${BASE_URL}/bsc/ai/analyze-token with method POST and JSON body {\"tokenAddress\": \"${SELECTED_TOKEN}\"} (${SELECTED_TOKEN_NAME} token on BSC).
 Show: the response (status, body with risk analysis, cost in USDT, latency, remaining budget). Note this costs \$0.005 vs \$0.001 for the DeFi endpoints."
 
 # ===== Step 8: Accounting Check =====
