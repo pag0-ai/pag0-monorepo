@@ -10,15 +10,21 @@
 
 ---
 
-## The Opportunity
+## The Problem
 
-AEON launched an x402 Facilitator on BNB Chain (Oct 2025). But the **x402 Bazaar has 0 APIs registered on BSC.** The infrastructure exists — no one is using it.
+AI agents can now pay for APIs with x402. But **paying ≠ managing spending.**
 
-| Gap | What's Missing |
-|-----|---------------|
-| **No APIs** | Zero x402-enabled APIs on BNB Chain — nothing for agents to pay for |
-| **No Permit2 support** | BSC tokens (USDT, USDC) lack EIP-3009; AEON's facilitator crashes on Permit2 payloads |
-| **No agent tooling** | No MCP server, no budget control, no curation — just a raw facilitator |
+| Pain Point | Impact |
+|---|---|
+| **No budget control** | Agents can overspend without limits — one runaway loop costs hundreds of dollars |
+| **Blind API selection** | Multiple APIs exist for the same task, but no objective data to compare cost, speed, or reliability |
+| **Duplicate payments** | Agents repeat identical requests, paying every time — redundant calls waste real money |
+
+x402 solved **how** agents pay. Pag0 solves **how much**, **how smart**, and **how efficiently** they pay.
+
+## The Opportunity: BNB Chain
+
+AEON launched an x402 Facilitator on BNB Chain (Oct 2025). But the **x402 Bazaar has 0 APIs registered on BSC.** The infrastructure exists — no one is using it. BSC tokens lack EIP-3009, and AEON's facilitator crashes on Permit2 payloads.
 
 Pag0 fills the entire stack: **APIs + Facilitator + Proxy + Agent Tools** — all on BSC.
 
@@ -59,6 +65,30 @@ Payment Flow:
 
 One-time setup: `USDT.approve(Permit2, MAX)` (~$0.01 BNB gas). After that, **all payments are gasless off-chain signatures.**
 
+### Spend Firewall (Budget Control)
+
+Per-request, daily, and monthly budget limits — all enforced **before** the payment leaves the agent's wallet. Whitelist/blacklist endpoints. Automatic blocking on policy violation.
+
+- Per-request cap: max $0.01 USDT per call
+- Daily budget: $1 USDT/day — agent cannot overspend even in a runaway loop
+- Monthly budget: $10 USDT/month — hard ceiling across all APIs
+- Endpoint whitelist: only approved BSC DeFi APIs (Venus, PancakeSwap, AI Analysis)
+
+### Data-Driven API Curation
+
+Every API call through Pag0 generates real usage data. The curation engine scores endpoints across **4 dimensions** — cost efficiency, latency, reliability, and on-chain reputation — to objectively rank and recommend the best APIs.
+
+- **Scoring:** Weighted formula (cost 30%, latency 25%, reliability 25%, reputation 20%)
+- **Recommendation:** "Which DeFi API should I use?" → Curation engine returns top-ranked endpoints with evidence
+- **Comparison:** Head-to-head comparison across all dimensions with winner analysis
+- **Rankings:** Category-level leaderboard (e.g., BSC DeFi APIs sorted by overall score)
+
+No more blind selection — agents pick APIs based on **data, not guesswork.**
+
+### Smart Cache
+
+Redis-based response caching with configurable TTL. Identical requests served from cache — **no duplicate payments.** Cache hits cost $0 and respond in <10ms.
+
 ---
 
 ## Self-Hosted x402 APIs on BSC
@@ -83,9 +113,9 @@ A fully functional MCP server lets any AI agent use Pag0 tools on BNB Chain nati
 |------|--------------|--------|
 | **1. Wallet Setup** | Local wallet on BSC with USDT balance | BSC Mainnet, eip155:56 |
 | **1.5. Permit2 Approval** | One-time on-chain USDT approval | Tx hash on BSCScan |
-| **2. Health Check** | Budget & policy enforcement for BSC | Daily/monthly limits in USDT (18 decimals) |
-| **3. DeFi Recommendations** | Curation engine discovers BSC APIs | Venus, PancakeSwap, AI Analysis ranked by score |
-| **4. Endpoint Score** | Quality scoring with 4 dimensions | Cost, latency, reliability, reputation breakdown |
+| **2. Health Check** | Budget & policy enforcement for BSC | $1/day, $10/month limits enforced — overspend blocked |
+| **3. DeFi Recommendations** | Curation engine ranks BSC APIs by real data | Top 3 scored: Venus (85.2), PancakeSwap (78.6), AI Analysis (72.1) |
+| **4. Endpoint Score** | 4-dimension quality scoring with evidence | Cost 88.5, Latency 82.3, Reliability 97.8%, Reputation 76.0 |
 | **5. x402 Payment (Venus)** | Real Permit2 payment on BSC | $0.001 USDT paid, 200 OK, lending rates returned |
 | **6. x402 Payment (PancakeSwap)** | Second Permit2 payment | $0.001 USDT, swap quote with optimal route |
 | **7. x402 Payment (AI Analysis)** | Higher-cost API call | $0.005 USDT, token risk analysis with AI |
@@ -150,10 +180,12 @@ Hackathon requirement: *"Contract address or tx hash on BSC or opBNB"*
 
 ## Market Opportunity
 
+- **Positioning:** "Auth0 built the identity layer on OAuth ($6.5B exit). Pag0 builds the **payment control layer** on x402."
 - **Empty market:** x402 Bazaar has 0 APIs on BSC. Pag0 is the first to bring x402 infrastructure + APIs to BNB Chain.
 - **BSC DeFi ecosystem:** $5B+ TVL across Venus, PancakeSwap, Alpaca Finance — massive demand for paid API access.
 - **Permit2 is universal:** Uniswap's Permit2 is deployed on 20+ chains. The `LocalBscFacilitatorClient` pattern extends x402 to any EVM chain where tokens lack EIP-3009.
-- **Data network effect:** Every API call through Pag0 feeds the curation engine. More usage = better recommendations = more usage.
+- **Data network effect:** Every API call through Pag0 feeds the curation engine. More usage → better scoring → smarter recommendations → more usage. This is the moat.
+- **Budget control is non-negotiable:** No enterprise will let agents spend freely. Pag0's Spend Firewall is the compliance layer x402 needs.
 
 ---
 
