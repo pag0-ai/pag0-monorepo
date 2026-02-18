@@ -53,7 +53,8 @@ const server = new McpServer({
   version: "0.1.0",
 });
 
-const client = new Pag0Client(PAG0_API_URL, PAG0_API_KEY);
+const CHAIN_ID = NETWORK === "bsc" ? 56 : 84532;
+const client = new Pag0Client(PAG0_API_URL, PAG0_API_KEY, CHAIN_ID);
 
 // Wallet mode selection: local (ethers) or cdp (Coinbase Server Wallet)
 let wallet: IWallet;
@@ -68,7 +69,7 @@ if (WALLET_MODE === "cdp") {
 }
 
 // Create proxy-aware fetch (x402 SDK handles 402 → sign → retry)
-const proxyFetch = createProxyFetch(PAG0_API_URL, PAG0_API_KEY, wallet);
+const proxyFetch = createProxyFetch(PAG0_API_URL, PAG0_API_KEY, wallet, CHAIN_ID);
 
 // Register all tools
 registerWalletTools(server, wallet);

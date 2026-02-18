@@ -43,17 +43,21 @@ export interface PaymentRequest {
 export class Pag0Client {
   private baseUrl: string;
   private apiKey: string;
+  private chainId?: number;
 
-  constructor(baseUrl: string, apiKey: string) {
+  constructor(baseUrl: string, apiKey: string, chainId?: number) {
     this.baseUrl = baseUrl.replace(/\/$/, "");
     this.apiKey = apiKey;
+    this.chainId = chainId;
   }
 
   private get headers(): Record<string, string> {
-    return {
+    const h: Record<string, string> = {
       "Content-Type": "application/json",
       "X-Pag0-API-Key": this.apiKey,
     };
+    if (this.chainId) h["X-Pag0-Chain-ID"] = String(this.chainId);
+    return h;
   }
 
   private async get<T>(path: string): Promise<T> {

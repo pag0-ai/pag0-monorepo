@@ -119,7 +119,8 @@ console.log(`\n${CYAN}=== Pag0 MCP Tools Test ===${RESET}`);
 console.log(`${DIM}  proxy: ${PAG0_API_URL}${RESET}`);
 console.log(`${DIM}  wallet: ${WALLET_MODE}${RESET}\n`);
 
-const client = new Pag0Client(PAG0_API_URL, PAG0_API_KEY);
+const CHAIN_ID = NETWORK === "bsc" ? 56 : 84532;
+const client = new Pag0Client(PAG0_API_URL, PAG0_API_KEY, CHAIN_ID);
 
 let wallet: IWallet;
 if (WALLET_MODE === "cdp") {
@@ -132,7 +133,7 @@ if (WALLET_MODE === "cdp") {
   }
   wallet = new Pag0Wallet(process.env.WALLET_PRIVATE_KEY!, NETWORK);
 }
-const proxyFetch = createProxyFetch(PAG0_API_URL, PAG0_API_KEY, wallet);
+const proxyFetch = createProxyFetch(PAG0_API_URL, PAG0_API_KEY, wallet, CHAIN_ID);
 
 console.log(`${DIM}  address: ${wallet.address}${RESET}\n`);
 

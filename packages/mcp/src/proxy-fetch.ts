@@ -40,6 +40,7 @@ export function createProxyFetch(
   proxyBaseUrl: string,
   apiKey: string,
   wallet: IWallet,
+  chainId?: number,
 ): typeof globalThis.fetch {
   const relayUrl = proxyBaseUrl.replace(/\/$/, "") + "/relay";
 
@@ -61,6 +62,7 @@ export function createProxyFetch(
     const headers = new Headers(init?.headers ?? req?.headers);
     headers.set("x-pag0-target-url", targetUrl);
     headers.set("x-pag0-api-key", apiKey);
+    if (chainId) headers.set("x-pag0-chain-id", String(chainId));
 
     // Materialize body as ArrayBuffer to avoid ReadableStream/duplex issues
     let body: BodyInit | null = init?.body ?? null;

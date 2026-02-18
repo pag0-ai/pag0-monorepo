@@ -5,7 +5,7 @@
 **Quick Links**
 
 - **Demo Video (YouTube):** <https://youtu.be/Du7mqZNaY4c>
-- **Demo Setup & Run Guide:** [`guides/2-RUN-MCP-AGENT-BSC.md`](guides/2-RUN-MCP-AGENT-BSC.md)
+- **Demo Setup & Run Guide:** [`guides/2-RUN-MCP-AGENT-BSC.md`](https://github.com/pag0-ai/pag0-monorepo/blob/main/guides/2-RUN-MCP-AGENT-BSC.md)
 - **Track:** Builders (primary) / Agent (secondary)
 
 ---
