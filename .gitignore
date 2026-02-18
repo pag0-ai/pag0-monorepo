@@ -44,3 +44,5 @@ prepare-hackathon
 .claude/settings.json
 
 *.mp4
+
+docs/VIBELABS-*.md
